@@ -8,4 +8,7 @@ type User struct {
 	DateOfBirth string `json:"dateOfBirth"`
 	Nickname    string `json:"nickname"`
 	AboutMe     string `json:"aboutMe"`
+	Age         int    `json:"-"`
+	Gender      string `json:"-"`
+	AvatarUrl   string `json:"avatarUrl"`
 }

@@ -209,6 +209,19 @@ export function AuthForm() {
         });
         // TODO: Implement actual login API call
       } else {
+        const avatarForm = new FormData();
+        let avatarUrl = "";
+        if (formData.avatar) {
+          avatarForm.append("avatar", formData.avatar);
+        }
+        await fetch("http://localhost:8080/api/upload-avatar", {
+          method: "POST",
+          body: avatarForm,
+        })
+          .then((res) => res.json())
+          .then((data) => (avatarUrl = data.avatarUrl))
+          .catch((err) => console.error(err));
+
         await fetch("http://localhost:8080/api/register", {
           method: "POST",
           headers: {
@@ -222,22 +235,12 @@ export function AuthForm() {
             dateOfBirth: formData.dateOfBirth,
             nickname: formData.nickname,
             aboutMe: formData.aboutMe,
+            avatarUrl: avatarUrl,
           }),
         })
           .then((res) => res.json())
           .then((data) => console.log(data))
           .catch((err) => console.error(err));
-
-        const avatarForm = new FormData();
-
-        if (formData.avatar) {
-          avatarForm.append("avatar", formData.avatar);
-        }
-
-        await fetch("http://localhost:8080/api/upload-avatar", {
-          method: "POST",
-          body: avatarForm,
-        });
       }
 
       // Simulate API call delay
