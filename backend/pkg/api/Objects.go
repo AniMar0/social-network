@@ -12,3 +12,8 @@ type User struct {
 	Gender      string `json:"-"`
 	AvatarUrl   string `json:"avatarUrl"`
 }
+
+type LoginUser struct {
+	Identifier string `json:"identifier"`
+	Password   string `json:"password"`
+}

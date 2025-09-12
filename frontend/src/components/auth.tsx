@@ -208,6 +208,26 @@ export function AuthForm() {
           password: formData.password,
         });
         // TODO: Implement actual login API call
+        await fetch("http://localhost:8080/api/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            identifier: formData.email,
+            password: formData.password,
+          }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.error) {
+              setErrors({ general: data.error });
+            } else {
+              // Handle successful login (e.g., redirect or show success message)
+              console.log("Login successful:", data);
+            }
+          })
+          .catch((err) => console.error(err));
       } else {
         const avatarForm = new FormData();
         let avatarUrl = "";

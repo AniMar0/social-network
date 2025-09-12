@@ -14,7 +14,7 @@ func (S *Server) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/404", http.StatusSeeOther)
 		return
 	}
- 
+
 	var user User
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
@@ -36,6 +36,43 @@ func (S *Server) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		tools.RenderErrorPage(w, r, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
+}
+
+func (S *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/404", http.StatusSeeOther)
+		return
+	}
+
+	var user LoginUser
+	err := json.NewDecoder(r.Body).Decode(&user)
+	if err != nil {
+		tools.RenderErrorPage(w, r, "Bad Request", http.StatusBadRequest)
+		return
+	}
+	if user.Identifier == "" || user.Password == "" {
+		tools.RenderErrorPage(w, r, "Bad Request", http.StatusBadRequest)
+		return
+	}
+	nickname, hashedPassword, err := S.GetHashedPasswordFromDB(user.Identifier)
+	if err != nil {
+		tools.RenderErrorPage(w, r, "User Not Found", http.StatusBadRequest)
+		return
+	}
+	fmt.Println(user)
+	if err := tools.CheckPassword(hashedPassword, user.Password); err != nil {
+		tools.RenderErrorPage(w, r, "Incorrect password", http.StatusInternalServerError)
+		return
+	}
+
+	//S.MakeToken(w, nickname)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"username": nickname,
+	})
+
+	// S.broadcastUserStatusChange()
 }
 
 func (S *Server) UploadAvatarHandler(w http.ResponseWriter, r *http.Request) {

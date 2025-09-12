@@ -9,5 +9,6 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/mattn/go-sqlite3 v1.14.32 // indirect
 	github.com/rs/cors v1.11.1 // indirect
+	github.com/twinj/uuid v1.0.0 // indirect
 	golang.org/x/crypto v0.42.0 // indirect
 )

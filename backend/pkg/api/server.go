@@ -3,11 +3,14 @@ package backend
 import (
 	"SOCIAL-NETWORK/pkg/db/sqlite"
 	"database/sql"
+	"fmt"
 	"html"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/rs/cors"
+	"github.com/twinj/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -43,6 +46,11 @@ func (S *Server) Run(addr string) {
 func (S *Server) initRuts() {
 	S.mux.HandleFunc("/api/register", S.RegisterHandler)
 	S.mux.HandleFunc("/api/upload-avatar", S.UploadAvatarHandler)
+
+	S.mux.HandleFunc("/api/login", S.LoginHandler)
+	// S.mux.HandleFunc("/api/logout", S.LogoutHandler)
+	// S.mux.HandleFunc("/api/user", S.UserHandler)
+	// S.mux.HandleFunc("/api/user/status", S.UserStatusHandler)
 }
 
 func (S *Server) AddUser(user User) error {
@@ -79,4 +87,40 @@ func (S *Server) UserFound(user User) (error, bool) {
 		return nil, true
 	}
 	return nil, false
+}
+
+func (S *Server) GetHashedPasswordFromDB(identifier string) (string, string, error) {
+	var hashedPassword, id string
+
+	err := S.db.QueryRow(`
+		SELECT password, id FROM users 
+		WHERE nickname = ? OR email = ?
+	`, identifier, identifier).Scan(&id, &hashedPassword)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", "", fmt.Errorf("this user does not exist")
+		}
+		return "", "", err
+	}
+	return hashedPassword, id, nil
+}
+
+func (S *Server) MakeToken(Writer http.ResponseWriter, username string) {
+	sessionID := uuid.NewV4().String()
+	expirationTime := time.Now().Add(24 * time.Hour)
+
+	_, err := S.db.Exec("INSERT INTO sessions (session_id, nickname, expires_at) VALUES (?, ?, ?)",
+		sessionID, username, expirationTime)
+	if err != nil {
+		http.Error(Writer, "Error creating session", http.StatusInternalServerError)
+		return
+	}
+
+	http.SetCookie(Writer, &http.Cookie{
+		Name:     "session_token",
+		Value:    sessionID,
+		Expires:  expirationTime,
+		HttpOnly: true,
+	})
 }
