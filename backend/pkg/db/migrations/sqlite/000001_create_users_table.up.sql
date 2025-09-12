@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
     avatar TEXT,
     nickname TEXT,
     about_me TEXT,
+    avatar_path TEXT,
     is_private INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
