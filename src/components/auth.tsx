@@ -1,73 +1,64 @@
-"use client";
+"use client"
 
-import type React from "react";
+import type React from "react"
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar } from "@/components/ui/calendar";
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover";
-import { CalendarIcon, Upload, Eye, EyeOff, ArrowLeft } from "lucide-react";
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
+} from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { CalendarIcon, Upload, Eye, EyeOff, ArrowLeft } from "lucide-react"
+import { format } from "date-fns"
+import { cn } from "@/lib/utils"
+
 
 interface FormData {
     // Required fields for registration
-    email: string;
-    password: string;
-    confirmPassword: string;
-    firstName: string;
-    lastName: string;
-    dateOfBirth: Date | undefined;
-    gender: string;
+    email: string
+    password: string
+    confirmPassword: string
+    firstName: string
+    lastName: string
+    dateOfBirth: Date | undefined
+    gender: string
 
     // Optional fields for registration
-    nickname: string;
-    aboutMe: string;
-    avatar: File | null;
+    nickname: string
+    aboutMe: string
+    avatar: File | null
 }
 
 interface FormErrors {
-    email?: string;
-    password?: string;
-    confirmPassword?: string;
-    firstName?: string;
-    lastName?: string;
-    dateOfBirth?: string;
-    gender?: string;
-    general?: string;
+    email?: string
+    password?: string
+    confirmPassword?: string
+    firstName?: string
+    lastName?: string
+    dateOfBirth?: string
+    gender?: string
+    general?: string
 }
 
 export function AuthForm() {
     // State management for form mode and data
-    const [isLogin, setIsLogin] = useState(true);
-    const [isForgotPassword, setIsForgotPassword] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-    const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
+    const [isLogin, setIsLogin] = useState(true)
+    const [isForgotPassword, setIsForgotPassword] = useState(false)
+    const [showPassword, setShowPassword] = useState(false)
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+    const [isLoading, setIsLoading] = useState(false)
+    const [forgotPasswordEmail, setForgotPasswordEmail] = useState("")
 
     // Form data state with proper typing
     const [formData, setFormData] = useState<FormData>({
@@ -81,52 +72,53 @@ export function AuthForm() {
         nickname: "",
         aboutMe: "",
         avatar: null,
-    });
+    })
 
     // Form validation errors
-    const [errors, setErrors] = useState<FormErrors>({});
+    const [errors, setErrors] = useState<FormErrors>({})
 
     // Avatar preview URL for uploaded images
-    const [avatarPreview, setAvatarPreview] = useState<string>("");
+    const [avatarPreview, setAvatarPreview] = useState<string>("")
 
     /**
      * Validates form data based on current mode (login/register)
      * Returns an object containing any validation errors
      */
     const validateForm = (): FormErrors => {
-        const newErrors: FormErrors = {};
+        const newErrors: FormErrors = {}
 
         // Email validation - required for both login and register
         if (!formData.email) {
-            newErrors.email = "Email is required";
+            newErrors.email = "Email is required"
         } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-            newErrors.email = "Please enter a valid email address";
+            newErrors.email = "Please enter a valid email address"
         }
 
         // Password validation - required for both modes
         if (!formData.password) {
-            newErrors.password = "Password is required";
+            newErrors.password = "Password is required"
         } else if (!isLogin && formData.password.length < 8) {
-            newErrors.password = "Password must be at least 8 characters long";
+            newErrors.password = "Password must be at least 8 characters long"
         }
 
         // Registration-specific validations
         if (!isLogin) {
             // Confirm password validation
             if (!formData.confirmPassword) {
-                newErrors.confirmPassword = "Please confirm your password";
+                newErrors.confirmPassword = "Please confirm your password"
             } else if (formData.password !== formData.confirmPassword) {
-                newErrors.confirmPassword = "Passwords do not match";
+                newErrors.confirmPassword = "Passwords do not match"
             }
 
             // Name validations
             if (!formData.firstName.trim()) {
-                newErrors.firstName = "First name is required";
+                newErrors.firstName = "First name is required"
             }
 
             if (!formData.lastName.trim()) {
-                newErrors.lastName = "Last name is required";
+                newErrors.lastName = "Last name is required"
             }
+
             // Gender validation
             if (!formData.gender) {
                 newErrors.gender = "Gender is required"
@@ -134,206 +126,142 @@ export function AuthForm() {
 
             // Date of birth validation
             if (!formData.dateOfBirth) {
-                newErrors.dateOfBirth = "Date of birth is required";
+                newErrors.dateOfBirth = "Date of birth is required"
             } else {
-                const today = new Date();
-                const age = today.getFullYear() - formData.dateOfBirth.getFullYear();
+                const today = new Date()
+                const age = today.getFullYear() - formData.dateOfBirth.getFullYear()
                 if (age < 13) {
-                    newErrors.dateOfBirth =
-                        "You must be at least 13 years old to register";
+                    newErrors.dateOfBirth = "You must be at least 13 years old to register"
                 }
             }
         }
 
-        return newErrors;
-    };
+        return newErrors
+    }
 
     /**
      * Handles input field changes and updates form data state
      */
-    const handleInputChange = (
-        field: keyof FormData,
-        value: string | Date | File | null
-    ) => {
-        setFormData((prev) => ({ ...prev, [field]: value }));
+    const handleInputChange = (field: keyof FormData, value: string | Date | File | null) => {
+        setFormData((prev) => ({ ...prev, [field]: value }))
 
         // Clear specific field error when user starts typing
         if (errors[field as keyof FormErrors]) {
-            setErrors((prev) => ({ ...prev, [field]: undefined }));
+            setErrors((prev) => ({ ...prev, [field]: undefined }))
         }
-    };
+    }
 
     /**
      * Handles avatar file upload and creates preview URL
      */
     const handleAvatarUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
+        const file = event.target.files?.[0]
         if (file) {
             // Validate file type and size
             if (!file.type.startsWith("image/")) {
-                setErrors((prev) => ({
-                    ...prev,
-                    general: "Please select a valid image file",
-                }));
-                return;
+                setErrors((prev) => ({ ...prev, general: "Please select a valid image file" }))
+                return
             }
 
             if (file.size > 5 * 1024 * 1024) {
                 // 5MB limit
-                setErrors((prev) => ({
-                    ...prev,
-                    general: "Image size must be less than 5MB",
-                }));
-                return;
+                setErrors((prev) => ({ ...prev, general: "Image size must be less than 5MB" }))
+                return
             }
 
-            handleInputChange("avatar", file);
+            handleInputChange("avatar", file)
 
             // Create preview URL
-            const reader = new FileReader();
+            const reader = new FileReader()
             reader.onload = (e) => {
-                setAvatarPreview(e.target?.result as string);
-            };
-            reader.readAsDataURL(file);
+                setAvatarPreview(e.target?.result as string)
+            }
+            reader.readAsDataURL(file)
         }
-    };
+    }
 
     /**
      * Handles form submission for both login and registration
      */
     const handleSubmit = async (event: React.FormEvent) => {
-        event.preventDefault();
+        event.preventDefault()
 
         // Validate form data
-        const validationErrors = validateForm();
+        const validationErrors = validateForm()
         if (Object.keys(validationErrors).length > 0) {
-            setErrors(validationErrors);
-            return;
+            setErrors(validationErrors)
+            return
         }
 
-        setIsLoading(true);
-        setErrors({});
+        setIsLoading(true)
+        setErrors({})
 
         try {
             if (isLogin) {
                 // Handle login logic here
-                console.log("Login attempt:", {
-                    email: formData.email,
-                    password: formData.password,
-                });
+                console.log("Login attempt:", { email: formData.email, password: formData.password })
                 // TODO: Implement actual login API call
-                await fetch("http://localhost:8080/api/login", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        identifier: formData.email,
-                        password: formData.password,
-                    }),
-                })
-                    .then((res) => res.json())
-                    .then((data) => {
-                        if (data.error) {
-                            setErrors({ general: data.error });
-                        } else {
-                            // Handle successful login (e.g., redirect or show success message)
-                            console.log("Login successful:", data);
-                        }
-                    })
-                    .catch((err) => console.error(err));
             } else {
-                const avatarForm = new FormData();
-                let avatarUrl = "";
-                if (formData.avatar) {
-                    avatarForm.append("avatar", formData.avatar);
-                }
-                await fetch("http://localhost:8080/api/upload-avatar", {
-                    method: "POST",
-                    body: avatarForm,
-                })
-                    .then((res) => res.json())
-                    .then((data) => (avatarUrl = data.avatarUrl))
-                    .catch((err) => console.error(err));
-
-                await fetch("http://localhost:8080/api/register", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        email: formData.email,
-                        password: formData.password,
-                        firstName: formData.firstName,
-                        lastName: formData.lastName,
-                        dateOfBirth: formData.dateOfBirth,
-                        nickname: formData.nickname,
-                        aboutMe: formData.aboutMe,
-                        avatarUrl: avatarUrl,
-                    }),
-                })
-                    .then((res) => res.json())
-                    .then((data) => console.log(data))
-                    .catch((err) => console.error(err));
+                // Handle registration logic here
+                console.log("Registration attempt:", formData)
+                // TODO: Implement actual registration API call
             }
 
             // Simulate API call delay
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+            await new Promise((resolve) => setTimeout(resolve, 1000))
         } catch (error) {
-            setErrors({ general: "An error occurred. Please try again." });
+            setErrors({ general: "An error occurred. Please try again." })
         } finally {
-            setIsLoading(false);
+            setIsLoading(false)
         }
-    };
+    }
 
     /**
      * Handles forgot password form submission
      */
     const handleForgotPassword = async (event: React.FormEvent) => {
-        event.preventDefault();
+        event.preventDefault()
 
         // Validate email
         if (!forgotPasswordEmail) {
-            setErrors({ email: "Email is required" });
-            return;
+            setErrors({ email: "Email is required" })
+            return
         }
 
         if (!/\S+@\S+\.\S+/.test(forgotPasswordEmail)) {
-            setErrors({ email: "Please enter a valid email address" });
-            return;
+            setErrors({ email: "Please enter a valid email address" })
+            return
         }
 
-        setIsLoading(true);
-        setErrors({});
+        setIsLoading(true)
+        setErrors({})
 
         try {
             // Handle password reset logic here
-            console.log("Password reset request for:", forgotPasswordEmail);
+            console.log("Password reset request for:", forgotPasswordEmail)
             // TODO: Implement actual password reset API call (backend dyalek)
 
             // Simulate API call delay
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+            await new Promise((resolve) => setTimeout(resolve, 1000))
 
             // Show success message (you can customize this)
-            setErrors({
-                general: "Password reset instructions have been sent to your email.",
-            });
+            setErrors({ general: "Password reset instructions have been sent to your email." })
         } catch (error) {
-            setErrors({ general: "An error occurred. Please try again." });
+            setErrors({ general: "An error occurred. Please try again." })
         } finally {
-            setIsLoading(false);
+            setIsLoading(false)
         }
-    };
+    }
 
     /**
      * Resets form when switching between login and register modes
      */
     const handleModeSwitch = (value: string) => {
-        const newIsLogin = value === "login";
-        setIsLogin(newIsLogin);
-        setErrors({});
-        setIsForgotPassword(false);
-        setForgotPasswordEmail("");
+        const newIsLogin = value === "login"
+        setIsLogin(newIsLogin)
+        setErrors({})
+        setIsForgotPassword(false)
+        setForgotPasswordEmail("")
 
         // Reset form data when switching modes
         setFormData({
@@ -347,15 +275,15 @@ export function AuthForm() {
             nickname: "",
             aboutMe: "",
             avatar: null,
-        });
-        setAvatarPreview("");
-    };
+        })
+        setAvatarPreview("")
+    }
 
     const handleBackToLogin = () => {
-        setIsForgotPassword(false);
-        setForgotPasswordEmail("");
-        setErrors({});
-    };
+        setIsForgotPassword(false)
+        setForgotPasswordEmail("")
+        setErrors({})
+    }
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -386,17 +314,15 @@ export function AuthForm() {
                                         placeholder="Enter your email address"
                                         value={forgotPasswordEmail}
                                         onChange={(e) => {
-                                            setForgotPasswordEmail(e.target.value);
+                                            setForgotPasswordEmail(e.target.value)
                                             if (errors.email) {
-                                                setErrors((prev) => ({ ...prev, email: undefined }));
+                                                setErrors((prev) => ({ ...prev, email: undefined }))
                                             }
                                         }}
                                         className={cn(errors.email && "border-destructive")}
                                         required
                                     />
-                                    {errors.email && (
-                                        <p className="text-sm text-destructive">{errors.email}</p>
-                                    )}
+                                    {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                                 </div>
 
                                 {/* General message (success or error) */}
@@ -404,9 +330,7 @@ export function AuthForm() {
                                     <p
                                         className={cn(
                                             "text-sm text-center",
-                                            errors.general.includes("sent")
-                                                ? "text-green-600"
-                                                : "text-destructive"
+                                            errors.general.includes("sent") ? "text-green-600" : "text-destructive",
                                         )}
                                     >
                                         {errors.general}
@@ -431,16 +355,13 @@ export function AuthForm() {
                             </form>
                         </div>
                     ) : (
-                        <Tabs
-                            value={isLogin ? "login" : "register"}
-                            onValueChange={handleModeSwitch}
-                        >
+                        <Tabs value={isLogin ? "login" : "register"} onValueChange={handleModeSwitch}>
                             {/* Tab navigation for switching between login and register */}
                             <TabsList className="grid w-full grid-cols-2 mb-6">
-                                <TabsTrigger value="login" className="text-sm cursor-pointer">
+                                    <TabsTrigger value="login" className="text-sm cursor-pointer">
                                     Sign In
                                 </TabsTrigger>
-                                <TabsTrigger value="register" className="text-sm cursor-pointer">
+                                    <TabsTrigger value="register" className="text-sm cursor-pointer">
                                     Sign Up
                                 </TabsTrigger>
                             </TabsList>
@@ -456,15 +377,11 @@ export function AuthForm() {
                                             type="email"
                                             placeholder="Enter your email"
                                             value={formData.email}
-                                            onChange={(e) =>
-                                                handleInputChange("email", e.target.value)
-                                            }
+                                            onChange={(e) => handleInputChange("email", e.target.value)}
                                             className={cn(errors.email && "border-destructive")}
                                             required
                                         />
-                                        {errors.email && (
-                                            <p className="text-sm text-destructive">{errors.email}</p>
-                                        )}
+                                        {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                                     </div>
 
                                     {/* Password Field with visibility toggle */}
@@ -476,13 +393,8 @@ export function AuthForm() {
                                                 type={showPassword ? "text" : "password"}
                                                 placeholder="Enter your password"
                                                 value={formData.password}
-                                                onChange={(e) =>
-                                                    handleInputChange("password", e.target.value)
-                                                }
-                                                className={cn(
-                                                    errors.password && "border-destructive",
-                                                    "pr-10"
-                                                )}
+                                                onChange={(e) => handleInputChange("password", e.target.value)}
+                                                className={cn(errors.password && "border-destructive", "pr-10")}
                                                 required
                                             />
                                             <Button
@@ -499,22 +411,14 @@ export function AuthForm() {
                                                 )}
                                             </Button>
                                         </div>
-                                        {errors.password && (
-                                            <p className="text-sm text-destructive">
-                                                {errors.password}
-                                            </p>
-                                        )}
+                                        {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
                                     </div>
 
                                     {/* General error message */}
-                                    {errors.general && (
-                                        <p className="text-sm text-destructive text-center">
-                                            {errors.general}
-                                        </p>
-                                    )}
+                                    {errors.general && <p className="text-sm text-destructive text-center">{errors.general}</p>}
 
                                     {/* Submit Button */}
-                                    <Button type="submit" className="w-full cursor-pointer" disabled={isLoading}>
+                                        <Button type="submit" className="w-full cursor-pointer" disabled={isLoading}>
                                         {isLoading ? "Signing in..." : "Sign In"}
                                     </Button>
 
@@ -522,7 +426,7 @@ export function AuthForm() {
                                         <Button
                                             type="button"
                                             variant="link"
-                                            className="text-sm text-muted-foreground cursor-pointer"
+                                                className="text-sm text-muted-foreground cursor-pointer"
                                             onClick={() => setIsForgotPassword(true)}
                                         >
                                             Forgot your password?
@@ -539,9 +443,7 @@ export function AuthForm() {
                                         <Label>Profile Picture (Optional)</Label>
                                         <div className="flex items-center space-x-4">
                                             <Avatar className="h-16 w-16">
-                                                <AvatarImage
-                                                    src={avatarPreview || "/placeholder.svg"}
-                                                />
+                                                <AvatarImage src={avatarPreview || "/placeholder.svg"} />
                                                 <AvatarFallback>
                                                     <Upload className="h-6 w-6 text-muted-foreground" />
                                                 </AvatarFallback>
@@ -554,22 +456,12 @@ export function AuthForm() {
                                                     className="hidden"
                                                     id="avatar-upload"
                                                 />
-                                                <Label
-                                                    htmlFor="avatar-upload"
-                                                    className="cursor-pointer"
-                                                >
-                                                    <Button
-                                                        type="button"
-                                                        variant="outline"
-                                                        size="sm"
-                                                        asChild
-                                                    >
+                                                <Label htmlFor="avatar-upload" className="cursor-pointer">
+                                                    <Button type="button" variant="outline" size="sm" asChild>
                                                         <span>Choose Image</span>
                                                     </Button>
                                                 </Label>
-                                                <p className="text-xs text-muted-foreground mt-1">
-                                                    Max 5MB, JPG/PNG only
-                                                </p>
+                                                <p className="text-xs text-muted-foreground mt-1">Max 5MB, JPG/PNG only</p>
                                             </div>
                                         </div>
                                     </div>
@@ -582,15 +474,11 @@ export function AuthForm() {
                                             type="email"
                                             placeholder="Enter your email"
                                             value={formData.email}
-                                            onChange={(e) =>
-                                                handleInputChange("email", e.target.value)
-                                            }
+                                            onChange={(e) => handleInputChange("email", e.target.value)}
                                             className={cn(errors.email && "border-destructive")}
                                             required
                                         />
-                                        {errors.email && (
-                                            <p className="text-sm text-destructive">{errors.email}</p>
-                                        )}
+                                        {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                                     </div>
 
                                     {/* Name Fields */}
@@ -601,17 +489,11 @@ export function AuthForm() {
                                                 id="firstName"
                                                 placeholder="First name"
                                                 value={formData.firstName}
-                                                onChange={(e) =>
-                                                    handleInputChange("firstName", e.target.value)
-                                                }
+                                                onChange={(e) => handleInputChange("firstName", e.target.value)}
                                                 className={cn(errors.firstName && "border-destructive")}
                                                 required
                                             />
-                                            {errors.firstName && (
-                                                <p className="text-sm text-destructive">
-                                                    {errors.firstName}
-                                                </p>
-                                            )}
+                                            {errors.firstName && <p className="text-sm text-destructive">{errors.firstName}</p>}
                                         </div>
                                         <div className="space-y-2">
                                             <Label htmlFor="lastName">Last Name *</Label>
@@ -619,33 +501,28 @@ export function AuthForm() {
                                                 id="lastName"
                                                 placeholder="Last name"
                                                 value={formData.lastName}
-                                                onChange={(e) =>
-                                                    handleInputChange("lastName", e.target.value)
-                                                }
+                                                onChange={(e) => handleInputChange("lastName", e.target.value)}
                                                 className={cn(errors.lastName && "border-destructive")}
                                                 required
                                             />
-                                            {errors.lastName && (
-                                                <p className="text-sm text-destructive">
-                                                    {errors.lastName}
-                                                </p>
-                                            )}
+                                            {errors.lastName && <p className="text-sm text-destructive">{errors.lastName}</p>}
                                         </div>
                                     </div>
-                                    {/* Gender Field */}
-                                    <div className="space-y-2">
-                                        <Label htmlFor="gender">Gender *</Label>
-                                        <Select>
-                                            <SelectTrigger className="w-[180px]">
-                                                <SelectValue placeholder="Select Your Gender" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="male">Male</SelectItem>
-                                                <SelectItem value="female">Female</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
 
+                                    {/* Gender Field */}
+                                        <div className="space-y-2">
+                                            <Label htmlFor="gender">Gender *</Label>
+                                            <Select>
+                                                <SelectTrigger className="w-[180px]">
+                                                    <SelectValue placeholder="Select Your Gender" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="male">Male</SelectItem>
+                                                    <SelectItem value="female">Female</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                    </div>
+                                    
                                     {/* Nickname Field (Optional) */}
                                     <div className="space-y-2">
                                         <Label htmlFor="nickname">Nickname (Optional)</Label>
@@ -653,9 +530,7 @@ export function AuthForm() {
                                             id="nickname"
                                             placeholder="Choose a nickname"
                                             value={formData.nickname}
-                                            onChange={(e) =>
-                                                handleInputChange("nickname", e.target.value)
-                                            }
+                                            onChange={(e) => handleInputChange("nickname", e.target.value)}
                                         />
                                     </div>
 
@@ -669,37 +544,25 @@ export function AuthForm() {
                                                     className={cn(
                                                         "w-full justify-start text-left font-normal",
                                                         !formData.dateOfBirth && "text-muted-foreground",
-                                                        errors.dateOfBirth && "border-destructive"
+                                                        errors.dateOfBirth && "border-destructive",
                                                     )}
                                                 >
                                                     <CalendarIcon className="mr-2 h-4 w-4" />
-                                                    {formData.dateOfBirth ? (
-                                                        format(formData.dateOfBirth, "PPP")
-                                                    ) : (
-                                                        <span>Pick a date</span>
-                                                    )}
+                                                    {formData.dateOfBirth ? format(formData.dateOfBirth, "PPP") : <span>Pick a date</span>}
                                                 </Button>
                                             </PopoverTrigger>
                                             <PopoverContent className="w-auto p-0" align="start">
                                                 <Calendar
                                                     mode="single"
                                                     selected={formData.dateOfBirth}
-                                                    onSelect={(date) =>
-                                                        handleInputChange("dateOfBirth", date ?? null)
-                                                    }
-                                                    disabled={(date) =>
-                                                        date > new Date() || date < new Date("1900-01-01")
-                                                    }
+                                                    onSelect={(date) => handleInputChange("dateOfBirth", date ?? null)}
+                                                    disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
                                                     initialFocus
                                                     captionLayout="dropdown"
                                                 />
                                             </PopoverContent>
                                         </Popover>
-                                        {errors.dateOfBirth && (
-                                            <p className="text-sm text-destructive">
-                                                {errors.dateOfBirth}
-                                            </p>
-                                        )}
+                                        {errors.dateOfBirth && <p className="text-sm text-destructive">{errors.dateOfBirth}</p>}
                                     </div>
 
                                     {/* About Me Field (Optional) */}
@@ -709,9 +572,7 @@ export function AuthForm() {
                                             id="aboutMe"
                                             placeholder="Tell us about yourself..."
                                             value={formData.aboutMe}
-                                            onChange={(e) =>
-                                                handleInputChange("aboutMe", e.target.value)
-                                            }
+                                            onChange={(e) => handleInputChange("aboutMe", e.target.value)}
                                             rows={3}
                                         />
                                     </div>
@@ -725,13 +586,8 @@ export function AuthForm() {
                                                 type={showPassword ? "text" : "password"}
                                                 placeholder="Create a password"
                                                 value={formData.password}
-                                                onChange={(e) =>
-                                                    handleInputChange("password", e.target.value)
-                                                }
-                                                className={cn(
-                                                    errors.password && "border-destructive",
-                                                    "pr-10"
-                                                )}
+                                                onChange={(e) => handleInputChange("password", e.target.value)}
+                                                className={cn(errors.password && "border-destructive", "pr-10")}
                                                 required
                                             />
                                             <Button
@@ -748,11 +604,7 @@ export function AuthForm() {
                                                 )}
                                             </Button>
                                         </div>
-                                        {errors.password && (
-                                            <p className="text-sm text-destructive">
-                                                {errors.password}
-                                            </p>
-                                        )}
+                                        {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
                                     </div>
 
                                     <div className="space-y-2">
@@ -763,13 +615,8 @@ export function AuthForm() {
                                                 type={showConfirmPassword ? "text" : "password"}
                                                 placeholder="Confirm your password"
                                                 value={formData.confirmPassword}
-                                                onChange={(e) =>
-                                                    handleInputChange("confirmPassword", e.target.value)
-                                                }
-                                                className={cn(
-                                                    errors.confirmPassword && "border-destructive",
-                                                    "pr-10"
-                                                )}
+                                                onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+                                                className={cn(errors.confirmPassword && "border-destructive", "pr-10")}
                                                 required
                                             />
                                             <Button
@@ -777,9 +624,7 @@ export function AuthForm() {
                                                 variant="ghost"
                                                 size="sm"
                                                 className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                                                onClick={() =>
-                                                    setShowConfirmPassword(!showConfirmPassword)
-                                                }
+                                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                                             >
                                                 {showConfirmPassword ? (
                                                     <EyeOff className="h-4 w-4 text-muted-foreground" />
@@ -788,22 +633,14 @@ export function AuthForm() {
                                                 )}
                                             </Button>
                                         </div>
-                                        {errors.confirmPassword && (
-                                            <p className="text-sm text-destructive">
-                                                {errors.confirmPassword}
-                                            </p>
-                                        )}
+                                        {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword}</p>}
                                     </div>
 
                                     {/* General error message */}
-                                    {errors.general && (
-                                        <p className="text-sm text-destructive text-center">
-                                            {errors.general}
-                                        </p>
-                                    )}
+                                    {errors.general && <p className="text-sm text-destructive text-center">{errors.general}</p>}
 
                                     {/* Submit Button */}
-                                    <Button type="submit" className="w-full cursor-pointer" disabled={isLoading}>
+                                        <Button type="submit" className="w-full cursor-pointer" disabled={isLoading}>
                                         {isLoading ? "Creating Account..." : "Create Account"}
                                     </Button>
                                 </form>
@@ -813,5 +650,5 @@ export function AuthForm() {
                 </CardContent>
             </Card>
         </div>
-    );
+    )
 }
