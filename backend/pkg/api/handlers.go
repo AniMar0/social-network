@@ -11,14 +11,14 @@ import (
 
 func (S *Server) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		http.Redirect(w, r, "/404", http.StatusSeeOther)
 		return
 	}
-
+ 
 	var user User
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		tools.RenderErrorPage(w, r, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 	err, found := S.UserFound(user)
