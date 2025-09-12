@@ -19,16 +19,22 @@ func (S *Server) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 	var user User
 	err := json.NewDecoder(r.Body).Decode(&user)
+
 	if err != nil {
+		fmt.Println(err)
 		tools.RenderErrorPage(w, r, "Invalid request body", http.StatusBadRequest)
 		return
 	}
+
 	err, found := S.UserFound(user)
 	if err != nil {
+		fmt.Println(err)
 		tools.RenderErrorPage(w, r, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
+	
 	if found {
+		fmt.Println("User already exists")
 		tools.RenderErrorPage(w, r, "Status Conflict", http.StatusConflict)
 		return
 	}
@@ -42,6 +48,7 @@ func (S *Server) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := S.AddUser(user); err != nil {
+		fmt.Println(err)
 		tools.RenderErrorPage(w, r, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
