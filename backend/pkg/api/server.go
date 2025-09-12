@@ -58,8 +58,8 @@ func (S *Server) AddUser(user User) error {
 	if err != nil {
 		return err
 	}
-	query := `INSERT INTO users (first_name, last_name, birthdate, age, avatar, nickname, about_me,email,password)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	query := `INSERT INTO users (first_name, last_name, birthdate, age, avatar, nickname, about_me,email,password,gender, url)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	_, err = S.db.Exec(query,
 		html.EscapeString(user.FirstName),
 		html.EscapeString(user.LastName),
@@ -70,7 +70,8 @@ func (S *Server) AddUser(user User) error {
 		html.EscapeString(user.AboutMe),
 		html.EscapeString(user.Email),
 		string(hashedPassword),
-		user.Gender)
+		html.EscapeString(user.Gender),
+		html.EscapeString(user.Url))
 	if err != nil {
 		return err
 	}
@@ -89,33 +90,39 @@ func (S *Server) UserFound(user User) (error, bool) {
 	return nil, false
 }
 
-func (S *Server) GetHashedPasswordFromDB(identifier string) (string, string, error) {
-	var hashedPassword, id string
+func (S *Server) GetHashedPasswordFromDB(identifier string) (string, string, int, error) {
+	var hashedPassword, FirstName string
+	var id int
 
 	err := S.db.QueryRow(`
-		SELECT password, id FROM users 
+		SELECT password, id, first_name FROM users 
 		WHERE nickname = ? OR email = ?
-	`, identifier, identifier).Scan(&id, &hashedPassword)
+	`, identifier, identifier).Scan(&hashedPassword, &id, &FirstName)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return "", "", fmt.Errorf("this user does not exist")
+			return "", "", 0, fmt.Errorf("this user does not exist")
 		}
-		return "", "", err
+		return "", "", 0, err
 	}
-	return hashedPassword, id, nil
+	return FirstName, hashedPassword, id, nil
 }
 
-func (S *Server) MakeToken(Writer http.ResponseWriter, username string) {
+func (S *Server) MakeToken(Writer http.ResponseWriter, id int) {
 	sessionID := uuid.NewV4().String()
 	expirationTime := time.Now().Add(24 * time.Hour)
 
-	_, err := S.db.Exec("INSERT INTO sessions (session_id, nickname, expires_at) VALUES (?, ?, ?)",
-		sessionID, username, expirationTime)
+	fmt.Println("Creating session for user ID:", id)
+
+	_, err := S.db.Exec("INSERT INTO sessions (session_id, user_id, expires_at) VALUES (?, ?, ?)",
+		sessionID, id, expirationTime)
 	if err != nil {
+		fmt.Println("Error creating session:", err)
 		http.Error(Writer, "Error creating session", http.StatusInternalServerError)
 		return
 	}
+
+	fmt.Println("Session created with ID:", sessionID)
 
 	http.SetCookie(Writer, &http.Cookie{
 		Name:     "session_token",

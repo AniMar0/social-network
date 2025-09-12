@@ -9,7 +9,8 @@ type User struct {
 	Nickname    string `json:"nickname"`
 	AboutMe     string `json:"aboutMe"`
 	Age         int    `json:"-"`
-	Gender      string `json:"-"`
+	Gender      string `json:"gender"`
+	Url         string `json:"url"`
 	AvatarUrl   string `json:"avatarUrl"`
 }
 

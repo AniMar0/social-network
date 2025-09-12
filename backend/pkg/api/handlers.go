@@ -7,6 +7,8 @@ import (
 	"io"
 	"net/http"
 	"os"
+
+	"github.com/twinj/uuid"
 )
 
 func (S *Server) RegisterHandler(w http.ResponseWriter, r *http.Request) {
@@ -32,6 +34,13 @@ func (S *Server) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user.Age = tools.GetAge(user.DateOfBirth)
+
+	if user.Nickname == "" {
+		user.Url = uuid.NewV4().String()
+	} else {
+		user.Url = user.Nickname
+	}
+
 	if err := S.AddUser(user); err != nil {
 		tools.RenderErrorPage(w, r, "Internal Server Error", http.StatusInternalServerError)
 		return
@@ -54,22 +63,22 @@ func (S *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		tools.RenderErrorPage(w, r, "Bad Request", http.StatusBadRequest)
 		return
 	}
-	nickname, hashedPassword, err := S.GetHashedPasswordFromDB(user.Identifier)
+	FirstName, hashedPassword, id, err := S.GetHashedPasswordFromDB(user.Identifier)
 	if err != nil {
 		tools.RenderErrorPage(w, r, "User Not Found", http.StatusBadRequest)
 		return
 	}
-	fmt.Println(user)
 	if err := tools.CheckPassword(hashedPassword, user.Password); err != nil {
 		tools.RenderErrorPage(w, r, "Incorrect password", http.StatusInternalServerError)
 		return
 	}
 
-	//S.MakeToken(w, nickname)
+	S.MakeToken(w, id)
 
+	fmt.Println(FirstName, id)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{
-		"username": nickname,
+		"FirstName": FirstName,
 	})
 
 	// S.broadcastUserStatusChange()
