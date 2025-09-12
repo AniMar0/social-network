@@ -14,7 +14,7 @@ import { Settings, Upload, Save } from "lucide-react"
 
 
 
-interface UserData {
+export interface UserData {
     id: string
     firstName: string
     lastName: string
@@ -24,6 +24,10 @@ interface UserData {
     avatar?: string
     aboutMe?: string
     isPrivate: boolean
+    followersCount: number
+    followingCount: number
+    postsCount: number
+    joinedDate: string
 }
 
 interface ProfileSettingsProps {

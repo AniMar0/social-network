@@ -124,3 +124,86 @@ func (S *Server) UploadAvatarHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(fmt.Sprintf(`{"avatarUrl": "/%s"}`, avatarPath)))
 }
+
+func (S *Server) ProfileHandler(w http.ResponseWriter, r *http.Request) {
+	url := r.URL.Query().Get("nickname")
+	if url == "" {
+		http.Error(w, "nickname required", http.StatusBadRequest)
+		return
+	}
+
+	followers, err := S.GetFollowersCount(url)
+	if err != nil {
+		http.Error(w, "error getting followers", http.StatusInternalServerError)
+		return
+	}
+
+	following, err := S.GetFollowingCount(url)
+	if err != nil {
+		http.Error(w, "error getting following", http.StatusInternalServerError)
+		return
+	}
+
+	resp := map[string]interface{}{
+		"UserData":  S.GetUserData(url),
+		"followers": followers,
+		"following": following,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
+}
+
+func (S *Server) FollowHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var body struct {
+		Follower  string `json:"follower"`
+		Following string `json:"following"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		http.Error(w, "invalid body", http.StatusBadRequest)
+		return
+	}
+
+	if err := S.FollowUser(body.Follower, body.Following); err != nil {
+		http.Error(w, "failed to follow", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "followed successfully",
+	})
+}
+
+func (S *Server) UnfollowHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var body struct {
+		Follower  string `json:"follower"`
+		Following string `json:"following"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		http.Error(w, "invalid body", http.StatusBadRequest)
+		return
+	}
+
+	if err := S.UnfollowUser(body.Follower, body.Following); err != nil {
+		http.Error(w, "failed to unfollow", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "unfollowed successfully",
+	})
+}

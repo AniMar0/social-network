@@ -12,6 +12,7 @@ type User struct {
 	Gender      string `json:"gender"`
 	Url         string `json:"url"`
 	AvatarUrl   string `json:"avatarUrl"`
+	CreatedAt   string `json:"createdAt"`
 }
 
 type LoginUser struct {

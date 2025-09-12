@@ -32,6 +32,8 @@ import {
 import { CalendarIcon, Upload, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import {UserProfile,type Post} from "@/components/user-profile"
+import {type UserData} from  "@/components/account-settings"
 
 interface FormData {
   // Required fields for registration
@@ -60,6 +62,12 @@ interface FormErrors {
   general?: string;
 }
 
+interface UserProfileProps {
+  isOwnProfile?: boolean; // Is this the current user's profile?
+  isFollowing?: boolean; // Is the current user following this profile?
+  userData: UserData; // User profile data
+  posts: Post[]; // List of user posts
+}
 export function AuthForm() {
   // State management for form mode and data
   const [isLogin, setIsLogin] = useState(true);
@@ -237,8 +245,13 @@ export function AuthForm() {
             if (data.error) {
               setErrors({ general: data.error });
             } else {
-              // Handle successful login (e.g., redirect or show success message)
-              console.log("Login successful:", data);
+              // TODO: Show User Profile
+              UserProfile({
+                isOwnProfile: true,
+                isFollowing: false,
+                userData: data.user,
+                posts: [],
+              });
             }
           })
           .catch((err) => console.error(err));
