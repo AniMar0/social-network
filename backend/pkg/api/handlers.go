@@ -21,12 +21,21 @@ func (S *Server) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
+	err, found := S.UserFound(user)
+	if err != nil {
+		tools.RenderErrorPage(w, r, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	if found {
+		tools.RenderErrorPage(w, r, "Status Conflict", http.StatusConflict)
+		return
+	}
 
 	user.Age = tools.GetAge(user.DateOfBirth)
-	S.AddUser(user)
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"message":"Registration successful"}`))
+	if err := S.AddUser(user); err != nil {
+		tools.RenderErrorPage(w, r, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (S *Server) UploadAvatarHandler(w http.ResponseWriter, r *http.Request) {

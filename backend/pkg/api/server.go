@@ -68,3 +68,15 @@ func (S *Server) AddUser(user User) error {
 	}
 	return nil
 }
+
+func (S *Server) UserFound(user User) (error, bool) {
+	var exists int
+	err := S.db.QueryRow("SELECT COUNT(*) FROM users WHERE email = ? OR nickname = ?", user.Email, user.Nickname).Scan(&exists)
+	if err != nil {
+		return err, false
+	}
+	if exists > 0 {
+		return nil, true
+	}
+	return nil, false
+}
