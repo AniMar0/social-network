@@ -29,6 +29,7 @@ type UserData struct {
 	FollowingCount int     `json:"followingCount"`
 	PostsCount     int     `json:"postsCount"`
 	JoinedDate     string  `json:"joinedDate"`
+	Url            string  `json:"url"`
 }
 
 

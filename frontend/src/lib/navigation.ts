@@ -65,13 +65,16 @@ export const getUserProfileUrl = (user: any): string => {
   // If users have a custom URL field, use that, otherwise use nickname or id
   
   // Priority order: profileUrl > nickname > email (before @) > id
-  if (user.profileUrl && user.profileUrl.trim()) {
-    return user.profileUrl.trim();
-  }
-  
+
   if (user.nickname && user.nickname.trim()) {
     return user.nickname.trim();
   }
+
+  if (user.url && user.url.trim()) {
+    return user.url.trim();
+  }
+  
+  
   
   // Fallback: use email username part (before @)
   if (user.email) {

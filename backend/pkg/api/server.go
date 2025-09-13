@@ -59,7 +59,7 @@ func (S *Server) initRoutes() {
 	S.mux.HandleFunc("/api/follow", S.FollowHandler)
 	S.mux.HandleFunc("/api/unfollow", S.UnfollowHandler)
 
-	S.mux.HandleFunc("/api/profile", S.ProfileHandler)
+	S.mux.HandleFunc("/profile/", S.ProfileHandler)
 
 	S.mux.Handle("/api/create-post", S.SessionMiddleware(http.HandlerFunc(S.CreatePostHandler)))
 	//S.mux.HandleFunc("/api/load-posts", S.LoadPostsHandler)
@@ -175,7 +175,6 @@ func (S *Server) MakeToken(Writer http.ResponseWriter, id int) {
 }
 
 func (S *Server) FollowUser(follower, following string) error {
-	// ما تقدرش تتابع نفسك
 	if follower == following {
 		return fmt.Errorf("you cannot follow yourself")
 	}
@@ -243,7 +242,7 @@ func (S *Server) GetUserData(url string, id int) (UserData, error) {
 	var user UserData
 
 	err := S.db.QueryRow(`
-		SELECT id, first_name, last_name, nickname, email, birthdate, avatar, about_me, is_private, created_at
+		SELECT id, first_name, last_name, nickname, email, birthdate, avatar, about_me, is_private, created_at, url
 		FROM users 
 		WHERE url = ? OR id = ?
 	`, url, id).Scan(
@@ -257,6 +256,7 @@ func (S *Server) GetUserData(url string, id int) (UserData, error) {
 		&user.AboutMe,
 		&user.IsPrivate,
 		&user.JoinedDate,
+		&user.Url,
 	)
 	if err != nil {
 		return UserData{}, err

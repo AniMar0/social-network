@@ -143,8 +143,8 @@ func (S *Server) UploadAvatarHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (S *Server) ProfileHandler(w http.ResponseWriter, r *http.Request) {
-	// http://localhost:8080/api/profile?nickname=aniMaro
-	url := r.URL.Query().Get("nickname")
+	fmt.Println(r.URL.Path)
+	url := strings.TrimPrefix(r.URL.Path, "/profile/")
 	if url == "" {
 		http.Error(w, "nickname required", http.StatusBadRequest)
 		return

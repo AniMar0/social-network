@@ -20,6 +20,8 @@ export default function ProfileRedirectPage() {
           return;
         }
 
+        console.log("Authenticated user:", user);
+
         // Get user's profile URL/username
         const profileUrl = getUserProfileUrl(user);
         
