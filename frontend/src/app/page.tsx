@@ -1,9 +1,11 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { AuthForm } from "@/components/auth";
-import { UserProfile } from "@/components/user-profile";
-import { Button } from "@/components/ui/button";
+import { useState } from "react"
+import { AuthForm } from "@/components/auth"
+import UserProfile from "@/components/user-profile"
+import { HomeFeed } from "@/components/home"
+import { NewPostModal } from "@/components/newpost"
+import { Button } from "@/components/ui/button"
 
 let sampleUserData = {
   id: "1",
@@ -20,7 +22,7 @@ let sampleUserData = {
   followingCount: 16,
   postsCount: 12,
   joinedDate: "2023-01-15",
-};
+}
 
 const samplePosts = [
   {
@@ -42,7 +44,7 @@ const samplePosts = [
     comments: 7,
     isLiked: true,
   },
-];
+]
 
 const sampleFollowers = [
   {
@@ -52,36 +54,75 @@ const sampleFollowers = [
     nickname: "alexc",
     email: "alex@example.com",
     dateOfBirth: "1992-03-20",
-    avatar: "/man-avatar-glasses.png",
+    avatar: "https://imgur.com/v1oBVXE.png",
     isPrivate: false,
     followersCount: 890,
     followingCount: 234,
     postsCount: 156,
     joinedDate: "2022-08-10",
   },
-];
+]
 
 export default function HomePage() {
-  const [currentView, setCurrentView] = useState<"auth" | "profile">("auth");
-  const [isOwnProfile, setIsOwnProfile] = useState(true);
+  
+  const [currentView, setCurrentView] = useState<"auth" | "profile" | "home">("home")
+  const [isOwnProfile, setIsOwnProfile] = useState(true)
+  const [isNewPostModalOpen, setIsNewPostModalOpen] = useState(false)
   // Check if user is logged in
   fetch("http://localhost:8080/api/logged", {
     method: "POST",
     credentials: "include",
   })
-    .then((res) => res.json())
+    .then(async (res) => {
+      if (!res.ok) {
+        const text = await res.text();
+        console.log("Error checking login status:", text);
+        return null;
+      }
+      return res.json();
+    })
     .then((data) => {
-      if (data.loggedIn) {
+      if (data && data.loggedIn) {
         setCurrentView("profile");
         sampleUserData = data.user;
       }
     })
     .catch((err) => console.error(err));
+
+  const handleNewPost = () => {
+    setIsNewPostModalOpen(true)
+  }
+
+  const handleNavigate = (itemId: string) => {
+    switch (itemId) {
+      case "home":
+        setCurrentView("home")
+        break
+      case "profile":
+        setCurrentView("profile")
+        break
+      case "auth":
+        setCurrentView("auth")
+        break
+      default:
+        setCurrentView("home")
+    }
+  }
+
+  const handlePostSubmit = (postData: any) => {
+    console.log("New post submitted:", postData)
+    // Send the post to the back end (not implemented)
+    setIsNewPostModalOpen(false)
+  }
+
   return (
     <div className="min-h-screen bg-background">
-      {/* <div className="fixed top-4 right-4 z-50 flex gap-2">
+      <div className="fixed top-4 right-4 z-50 flex gap-2">
         <Button variant={currentView === "auth" ? "default" : "outline"} onClick={() => setCurrentView("auth")}>
           Auth Form
+        </Button>
+        <Button variant={currentView === "home" ? "default" : "outline"} onClick={() => setCurrentView("home")}>
+          Home Feed
         </Button>
         <Button variant={currentView === "profile" ? "default" : "outline"} onClick={() => setCurrentView("profile")}>
           Profile Page
@@ -91,16 +132,27 @@ export default function HomePage() {
             {isOwnProfile ? "Owner View" : "Visitor View"}
           </Button>
         )}
-      </div> */}
+      </div>
+
       {currentView === "auth" ? (
         <AuthForm />
+      ) : currentView === "home" ? (
+        <HomeFeed onNewPost={handleNewPost} onNavigate={handleNavigate} />
       ) : (
         <UserProfile
           isOwnProfile={isOwnProfile}
           userData={sampleUserData}
           posts={samplePosts}
+          onNewPost={handleNewPost}
+          onNavigate={handleNavigate}
         />
       )}
+
+      <NewPostModal
+        isOpen={isNewPostModalOpen}
+        onClose={() => setIsNewPostModalOpen(false)}
+        onPost={handlePostSubmit}
+      />
     </div>
-  );
+  )
 }

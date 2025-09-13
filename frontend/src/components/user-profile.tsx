@@ -37,6 +37,8 @@ interface UserProfileProps {
   isFollowing?: boolean; // Is the current user following this profile?
   userData: UserData; // User profile data
   posts: Post[]; // List of user posts
+  onNewPost?: () => void; // Callback to open new post dialog
+  onNavigate?: (itemId: string) => void;
 }
 
 function UserProfile({
@@ -44,6 +46,8 @@ function UserProfile({
   isFollowing = false,
   userData,
   posts = [],
+  onNewPost,
+  onNavigate,
 }: UserProfileProps) {
   // State for profile data (can be updated by settings dialog)
   const [profileData, setProfileData] = useState(userData);
@@ -62,8 +66,17 @@ function UserProfile({
     fetch(`http://localhost:8080/api/profile?nickname=${nickname}`, {
       credentials: "include",
     })
-      .then((res) => res.json())
-      .then((data) => console.log(data))
+      .then(async (res) => {
+        if (!res.ok) {
+          const text = await res.text();
+          console.error("/api/profile error:", text);
+          return null;
+        }
+        return res.json();
+      })
+      .then((data) => {
+        if (data) console.log(data);
+      })
       .catch((err) => console.error(err));
   };
 
@@ -113,10 +126,13 @@ function UserProfile({
   const canViewPosts = isOwnProfile || !profileData.isPrivate || followingState;
 
   const handleNavigation = (itemId: string) => {
+    // bubble navigation event to parent if provided
+    onNavigate?.(itemId);
     console.log("Navigating to:", itemId);
   };
 
   const handleNewPost = () => {
+    onNewPost?.();
     console.log("Opening new post dialog");
   };
 

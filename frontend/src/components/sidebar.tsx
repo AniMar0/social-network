@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Home, Search, Bell, MessageSquare, Users, User, Plus } from "lucide-react"
+import { Home, Search, Bell, MessageSquare, Users, User, Plus, LogOut } from "lucide-react"
 
 
 interface NavigationItem {
@@ -21,7 +21,7 @@ interface SidebarNavigationProps {
     onNewPost?: () => void
 }
 
-function SidebarNavigation({ activeItem = "profile", onNavigate, onNewPost }: SidebarNavigationProps) {
+function SidebarNavigation({ activeItem = "home", onNavigate, onNewPost }: SidebarNavigationProps) {
     const [currentActive, setCurrentActive] = useState(activeItem)
 
     const navigationItems: NavigationItem[] = [
@@ -42,6 +42,10 @@ function SidebarNavigation({ activeItem = "profile", onNavigate, onNewPost }: Si
     const handleNewPost = () => {
         onNewPost?.()
         console.log("New Post button clicked")
+    }
+
+    const handleLogout = () => {
+        console.log("Logout button clicked")
     }
 
     return (
@@ -75,7 +79,18 @@ function SidebarNavigation({ activeItem = "profile", onNavigate, onNewPost }: Si
                     })}
                 </ul>
             </nav>
-
+            {/* logout Button */}
+            <div className="p-4">
+                <Button
+                    onClick={handleLogout}
+                    className="w-full bg-destructive hover:bg-destructive/90 hover:text-white text-destructive-foreground font-medium cursor-pointer"
+                    size="lg"
+                >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                </Button>
+            </div>
+            
             {/* New Post Button */}
             <div className="p-4 border-t border-border">
                 <Button

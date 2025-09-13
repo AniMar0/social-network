@@ -104,6 +104,12 @@ importers:
       date-fns:
         specifier: 4.1.0
         version: 4.1.0
+      emoji-picker-react:
+        specifier: ^4.13.3
+        version: 4.13.3(react@19.1.1)
+      gif-picker-react:
+        specifier: ^1.4.0
+        version: 1.4.0(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       lucide-react:
         specifier: ^0.510.0
         version: 0.510.0(react@19.1.1)
@@ -1584,6 +1590,12 @@ packages:
   electron-to-chromium@1.5.217:
     resolution: {integrity: sha512-Pludfu5iBxp9XzNl0qq2G87hdD17ZV7h5T4n6rQXDi3nCyloBV3jreE9+8GC6g4X/5yxqVgXEURpcLtM0WS4jA==}
 
+  emoji-picker-react@4.13.3:
+    resolution: {integrity: sha512-aZaxCI72oUQfvZtYuQ9RaYLEwmH3GVgAr5SEeB97Y7gWL06zJ4VTuSl8rAMVY7GNmd0tf/EQ1W2SDuXTl0q9AA==}
+    engines: {node: '>=10'}
+    peerDependencies:
+      react: '>=16'
+
   emoji-regex@9.2.2:
     resolution: {integrity: sha512-L18DaJsXSUk2+42pv8mLs5jJT2hqFkFE4j21wOmgbUqsZ2hL72NsUU785g9RXgo3s0ZNgVl42TiHp3ZtOv/Vyg==}
 
@@ -1788,6 +1800,9 @@ packages:
     resolution: {integrity: sha512-78/PXT1wlLLDgTzDs7sjq9hzz0vXD+zn+7wypEe4fXQxCmdmqfGsEPQxmiCSQI3ajFV91bVSsvNtrJRiW6nGng==}
     engines: {node: '>=10'}
 
+  flairup@1.0.0:
+    resolution: {integrity: sha512-IKlE+pNvL2R+kVL1kEhUYqRxVqeFnjiIvHWDMLFXNaqyUdFXQM2wte44EfMYJNHkW16X991t2Zg8apKkhv7OBA==}
+
   flat-cache@4.0.1:
     resolution: {integrity: sha512-f7ccFPK3SXFHpx15UIGyRJ/FJQctuKZ0zVuN3frBo4HnK3cay9VEW0R6yPYFHC0AgqhukPzKjq22t5DmAyqGyw==}
     engines: {node: '>=16'}
@@ -1830,6 +1845,13 @@ packages:
 
   get-tsconfig@4.10.1:
     resolution: {integrity: sha512-auHyJ4AgMz7vgS8Hp3N6HXSmlMdUyhSUrfBF16w153rxtLIEOE+HGqaBppczZvnHLqQJfiHotCYpNhl0lUROFQ==}
+
+  gif-picker-react@1.4.0:
+    resolution: {integrity: sha512-e48u077ldBiMoPS4NZ+3noW9aJCLMYMQqcx4xdcaGJdONVXCWNxw3bJ0MF2X5xO6fJXHY4IA9vD4/pdswMrorA==}
+    engines: {node: '>=16.0.0', npm: '>=8.0.0'}
+    peerDependencies:
+      react: '>=17'
+      react-dom: '>=17'
 
   glob-parent@5.1.2:
     resolution: {integrity: sha512-AOIgSQCepiJYwP3ARnGx+5VnTu2HBYdzbGP45eLw1vr3zB3vZLeyed1sC9hnbcOc9/SrMyM5RPQrkGz4aS9Zow==}
@@ -4118,6 +4140,11 @@ snapshots:
 
   electron-to-chromium@1.5.217: {}
 
+  emoji-picker-react@4.13.3(react@19.1.1):
+    dependencies:
+      flairup: 1.0.0
+      react: 19.1.1
+
   emoji-regex@9.2.2: {}
 
   enhanced-resolve@5.18.3:
@@ -4470,6 +4497,8 @@ snapshots:
       locate-path: 6.0.0
       path-exists: 4.0.0
 
+  flairup@1.0.0: {}
+
   flat-cache@4.0.1:
     dependencies:
       flatted: 3.3.3
@@ -4525,6 +4554,11 @@ snapshots:
   get-tsconfig@4.10.1:
     dependencies:
       resolve-pkg-maps: 1.0.0
+
+  gif-picker-react@1.4.0(react-dom@19.1.1(react@19.1.1))(react@19.1.1):
+    dependencies:
+      react: 19.1.1
+      react-dom: 19.1.1(react@19.1.1)
 
   glob-parent@5.1.2:
     dependencies:

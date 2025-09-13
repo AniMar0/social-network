@@ -6,29 +6,13 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon, Upload, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -232,7 +216,13 @@ export function AuthForm() {
             password: formData.password,
           }),
         })
-          .then((res) => res.json())
+          .then(async (res) => {
+            if (!res.ok) {
+              const text = await res.text();
+              throw new Error(text || "Login failed");
+            }
+            return res.json();
+          })
           .then((data) => {
             if (data.error) {
               setErrors({ general: data.error });
@@ -242,21 +232,34 @@ export function AuthForm() {
               console.log("Login successful:", data.user);
             }
           })
-          .catch((err) => console.error(err));
+          .catch((err) => {
+            console.error(err);
+            setErrors((prev) => ({ ...prev, general: String(err.message || err) }));
+          });
       } else {
         const avatarForm = new FormData();
         let avatarUrl = "";
         if (formData.avatar) {
           console.log(formData.avatar);
           avatarForm.append("avatar", formData.avatar);
-          await fetch("http://localhost:8080/api/upload-avatar", {
-            method: "POST",
-            body: avatarForm,
-            credentials: "include",
+        await fetch("http://localhost:8080/api/upload-avatar", {
+          method: "POST",
+          body: avatarForm,
+          credentials: "include",
+        })
+          .then(async (res) => {
+            if (!res.ok) {
+              // backend may return plain text error messages for bad requests
+              const text = await res.text();
+              throw new Error(text || "Upload failed");
+            }
+            return res.json();
           })
-            .then((res) => res.json())
-            .then((data) => (avatarUrl = data.avatarUrl))
-            .catch((err) => console.error(err));
+          .then((data) => (avatarUrl = data.avatarUrl))
+          .catch((err) => {
+            console.error(err);
+            setErrors((prev) => ({ ...prev, general: String(err.message || err) }));
+          });
         } else {
           avatarUrl = "/uploads/default.jpg";
         }
@@ -279,9 +282,18 @@ export function AuthForm() {
             gender: formData.gender,
           }),
         })
-          .then((res) => res.json())
+          .then(async (res) => {
+            if (!res.ok) {
+              const text = await res.text();
+              throw new Error(text || "Registration failed");
+            }
+            return res.json();
+          })
           .then((data) => console.log(data))
-          .catch((err) => console.error(err));
+          .catch((err) => {
+            console.error(err);
+            setErrors((prev) => ({ ...prev, general: String(err.message || err) }));
+          });
       }
 
       // Simulate API call delay
@@ -569,7 +581,7 @@ export function AuthForm() {
                     <div className="flex items-center space-x-4">
                       <Avatar className="h-16 w-16">
                         <AvatarImage
-                          src={avatarPreview || "http://localhost:8080/uploads/default.jpg"}
+                            src={avatarPreview || "http://localhost:8080/uploads/default.jpg"}
                         />
                         <AvatarFallback>
                           <Upload className="h-6 w-6 text-muted-foreground" />

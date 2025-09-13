@@ -16,9 +16,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Settings, Upload, Save } from "lucide-react";
-import { fi } from "date-fns/locale";
-import { log } from "util";
+import { Settings, Upload, Save, CalendarIcon } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+
 
 export interface UserData {
   id: string;
@@ -95,11 +98,19 @@ export function ProfileSettings({ userData, onSave }: ProfileSettingsProps) {
       body: avatarForm,
       credentials: "include",
     })
-      .then((res) => res.json())
+      .then(async (res) => {
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(text || "Upload failed");
+        }
+        return res.json();
+      })
       .then((data) => {
         avatarUrl = data.avatarUrl;
       })
-      .catch((err) => console.error(err));
+      .catch((err) => {
+        console.error(err);
+      });
 
     formData.avatar = avatarUrl || userData.avatar;
     formData.nickname = formData.nickname || userData.nickname;
@@ -110,7 +121,6 @@ export function ProfileSettings({ userData, onSave }: ProfileSettingsProps) {
     formData.email = formData.email || userData.email;
     formData.id = formData.id || userData.id;
     formData.joinedDate = formData.joinedDate || userData.joinedDate;
-
     if (formData.isPrivate === null) {
       formData.isPrivate = userData.isPrivate;
     }
@@ -123,7 +133,7 @@ export function ProfileSettings({ userData, onSave }: ProfileSettingsProps) {
     if (formData.postsCount === null) {
       formData.postsCount = userData.postsCount;
     }
-
+    
     try {
       const res = await fetch("http://localhost:8080/api/user/update", {
         method: "PUT",
@@ -134,9 +144,10 @@ export function ProfileSettings({ userData, onSave }: ProfileSettingsProps) {
         body: JSON.stringify(formData),
       });
 
-      const data = await res.json();
+      const data = res.ok ? await res.json() : null;
       if (!res.ok) {
-        throw new Error(data.message || "Failed to update profile");
+        const text = data?.message || (await res.text());
+        throw new Error(text || "Failed to update profile");
       }
       onSave(data.user);
       setIsOpen(false);
@@ -167,7 +178,7 @@ export function ProfileSettings({ userData, onSave }: ProfileSettingsProps) {
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto bg-card border-border">
+  <DialogContent className="max-w-md w-full bg-card border-border">
         <div>
           <DialogHeader>
             <DialogTitle className="text-foreground">Edit Profile</DialogTitle>
@@ -182,8 +193,8 @@ export function ProfileSettings({ userData, onSave }: ProfileSettingsProps) {
                     formData.avatar?.startsWith("blob:")
                       ? formData.avatar
                       : formData.avatar
-                      ? `http://localhost:8080/${formData.avatar}` 
-                      : `/placeholder.svg?height=96&width=96&query=user+avatar`
+                        ? `http://localhost:8080/${formData.avatar}`
+                        : `/placeholder.svg?height=96&width=96&query=user+avatar`
                   }
                   alt="Profile avatar"
                 />
@@ -276,15 +287,47 @@ export function ProfileSettings({ userData, onSave }: ProfileSettingsProps) {
                 <Label htmlFor="dateOfBirth" className="text-foreground">
                   Date of Birth
                 </Label>
-                <Input
-                  id="dateOfBirth"
-                  type="date"
-                  value={formData.dateOfBirth}
-                  onChange={(e) =>
-                    handleInputChange("dateOfBirth", e.target.value)
-                  }
-                  className="bg-background border-border"
-                />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !formData.dateOfBirth && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {formData.dateOfBirth ? (
+                        format(new Date(formData.dateOfBirth), "PPP")
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={formData.dateOfBirth ? new Date(formData.dateOfBirth) : undefined}
+                      onSelect={(date: Date | undefined) =>
+                        handleInputChange(
+                          "dateOfBirth",
+                          date instanceof Date && !isNaN(date.getTime())
+                            ? // build YYYY-MM-DD from local date parts to avoid timezone shifts
+                              `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+                                date.getDate()
+                              ).padStart(2, "0")}`
+                            : ""
+                        )
+                      }
+                      disabled={(date: Date) =>
+                        date > new Date() || date < new Date("1900-01-01")
+                      }
+                      initialFocus
+                      captionLayout="dropdown"
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <div className="space-y-2">
