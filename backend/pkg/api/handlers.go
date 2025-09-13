@@ -168,7 +168,15 @@ func (S *Server) ProfileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userID, _ := strconv.Atoi(user.ID)
+	posts, err := S.GetUserPosts(userID)
+	if err != nil {
+		http.Error(w, "error getting posts", http.StatusInternalServerError)
+		return
+	}
+
 	resp := map[string]interface{}{
+		"posts":     posts,
 		"user":      user,
 		"followers": followers,
 		"following": following,

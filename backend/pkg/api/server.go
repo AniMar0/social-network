@@ -210,7 +210,6 @@ func (S *Server) GetFollowersCount(url string) (int, error) {
 	return count, nil
 }
 
-
 func (S *Server) GetFollowingCount(url string) (int, error) {
 	row := S.db.QueryRow(`
 		SELECT COUNT(*) 
@@ -225,7 +224,6 @@ func (S *Server) GetFollowingCount(url string) (int, error) {
 	}
 	return count, nil
 }
-
 
 func (S *Server) CheckSession(r *http.Request) (int, string, error) {
 
@@ -313,4 +311,28 @@ func (S *Server) SessionMiddleware(next http.Handler) http.Handler {
 		ctx := context.WithValue(r.Context(), "username", username)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
+}
+
+func (S *Server) GetUserPosts(userID int) ([]Post, error) {
+	rows, err := S.db.Query(`
+		SELECT id, author_id, content, image_url, created_at
+		FROM posts
+		WHERE author_id = ?
+		ORDER BY created_at DESC
+	`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var posts []Post
+	for rows.Next() {
+		var post Post
+		if err := rows.Scan(&post.ID, &post.UserID, &post.Content, &post.Image, &post.CreatedAt); err != nil {
+			return nil, err
+		}
+		posts = append(posts, post)
+	}
+
+	return posts, nil
 }
