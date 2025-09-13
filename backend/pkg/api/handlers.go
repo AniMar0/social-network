@@ -143,8 +143,9 @@ func (S *Server) UploadAvatarHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (S *Server) ProfileHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(r.URL.Path)
-	url := strings.TrimPrefix(r.URL.Path, "/profile/")
+	url := strings.TrimPrefix(r.URL.Path, "/api/profile/")
+	fmt.Println(url)
+
 	if url == "" {
 		http.Error(w, "nickname required", http.StatusBadRequest)
 		return
@@ -161,8 +162,14 @@ func (S *Server) ProfileHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "error getting following", http.StatusInternalServerError)
 		return
 	}
+	user, err := S.GetUserData(url, 0)
+	if err != nil {
+		http.Error(w, "user not found", http.StatusNotFound)
+		return
+	}
 
 	resp := map[string]interface{}{
+		"user":      user,
 		"followers": followers,
 		"following": following,
 	}

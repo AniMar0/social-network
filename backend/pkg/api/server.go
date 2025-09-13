@@ -59,7 +59,7 @@ func (S *Server) initRoutes() {
 	S.mux.HandleFunc("/api/follow", S.FollowHandler)
 	S.mux.HandleFunc("/api/unfollow", S.UnfollowHandler)
 
-	S.mux.HandleFunc("/profile/", S.ProfileHandler)
+	S.mux.HandleFunc("/api/profile/", S.ProfileHandler)
 
 	S.mux.Handle("/api/create-post", S.SessionMiddleware(http.HandlerFunc(S.CreatePostHandler)))
 	//S.mux.HandleFunc("/api/load-posts", S.LoadPostsHandler)
@@ -195,10 +195,13 @@ func (S *Server) UnfollowUser(follower, following string) error {
 	return err
 }
 
-func (S *Server) GetFollowersCount(nickname string) (int, error) {
+func (S *Server) GetFollowersCount(url string) (int, error) {
 	row := S.db.QueryRow(`
-		SELECT COUNT(*) FROM follows WHERE following = ?
-	`, nickname)
+		SELECT COUNT(*) 
+		FROM follows f
+		JOIN users u ON u.id = f.following_id
+		WHERE u.url = ?
+	`, url)
 
 	var count int
 	if err := row.Scan(&count); err != nil {
@@ -207,10 +210,14 @@ func (S *Server) GetFollowersCount(nickname string) (int, error) {
 	return count, nil
 }
 
-func (S *Server) GetFollowingCount(nickname string) (int, error) {
+
+func (S *Server) GetFollowingCount(url string) (int, error) {
 	row := S.db.QueryRow(`
-		SELECT COUNT(*) FROM follows WHERE follower = ?
-	`, nickname)
+		SELECT COUNT(*) 
+		FROM follows f
+		JOIN users u ON u.id = f.follower_id
+		WHERE u.url = ?
+	`, url)
 
 	var count int
 	if err := row.Scan(&count); err != nil {
@@ -218,6 +225,7 @@ func (S *Server) GetFollowingCount(nickname string) (int, error) {
 	}
 	return count, nil
 }
+
 
 func (S *Server) CheckSession(r *http.Request) (int, string, error) {
 

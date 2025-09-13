@@ -20,14 +20,10 @@ export default function ProfileRedirectPage() {
           return;
         }
 
-        console.log("Authenticated user:", user);
-
         // Get user's profile URL/username
         const profileUrl = getUserProfileUrl(user);
-        
-        // Redirect to user's dynamic profile page with /profile/ prefix
+
         router.push(`/profile/${profileUrl}`);
-        
       } catch (err) {
         console.error("Error redirecting to profile:", err);
         // If there's an error, redirect to home

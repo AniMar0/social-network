@@ -69,6 +69,7 @@ export default function UserProfilePage() {
 
         if (!authRes.ok) {
           // User not logged in, redirect to auth
+          console.log("User not logged in - auth check failed");
           router.push("/");
           return;
         }
@@ -76,6 +77,7 @@ export default function UserProfilePage() {
         const authData = await authRes.json();
         if (!authData.loggedIn) {
           // User not logged in, redirect to auth
+          console.log("User not logged in");
           router.push("/");
           return;
         }
@@ -86,7 +88,7 @@ export default function UserProfilePage() {
         // Check if viewing own profile vs another user's profile
         // TODO: ADD YOUR BACKEND LOGIC HERE - Compare username with current user's profile URL/nickname
         // Replace this logic to match how you store usernames/URLs in your database
-        const isOwn = authData.user.nickname === username || authData.user.id === username;
+        const isOwn = authData.user.nickname === username || authData.user.url === username;
         setIsOwnProfile(isOwn);
 
         if (isOwn) {
