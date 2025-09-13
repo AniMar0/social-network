@@ -32,17 +32,26 @@ type UserData struct {
 	Url            string  `json:"url"`
 }
 
-
 type LoginUser struct {
 	Identifier string `json:"identifier"`
 	Password   string `json:"password"`
 }
 
 type Post struct {
-    ID        int     `json:"id"`
-    UserID    int     `json:"userId"`
-    Content   string  `json:"content"`
-    Image     *string `json:"image,omitempty"`
-    Privacy   string  `json:"privacy"` // public | almost-private | private
-    CreatedAt string  `json:"createdAt"`
+	ID        int     `json:"id"`
+	UserID    int     `json:"-"`
+	Content   string  `json:"content"`
+	Image     *string `json:"image,omitempty"`
+	Privacy   string  `json:"privacy"`
+	CreatedAt string  `json:"timestamp"`
+	Likes     int     `json:"likes"`
+	Comments  int     `json:"comments"`
+	Shares    int     `json:"shares"`
+	IsLiked   bool    `json:"isLiked"`
+	Author    struct {
+		Name      string `json:"name"`
+		Username  string `json:"username"`
+		Avatar    string `json:"avatar"`
+		IsPrivate bool   `json:"isPrivate"` // بدل isVerified
+	} `json:"author"`
 }

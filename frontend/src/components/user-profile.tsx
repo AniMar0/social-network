@@ -257,7 +257,7 @@ function UserProfile({
                         <Avatar className="h-10 w-10">
                           <AvatarImage
                             src={
-                              `http://localhost:8080/${profileData.avatar}`||
+                              `http://localhost:8080/${profileData.avatar}` ||
                               `/placeholder.svg?height=40&width=40&query=user+avatar`
                             }
                             alt={`${profileData.firstName} ${profileData.lastName}`}
@@ -289,7 +289,7 @@ function UserProfile({
                         {post.image && (
                           <div className="rounded-lg overflow-hidden">
                             <img
-                              src={post.image || "/placeholder.svg"}
+                              src={`http://localhost:8080/${post.image}`}
                               alt="Post content"
                               className="w-full h-auto max-h-96 object-cover"
                             />

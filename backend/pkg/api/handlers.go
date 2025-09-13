@@ -144,10 +144,9 @@ func (S *Server) UploadAvatarHandler(w http.ResponseWriter, r *http.Request) {
 
 func (S *Server) ProfileHandler(w http.ResponseWriter, r *http.Request) {
 	url := strings.TrimPrefix(r.URL.Path, "/api/profile/")
-	fmt.Println(url)
 
 	if url == "" {
-		http.Error(w, "nickname required", http.StatusBadRequest)
+		http.Error(w, "url required", http.StatusBadRequest)
 		return
 	}
 
@@ -168,13 +167,18 @@ func (S *Server) ProfileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, _ := strconv.Atoi(user.ID)
+	userID, err := strconv.Atoi(user.ID)
+	if err != nil {
+		http.Error(w, "error converting user ID", http.StatusInternalServerError)
+		return
+	}
 	posts, err := S.GetUserPosts(userID)
 	if err != nil {
+		fmt.Println(err)
 		http.Error(w, "error getting posts", http.StatusInternalServerError)
 		return
 	}
-
+	
 	resp := map[string]interface{}{
 		"posts":     posts,
 		"user":      user,

@@ -315,10 +315,13 @@ func (S *Server) SessionMiddleware(next http.Handler) http.Handler {
 
 func (S *Server) GetUserPosts(userID int) ([]Post, error) {
 	rows, err := S.db.Query(`
-		SELECT id, author_id, content, image_url, created_at
-		FROM posts
-		WHERE author_id = ?
-		ORDER BY created_at DESC
+		SELECT 
+			p.id, p.content, p.image, p.created_at, p.privacy, 
+			u.id, u.first_name, u.last_name, u.nickname, u.avatar, u.is_private
+		FROM posts p
+		JOIN users u ON p.user_id = u.id
+		WHERE p.user_id = ?
+		ORDER BY p.created_at DESC
 	`, userID)
 	if err != nil {
 		return nil, err
@@ -328,9 +331,35 @@ func (S *Server) GetUserPosts(userID int) ([]Post, error) {
 	var posts []Post
 	for rows.Next() {
 		var post Post
-		if err := rows.Scan(&post.ID, &post.UserID, &post.Content, &post.Image, &post.CreatedAt); err != nil {
+		var authorID int
+		var firstName, lastName, nickname, avatar sql.NullString
+		var isPrivate bool
+		if err := rows.Scan(
+			&post.ID, &post.Content, &post.Image, &post.CreatedAt, &post.Privacy,
+			&authorID, &firstName, &lastName, &nickname, &avatar, &isPrivate,
+		); err != nil {
 			return nil, err
 		}
+
+		// تحويل NullString إلى string
+		post.Author = struct {
+			Name      string `json:"name"`
+			Username  string `json:"username"`
+			Avatar    string `json:"avatar"`
+			IsPrivate bool   `json:"isPrivate"`
+		}{
+			Name:      firstName.String + " " + lastName.String,
+			Username:  nickname.String,
+			Avatar:    avatar.String,
+			IsPrivate: isPrivate,
+		}
+
+		post.UserID = userID
+		post.Likes = 0
+		post.Comments = 0
+		post.Shares = 0
+		post.IsLiked = false
+
 		posts = append(posts, post)
 	}
 
