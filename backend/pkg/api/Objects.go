@@ -36,3 +36,12 @@ type LoginUser struct {
 	Identifier string `json:"identifier"`
 	Password   string `json:"password"`
 }
+
+type Post struct {
+    ID        int     `json:"id"`
+    UserID    int     `json:"userId"`
+    Content   string  `json:"content"`
+    Image     *string `json:"image,omitempty"`
+    Privacy   string  `json:"privacy"` // public | almost-private | private
+    CreatedAt string  `json:"createdAt"`
+}

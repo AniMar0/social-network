@@ -2,6 +2,7 @@ package backend
 
 import (
 	"SOCIAL-NETWORK/pkg/db/sqlite"
+	"context"
 	"database/sql"
 	"fmt"
 	"html"
@@ -59,6 +60,10 @@ func (S *Server) initRoutes() {
 	S.mux.HandleFunc("/api/unfollow", S.UnfollowHandler)
 
 	S.mux.HandleFunc("/api/profile", S.ProfileHandler)
+
+	S.mux.Handle("/api/create-post", S.SessionMiddleware(http.HandlerFunc(S.CreatePostHandler)))
+	//S.mux.HandleFunc("/api/load-posts", S.LoadPostsHandler)
+	//S.mux.HandleFunc("/api/load-user-posts", S.LoadUserPostsHandler)
 }
 
 func (S *Server) AddUser(user User) error {
@@ -257,4 +262,17 @@ func (S *Server) RemoveOldAvatar(userID int) error {
 	}
 
 	return nil
+}
+
+func (S *Server) SessionMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		username, _, err := S.CheckSession(r)
+		if err != nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), "username", username)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
 }
