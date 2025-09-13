@@ -26,3 +26,14 @@ func CheckPassword(hashedPassword, password string) error {
 func RenderErrorPage(w http.ResponseWriter, r *http.Request, errMsg string, errCode int) {
 	http.ServeFile(w, r, "./static/index.html")
 }
+
+func GetTheExtension(fileName string) string {
+	ext := ""
+	for i := len(fileName) - 1; i >= 0; i-- {
+		if fileName[i] == '.' {
+			ext = fileName[i:]
+			break
+		}
+	}
+	return ext
+}
