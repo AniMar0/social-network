@@ -3,6 +3,7 @@
 import type React from "react";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,7 +17,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon, Upload, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { UserProfile, type Post } from "@/components/user-profile";
 import { type UserData } from "@/components/account-settings";
 
 interface FormData {
@@ -54,7 +54,7 @@ export function AuthForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
-  const [userData, setUserData] = useState<UserData | null>(null);
+  const router = useRouter();
 
   // Form data state with proper typing
   const [formData, setFormData] = useState<FormData>({
@@ -218,8 +218,23 @@ export function AuthForm() {
         })
           .then(async (res) => {
             if (!res.ok) {
+              // Read response as text first
               const text = await res.text();
-              throw new Error(text || "Login failed");
+              // Try to parse as JSON, fall back to plain text
+              try {
+                const errorData = JSON.parse(text);
+                throw new Error(errorData.error || "Login failed");
+              } catch (jsonError) {
+                // If JSON parsing fails, check if text looks like JSON and extract error
+                if (text.includes('"error"')) {
+                  // Try to extract error message from malformed JSON
+                  const errorMatch = text.match(/"error"\s*:\s*"([^"]+)"/);
+                  if (errorMatch) {
+                    throw new Error(errorMatch[1]);
+                  }
+                }
+                throw new Error(text || "Login failed");
+              }
             }
             return res.json();
           })
@@ -227,9 +242,9 @@ export function AuthForm() {
             if (data.error) {
               setErrors({ general: data.error });
             } else {
-              // TODO: Show User Profile
-              setUserData(data.user);
               console.log("Login successful:", data.user);
+              // Redirect to home page
+              router.push("/home");
             }
           })
           .catch((err) => {
@@ -275,7 +290,7 @@ export function AuthForm() {
             password: formData.password,
             firstName: formData.firstName,
             lastName: formData.lastName,
-            dateOfBirth: formData.dateOfBirth,
+            dateOfBirth: formData.dateOfBirth ? formData.dateOfBirth.toISOString() : "",
             nickname: formData.nickname,
             aboutMe: formData.aboutMe,
             avatarUrl: avatarUrl,
@@ -284,15 +299,56 @@ export function AuthForm() {
         })
           .then(async (res) => {
             if (!res.ok) {
+              // Read response as text first
               const text = await res.text();
-              throw new Error(text || "Registration failed");
+              // Try to parse as JSON, fall back to plain text
+              try {
+                const errorData = JSON.parse(text);
+                throw new Error(errorData.error || "Registration failed");
+              } catch (jsonError) {
+                // If JSON parsing fails, use the plain text
+                throw new Error(text || "Registration failed");
+              }
             }
-            return res.json();
+            
+            // For successful responses, try to parse as JSON, but handle non-JSON responses gracefully
+            try {
+              const data = await res.json();
+              return data;
+            } catch (jsonError) {
+              // If JSON parsing fails, assume success and return a success message
+              console.log("Registration successful but no JSON response");
+              return { message: "Registration successful" };
+            }
           })
-          .then((data) => console.log(data))
+          .then((data) => {
+            console.log("Registration successful:", data);
+            // After successful registration, switch to login mode
+            setIsLogin(true);
+            setFormData({
+              email: formData.email, // Keep the email to make login easier
+              password: "",
+              confirmPassword: "",
+              firstName: "",
+              lastName: "",
+              dateOfBirth: undefined,
+              gender: "",
+              nickname: "",
+              aboutMe: "",
+              avatar: null,
+            });
+            setAvatarPreview("");
+          })
           .catch((err) => {
             console.error(err);
-            setErrors((prev) => ({ ...prev, general: String(err.message || err) }));
+            // Convert backend error messages to user-friendly messages
+            let errorMessage = String(err.message || err);
+            if (errorMessage.includes("User already exists") || errorMessage.includes("Status Conflict")) {
+              errorMessage = "An account with this email already exists. Please use a different email or try logging in.";
+            } else if (errorMessage.includes("404") || errorMessage.includes("not found")) {
+              errorMessage = "Registration service is currently unavailable. Please try again later.";
+            }
+            setErrors((prev) => ({ ...prev, general: errorMessage }));
           });
       }
 
@@ -375,17 +431,6 @@ export function AuthForm() {
     setForgotPasswordEmail("");
     setErrors({});
   };
-
-  if (userData) {
-    return (
-      <UserProfile
-        isOwnProfile={true}
-        isFollowing={false}
-        userData={userData}
-        posts={[]}
-      />
-    );
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">

@@ -167,7 +167,7 @@ function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
                     {/* Emoji Picker */}
                     {showEmojiPicker && (
                         <div>
-                <EmojiPicker
+                        <EmojiPicker
                                 onEmojiClick={(emojiData) => handleEmojiSelect(emojiData.emoji)}
                                 theme="dark"
                     />

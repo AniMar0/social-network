@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"encoding/json"
 	"net/http"
 	"time"
 
@@ -25,6 +26,12 @@ func CheckPassword(hashedPassword, password string) error {
 
 func RenderErrorPage(w http.ResponseWriter, r *http.Request, errMsg string, errCode int) {
 	http.ServeFile(w, r, "./static/index.html")
+}
+
+func SendJSONError(w http.ResponseWriter, errMsg string, errCode int) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(errCode)
+	json.NewEncoder(w).Encode(map[string]string{"error": errMsg})
 }
 
 func GetTheExtension(fileName string) string {
