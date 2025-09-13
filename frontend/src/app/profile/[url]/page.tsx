@@ -56,7 +56,7 @@ export default function UserProfilePage() {
 
   const router = useRouter();
   const params = useParams();
-  const username = params.username as string;
+  const userUrl = params.url as string;
 
   useEffect(() => {
     const checkAuthAndLoadProfile = async () => {
@@ -88,16 +88,15 @@ export default function UserProfilePage() {
         // Check if viewing own profile vs another user's profile
         // TODO: ADD YOUR BACKEND LOGIC HERE - Compare username with current user's profile URL/nickname
         // Replace this logic to match how you store usernames/URLs in your database
-        const isOwn =
-          authData.user.nickname === username || authData.user.url === username;
+        const isOwn = authData.user.url === userUrl;
+
         setIsOwnProfile(isOwn);
 
         if (isOwn) {
           // If viewing own profile, use the current user's data
-          console.log("user url", authData.user.url);
           try {
             const res = await fetch(
-              `http://localhost:8080/api/profile/${authData.user.url}`,
+              `http://localhost:8080/api/profile/${userUrl}`,
               {
                 method: "POST",
                 credentials: "include",
@@ -107,11 +106,8 @@ export default function UserProfilePage() {
             if (!res.ok) {
               return { loggedIn: false, user: null };
             }
-
             const data = await res.json();
             setUserData(data.user);
-            console.log("Using current user's data for profile:", data.user);
-            console.log("Fetched posts:", data.posts);
             setPosts(data.posts || []);
           } catch (err) {
             console.error("Error checking auth:", err);
@@ -121,7 +117,7 @@ export default function UserProfilePage() {
           // TODO: ADD YOUR BACKEND LOGIC HERE - Fetch other user's profile data
           // Replace this section with your backend call to get user profile by username
           try {
-            const profileRes = await fetch(`/api/profile/${username}`, {
+            const profileRes = await fetch(`/api/profile/${userUrl}`, {
               method: "GET",
               credentials: "include",
             });
@@ -131,7 +127,6 @@ export default function UserProfilePage() {
               router.push("/home");
               return;
             }
-
             const profileData = await profileRes.json();
             console.log("Fetched profile data:", profileData);
             setUserData(profileData.user);
@@ -151,10 +146,10 @@ export default function UserProfilePage() {
       }
     };
 
-    if (username) {
+    if (userUrl) {
       checkAuthAndLoadProfile();
     }
-  }, [username, router]);
+  }, [userUrl, router]);
 
   const handleNewPost = () => {
     setIsNewPostModalOpen(true);

@@ -66,31 +66,58 @@ function UserProfile({
   // Toggle follow/unfollow state
   // TODO: Call backend to follow/unfollow user
   const handleFollowToggle = async () => {
-    setFollowingState(!followingState);
+  try {
+    const res = await fetch("http://localhost:8080/api/logged", {
+      method: "POST",
+      credentials: "include",
+    });
+
+    //if (!res.ok) throw new Error("Auth check failed");
+
+    const data = await res.json();
+    const currentUser: UserData = data.user;
+
+    if (!currentUser) {
+      console.error("No logged in user");
+      return;
+    }
+
+    const body = {
+      follower: currentUser.id,      // اللي دار الفولو (أنا)
+      following: profileData.id,     // اللي نْدارلو الفولو
+    };
+
     if (followingState) {
-      // Unfollow logic
       await fetch("http://localhost:8080/api/unfollow", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({
-          follower: "user1",
-          following: "user2",
-        }),
+        body: JSON.stringify(body),
       });
+
+      setProfileData((prev) => ({
+        ...prev,
+        followersCount: prev.followersCount - 1,
+      }));
     } else {
-      // Follow logic
       await fetch("http://localhost:8080/api/follow", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({
-          follower: "user1",
-          following: "user2",
-        }),
+        body: JSON.stringify(body),
       });
+
+      setProfileData((prev) => ({
+        ...prev,
+        followersCount: prev.followersCount + 1,
+      }));
     }
-  };
+
+    setFollowingState(!followingState);
+  } catch (err) {
+    console.error("Error toggling follow:", err);
+  }
+};
 
   // Like or unlike a post
   // TODO: Call backend to like/unlike post
@@ -152,7 +179,7 @@ function UserProfile({
                 <AvatarImage
                   src={
                     `http://localhost:8080/${profileData.avatar}` ||
-                    `/placeholder.svg?height=128&width=128&query=user+avatar`
+                    "http://localhost:8080/uploads/default.jpg"
                   }
                   alt={`${profileData.firstName} ${profileData.lastName}`}
                 />
@@ -258,7 +285,7 @@ function UserProfile({
                           <AvatarImage
                             src={
                               `http://localhost:8080/${profileData.avatar}` ||
-                              `/placeholder.svg?height=40&width=40&query=user+avatar`
+                              "http://localhost:8080/uploads/default.jpg"
                             }
                             alt={`${profileData.firstName} ${profileData.lastName}`}
                           />

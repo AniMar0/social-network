@@ -27,6 +27,18 @@ func ConnectAndMigrate(dbPath string, migrationsDir string) *sql.DB {
 		log.Fatalf("Error pinging database: %v", err)
 	}
 
+	// ✅ Enable foreign keys
+	if _, err := db.Exec("PRAGMA foreign_keys = ON"); err != nil {
+		log.Fatalf("Error enabling foreign keys: %v", err)
+	}
+
+	// Test if foreign keys are really enabled
+	var enabled int
+	if err := db.QueryRow("PRAGMA foreign_keys;").Scan(&enabled); err != nil {
+		log.Fatalf("Error checking foreign keys status: %v", err)
+	}
+	log.Printf("Foreign keys enabled: %v", enabled == 1)
+
 	// Get absolute path of migrations folder
 	absMigrations, err := filepath.Abs(migrationsDir)
 	if err != nil {

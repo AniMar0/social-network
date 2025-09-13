@@ -180,8 +180,8 @@ func (S *Server) FollowUser(follower, following string) error {
 	}
 
 	_, err := S.db.Exec(`
-		INSERT INTO follows (follower, following) VALUES (?, ?)
-		ON CONFLICT(follower, following) DO NOTHING
+		INSERT INTO follows (follower_id, following_id) VALUES (?, ?)
+		ON CONFLICT(follower_id, following_id) DO NOTHING
 	`, follower, following)
 
 	return err
@@ -189,7 +189,7 @@ func (S *Server) FollowUser(follower, following string) error {
 
 func (S *Server) UnfollowUser(follower, following string) error {
 	_, err := S.db.Exec(`
-		DELETE FROM follows WHERE follower = ? AND following = ?
+		DELETE FROM follows WHERE follower_id = ? AND following_id = ?
 	`, follower, following)
 
 	return err
