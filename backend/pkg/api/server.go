@@ -29,7 +29,7 @@ func (S *Server) Run(addr string) {
 	// CORS configuration
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:3000"},
-		AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "OPTIONS"},
 		AllowedHeaders:   []string{"Content-Type"},
 		AllowCredentials: true,
 	})
@@ -48,8 +48,10 @@ func (S *Server) initRoutes() {
 
 	S.mux.HandleFunc("/api/register", S.RegisterHandler)
 	S.mux.HandleFunc("/api/upload-avatar", S.UploadAvatarHandler)
+	S.mux.HandleFunc("/api/user/update", S.UpdateUserHandler)
 
 	S.mux.HandleFunc("/api/login", S.LoginHandler)
+	S.mux.HandleFunc("/api/logged", S.LoggedHandler)
 	// S.mux.HandleFunc("/api/logout", S.LogoutHandler)
 
 	http.HandleFunc("/api/follow", S.FollowHandler)
@@ -132,7 +134,7 @@ func (S *Server) MakeToken(Writer http.ResponseWriter, id int) {
 		HttpOnly: true,
 		Path:     "/",
 		SameSite: http.SameSiteLaxMode,
-		Secure:   false,                
+		Secure:   false,
 	})
 }
 
@@ -201,15 +203,14 @@ func (S *Server) CheckSession(r *http.Request) (int, string, error) {
 	return userID, sessionID, nil
 }
 
-func (S *Server) GetUserData(url string) (UserData, error) {
+func (S *Server) GetUserData(url string, id int) (UserData, error) {
 	var user UserData
 
-	// أولاً نجيب بيانات المستخدم
 	err := S.db.QueryRow(`
 		SELECT id, first_name, last_name, nickname, email, birthdate, avatar, about_me, is_private, created_at
 		FROM users 
-		WHERE url = ?
-	`, url).Scan(
+		WHERE url = ? OR id = ?
+	`, url, id).Scan(
 		&user.ID,
 		&user.FirstName,
 		&user.LastName,
@@ -229,7 +230,6 @@ func (S *Server) GetUserData(url string) (UserData, error) {
 
 	user.FollowingCount, _ = S.GetFollowingCount(url)
 
-	// نجيب postsCount
 	// row := S.db.QueryRow(`SELECT COUNT(*) FROM posts WHERE author_id = ?`, user.ID)
 	// row.Scan(&user.PostsCount)
 

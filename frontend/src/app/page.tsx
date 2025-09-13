@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { AuthForm } from "@/components/auth"
-import { UserProfile } from "@/components/user-profile"
-import { Button } from "@/components/ui/button"
+import { useState } from "react";
+import { AuthForm } from "@/components/auth";
+import { UserProfile } from "@/components/user-profile";
+import { Button } from "@/components/ui/button";
 
-const sampleUserData = {
+let sampleUserData = {
   id: "1",
   firstName: "Thomas",
   lastName: "T link",
@@ -20,7 +20,7 @@ const sampleUserData = {
   followingCount: 16,
   postsCount: 12,
   joinedDate: "2023-01-15",
-}
+};
 
 const samplePosts = [
   {
@@ -42,7 +42,7 @@ const samplePosts = [
     comments: 7,
     isLiked: true,
   },
-]
+];
 
 const sampleFollowers = [
   {
@@ -59,15 +59,27 @@ const sampleFollowers = [
     postsCount: 156,
     joinedDate: "2022-08-10",
   },
-]
+];
 
 export default function HomePage() {
-  const [currentView, setCurrentView] = useState<"auth" | "profile">("auth")
-  const [isOwnProfile, setIsOwnProfile] = useState(true)
-
+  const [currentView, setCurrentView] = useState<"auth" | "profile">("auth");
+  const [isOwnProfile, setIsOwnProfile] = useState(true);
+  // Check if user is logged in
+  fetch("http://localhost:8080/api/logged", {
+    method: "POST",
+    credentials: "include",
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      if (data.loggedIn) {
+        setCurrentView("profile");
+        sampleUserData = data.user;
+      }
+    })
+    .catch((err) => console.error(err));
   return (
     <div className="min-h-screen bg-background">
-      <div className="fixed top-4 right-4 z-50 flex gap-2">
+      {/* <div className="fixed top-4 right-4 z-50 flex gap-2">
         <Button variant={currentView === "auth" ? "default" : "outline"} onClick={() => setCurrentView("auth")}>
           Auth Form
         </Button>
@@ -79,8 +91,7 @@ export default function HomePage() {
             {isOwnProfile ? "Owner View" : "Visitor View"}
           </Button>
         )}
-      </div>
-
+      </div> */}
       {currentView === "auth" ? (
         <AuthForm />
       ) : (
@@ -91,5 +102,5 @@ export default function HomePage() {
         />
       )}
     </div>
-  )
+  );
 }

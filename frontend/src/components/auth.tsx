@@ -247,6 +247,7 @@ export function AuthForm() {
         const avatarForm = new FormData();
         let avatarUrl = "";
         if (formData.avatar) {
+          console.log(formData.avatar);
           avatarForm.append("avatar", formData.avatar);
           await fetch("http://localhost:8080/api/upload-avatar", {
             method: "POST",
@@ -257,7 +258,7 @@ export function AuthForm() {
             .then((data) => (avatarUrl = data.avatarUrl))
             .catch((err) => console.error(err));
         } else {
-          avatarUrl = "uploads/default.jpg";
+          avatarUrl = "/uploads/default.jpg";
         }
 
         await fetch("http://localhost:8080/api/register", {

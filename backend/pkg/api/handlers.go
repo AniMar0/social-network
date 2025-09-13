@@ -85,14 +85,12 @@ func (S *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	S.MakeToken(w, id)
 
-	userData, err := S.GetUserData(url)
+	userData, err := S.GetUserData(url, id)
 	if err != nil {
 		fmt.Println(err)
 		tools.RenderErrorPage(w, r, "User Not Found", http.StatusBadRequest)
 		return
 	}
-
-	//fmt.Println("User logged in:", userData)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
@@ -217,4 +215,58 @@ func (S *Server) UnfollowHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{
 		"message": "unfollowed successfully",
 	})
+}
+
+func (S *Server) LoggedHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/404", http.StatusSeeOther)
+		return
+	}
+	id, _, err := S.CheckSession(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	userData, err := S.GetUserData("",id)
+	if err != nil {
+		fmt.Println(err)
+		tools.RenderErrorPage(w, r, "User Not Found", http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"user":     userData,
+		"loggedIn": true,
+	})
+}
+
+func (S *Server) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
+    if r.Method != http.MethodPut {
+        http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+        return
+    }
+
+    var user UserData
+    if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+        http.Error(w, "Bad Request", http.StatusBadRequest)
+        return
+    }
+
+    _, err := S.db.Exec(`
+        UPDATE users
+        SET first_name = ?, last_name = ?, nickname = ?, email = ?, birthdate = ?, avatar = ?, about_me = ?, is_private = ?
+		WHERE id = ?
+	`, user.FirstName, user.LastName, user.Nickname, user.Email, user.DateOfBirth, user.Avatar, user.AboutMe, user.IsPrivate, user.ID,
+    )
+    if err != nil {
+        http.Error(w, "Failed to update user", http.StatusInternalServerError)
+        return
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(map[string]interface{}{
+        "success": true,
+        "user":    user,
+    })
 }
