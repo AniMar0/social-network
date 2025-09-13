@@ -32,8 +32,8 @@ import {
 import { CalendarIcon, Upload, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import {UserProfile,type Post} from "@/components/user-profile"
-import {type UserData} from  "@/components/account-settings"
+import { UserProfile, type Post } from "@/components/user-profile";
+import { type UserData } from "@/components/account-settings";
 
 interface FormData {
   // Required fields for registration
@@ -76,6 +76,7 @@ export function AuthForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
+  const [userData, setUserData] = useState<UserData | null>(null);
 
   // Form data state with proper typing
   const [formData, setFormData] = useState<FormData>({
@@ -225,10 +226,6 @@ export function AuthForm() {
     try {
       if (isLogin) {
         // Handle login logic here
-        console.log("Login attempt:", {
-          email: formData.email,
-          password: formData.password,
-        });
         // TODO: Implement actual login API call
         await fetch("http://localhost:8080/api/login", {
           method: "POST",
@@ -246,12 +243,8 @@ export function AuthForm() {
               setErrors({ general: data.error });
             } else {
               // TODO: Show User Profile
-              UserProfile({
-                isOwnProfile: true,
-                isFollowing: false,
-                userData: data.user,
-                posts: [],
-              });
+              setUserData(data.user);
+              console.log("Login successful:", data.user);
             }
           })
           .catch((err) => console.error(err));
@@ -268,7 +261,7 @@ export function AuthForm() {
             .then((data) => (avatarUrl = data.avatarUrl))
             .catch((err) => console.error(err));
         } else {
-            avatarUrl = "uploads/default.jpg"
+          avatarUrl = "uploads/default.jpg";
         }
 
         await fetch("http://localhost:8080/api/register", {
@@ -372,6 +365,17 @@ export function AuthForm() {
     setForgotPasswordEmail("");
     setErrors({});
   };
+
+  if (userData) {
+    return (
+      <UserProfile
+        isOwnProfile={true}
+        isFollowing={false}
+        userData={userData}
+        posts={[]}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">

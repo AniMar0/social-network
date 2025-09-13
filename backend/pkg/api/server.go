@@ -94,13 +94,13 @@ func (S *Server) UserFound(user User) (error, bool) {
 }
 
 func (S *Server) GetHashedPasswordFromDB(identifier string) (string, string, int, error) {
-	var hashedPassword, FirstName string
+	var hashedPassword, url string
 	var id int
 
 	err := S.db.QueryRow(`
-		SELECT password, id, first_name FROM users 
+		SELECT password, id, url FROM users 
 		WHERE nickname = ? OR email = ?
-	`, identifier, identifier).Scan(&hashedPassword, &id, &FirstName)
+	`, identifier, identifier).Scan(&hashedPassword, &id, &url)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -108,15 +108,13 @@ func (S *Server) GetHashedPasswordFromDB(identifier string) (string, string, int
 		}
 		return "", "", 0, err
 	}
-	return FirstName, hashedPassword, id, nil
+	return url, hashedPassword, id, nil
 }
 
 func (S *Server) MakeToken(Writer http.ResponseWriter, id int) {
 	sessionID := uuid.NewV4().String()
 	expirationTime := time.Now().Add(24 * time.Hour)
-
-	fmt.Println("Creating session for user ID:", id)
-
+	
 	_, err := S.db.Exec("INSERT INTO sessions (session_id, user_id, expires_at) VALUES (?, ?, ?)",
 		sessionID, id, expirationTime)
 	if err != nil {
@@ -124,8 +122,6 @@ func (S *Server) MakeToken(Writer http.ResponseWriter, id int) {
 		http.Error(Writer, "Error creating session", http.StatusInternalServerError)
 		return
 	}
-
-	fmt.Println("Session created with ID:", sessionID)
 
 	http.SetCookie(Writer, &http.Cookie{
 		Name:     "session_token",
@@ -200,14 +196,38 @@ func (S *Server) CheckSession(r *http.Request) (int, string, error) {
 	return userID, sessionID, nil
 }
 
-func (S *Server) GetUserData(url string) User {
-	var user User
-	err := S.db.QueryRow(`
-		SELECT first_name, last_name, birthdate, age, avatar, nickname, about_me, created_at FROM users WHERE url = ?
-	`, url).Scan(&user.FirstName, &user.LastName, &user.DateOfBirth, &user.Age, &user.AvatarUrl, &user.Nickname, &user.AboutMe, &user.CreatedAt)
+func (S *Server) GetUserData(url string) (UserData, error) {
+	var user UserData
 
+	// أولاً نجيب بيانات المستخدم
+	err := S.db.QueryRow(`
+		SELECT id, first_name, last_name, nickname, email, birthdate, avatar, about_me, is_private, created_at
+		FROM users 
+		WHERE url = ?
+	`, url).Scan(
+		&user.ID,
+		&user.FirstName,
+		&user.LastName,
+		&user.Nickname,
+		&user.Email,
+		&user.DateOfBirth,
+		&user.Avatar,
+		&user.AboutMe,
+		&user.IsPrivate,
+		&user.JoinedDate,
+	)
 	if err != nil {
-		return User{}
+		return UserData{}, err
 	}
-	return user
+
+	user.FollowersCount, _ = S.GetFollowersCount(url)
+	
+	user.FollowingCount, _ = S.GetFollowingCount(url)
+
+	// نجيب postsCount
+	// row := S.db.QueryRow(`SELECT COUNT(*) FROM posts WHERE author_id = ?`, user.ID)
+	// row.Scan(&user.PostsCount)
+
+	return user, nil
 }
+

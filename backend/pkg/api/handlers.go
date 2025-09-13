@@ -70,7 +70,7 @@ func (S *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		tools.RenderErrorPage(w, r, "Bad Request", http.StatusBadRequest)
 		return
 	}
-	FirstName, hashedPassword, id, err := S.GetHashedPasswordFromDB(user.Identifier)
+	url, hashedPassword, id, err := S.GetHashedPasswordFromDB(user.Identifier)
 	if err != nil {
 		tools.RenderErrorPage(w, r, "User Not Found", http.StatusBadRequest)
 		return
@@ -82,10 +82,18 @@ func (S *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	S.MakeToken(w, id)
 
-	fmt.Println(FirstName, id)
+	userData, err := S.GetUserData(url)
+	if err != nil {
+		fmt.Println(err)
+		tools.RenderErrorPage(w, r, "User Not Found", http.StatusBadRequest)
+		return
+	}
+
+	fmt.Println("User logged in:", userData)
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
-		"FirstName": FirstName,
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"user": userData,
 	})
 
 	// S.broadcastUserStatusChange()
@@ -145,7 +153,6 @@ func (S *Server) ProfileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := map[string]interface{}{
-		"UserData":  S.GetUserData(url),
 		"followers": followers,
 		"following": following,
 	}
