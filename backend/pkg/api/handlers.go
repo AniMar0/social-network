@@ -274,11 +274,15 @@ func (S *Server) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to remove old avatar", http.StatusInternalServerError)
 		return
 	}
+
+	if user.Nickname != nil {
+		user.Url = *user.Nickname
+	}
 	_, err = S.db.Exec(`
         UPDATE users
-        SET first_name = ?, last_name = ?, nickname = ?, email = ?, birthdate = ?, avatar = ?, about_me = ?, is_private = ?
+        SET first_name = ?, last_name = ?, nickname = ?, email = ?, birthdate = ?, avatar = ?, about_me = ?, is_private = ?, url = ?
 		WHERE id = ?
-	`, user.FirstName, user.LastName, user.Nickname, user.Email, user.DateOfBirth, user.Avatar, user.AboutMe, user.IsPrivate, user.ID,
+	`, user.FirstName, user.LastName, user.Nickname, user.Email, user.DateOfBirth, user.Avatar, user.AboutMe, user.IsPrivate, user.Url, user.ID,
 	)
 	if err != nil {
 		http.Error(w, "Failed to update user", http.StatusInternalServerError)

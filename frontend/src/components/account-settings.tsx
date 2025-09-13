@@ -21,7 +21,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-
+import { useRouter } from "next/navigation";
 
 export interface UserData {
   id: string;
@@ -52,6 +52,7 @@ export function ProfileSettings({ userData, onSave }: ProfileSettingsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState<UserData>(userData);
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   /**
    * Handle form input changes
@@ -133,7 +134,7 @@ export function ProfileSettings({ userData, onSave }: ProfileSettingsProps) {
     if (formData.postsCount === null) {
       formData.postsCount = userData.postsCount;
     }
-    
+
     try {
       const res = await fetch("http://localhost:8080/api/user/update", {
         method: "PUT",
@@ -151,6 +152,7 @@ export function ProfileSettings({ userData, onSave }: ProfileSettingsProps) {
       }
       onSave(data.user);
       setIsOpen(false);
+      router.push(`/profile/${data.user.url}`);
     } catch (error) {
       console.error("Error saving profile:", error);
     } finally {
@@ -178,7 +180,7 @@ export function ProfileSettings({ userData, onSave }: ProfileSettingsProps) {
         </Button>
       </DialogTrigger>
 
-  <DialogContent className="max-w-md w-full bg-card border-border">
+      <DialogContent className="max-w-md w-full bg-card border-border">
         <div>
           <DialogHeader>
             <DialogTitle className="text-foreground">Edit Profile</DialogTitle>
@@ -193,8 +195,8 @@ export function ProfileSettings({ userData, onSave }: ProfileSettingsProps) {
                     formData.avatar?.startsWith("blob:")
                       ? formData.avatar
                       : formData.avatar
-                        ? `http://localhost:8080/${formData.avatar}`
-                        : `/placeholder.svg?height=96&width=96&query=user+avatar`
+                      ? `http://localhost:8080/${formData.avatar}`
+                      : `/placeholder.svg?height=96&width=96&query=user+avatar`
                   }
                   alt="Profile avatar"
                 />
@@ -308,13 +310,19 @@ export function ProfileSettings({ userData, onSave }: ProfileSettingsProps) {
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
-                      selected={formData.dateOfBirth ? new Date(formData.dateOfBirth) : undefined}
+                      selected={
+                        formData.dateOfBirth
+                          ? new Date(formData.dateOfBirth)
+                          : undefined
+                      }
                       onSelect={(date: Date | undefined) =>
                         handleInputChange(
                           "dateOfBirth",
                           date instanceof Date && !isNaN(date.getTime())
                             ? // build YYYY-MM-DD from local date parts to avoid timezone shifts
-                              `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+                              `${date.getFullYear()}-${String(
+                                date.getMonth() + 1
+                              ).padStart(2, "0")}-${String(
                                 date.getDate()
                               ).padStart(2, "0")}`
                             : ""
