@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/twinj/uuid"
 )
@@ -251,7 +252,7 @@ func (S *Server) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
-	
+
 	id, _ := strconv.Atoi(user.ID)
 	err := S.RemoveOldAvatar(id)
 	if err != nil {
@@ -274,4 +275,63 @@ func (S *Server) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 		"success": true,
 		"user":    user,
 	})
+}
+
+func (S *Server) LogoutHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("LogoutHandler called")
+
+	if r.Method != http.MethodPost {
+		fmt.Println("Method not allowed:", r.Method)
+		http.Redirect(w, r, "/404", http.StatusSeeOther)
+		return
+	}
+
+	cookie, err := r.Cookie("session_token")
+	if err != nil {
+		http.Error(w, "No session", http.StatusBadRequest)
+		return
+	}
+
+	var userID int
+	S.db.QueryRow("SELECT user_id FROM sessions WHERE session_id = ?", cookie.Value).Scan(&userID)
+
+	_, err = S.db.Exec("DELETE FROM sessions WHERE session_id = ?", cookie.Value)
+	if err != nil {
+		http.Error(w, "Error deleting session", http.StatusInternalServerError)
+		return
+	}
+
+	// S.RLock()
+	// if clients, exists := S.clients[username]; exists {
+	// 	for _, client := range clients {
+	// 		client.Send <- map[string]string{
+	// 			"event":   "logout",
+	// 			"message": "Session terminated",
+	// 		}
+	// 		client.Conn.Close()
+	// 	}
+	// 	delete(S.clients, username)
+	// }
+	// S.RUnlock()
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_token",
+		Value:    "",
+		Expires:  time.Unix(0, 0),
+		HttpOnly: true,
+		Path:     "/",
+		SameSite: http.SameSiteLaxMode,
+		Secure:   false,
+	})
+
+	// Broadcast user status change to remaining connected clients
+	// go func() {
+	// 	time.Sleep(100 * time.Millisecond)
+	// 	S.broadcastUserStatusChange()
+	// }()
+
+	fmt.Println("User logged out:", userID)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"message":"logged out"}`))
 }

@@ -53,12 +53,12 @@ func (S *Server) initRoutes() {
 
 	S.mux.HandleFunc("/api/login", S.LoginHandler)
 	S.mux.HandleFunc("/api/logged", S.LoggedHandler)
-	// S.mux.HandleFunc("/api/logout", S.LogoutHandler)
+	S.mux.HandleFunc("/api/logout", S.LogoutHandler)
 
-	http.HandleFunc("/api/follow", S.FollowHandler)
-	http.HandleFunc("/api/unfollow", S.UnfollowHandler)
+	S.mux.HandleFunc("/api/follow", S.FollowHandler)
+	S.mux.HandleFunc("/api/unfollow", S.UnfollowHandler)
 
-	http.HandleFunc("/api/profile", S.ProfileHandler)
+	S.mux.HandleFunc("/api/profile", S.ProfileHandler)
 }
 
 func (S *Server) AddUser(user User) error {

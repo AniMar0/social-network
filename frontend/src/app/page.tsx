@@ -1,11 +1,17 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { AuthForm } from "@/components/auth"
-import UserProfile from "@/components/user-profile"
-import { HomeFeed } from "@/components/home"
-import { NewPostModal } from "@/components/newpost"
-import { Button } from "@/components/ui/button"
+import { useEffect, useState } from "react";
+import { AuthForm } from "@/components/auth";
+import UserProfile from "@/components/user-profile";
+import { HomeFeed } from "@/components/home";
+import { NewPostModal } from "@/components/newpost";
+import { Button } from "@/components/ui/button";
+
+window.addEventListener("storage", function (event) {
+  if (event.key === "logout") {
+    window.location.reload();
+  }
+});
 
 let sampleUserData = {
   id: "1",
@@ -22,7 +28,7 @@ let sampleUserData = {
   followingCount: 16,
   postsCount: 12,
   joinedDate: "2023-01-15",
-}
+};
 
 const samplePosts = [
   {
@@ -44,91 +50,94 @@ const samplePosts = [
     comments: 7,
     isLiked: true,
   },
-]
-
-const sampleFollowers = [
-  {
-    id: "2",
-    firstName: "Alex",
-    lastName: "Chen",
-    nickname: "alexc",
-    email: "alex@example.com",
-    dateOfBirth: "1992-03-20",
-    avatar: "https://imgur.com/v1oBVXE.png",
-    isPrivate: false,
-    followersCount: 890,
-    followingCount: 234,
-    postsCount: 156,
-    joinedDate: "2022-08-10",
-  },
-]
+];
 
 export default function HomePage() {
-  
-  const [currentView, setCurrentView] = useState<"auth" | "profile" | "home">("home")
-  const [isOwnProfile, setIsOwnProfile] = useState(true)
-  const [isNewPostModalOpen, setIsNewPostModalOpen] = useState(false)
-  // Check if user is logged in
-  fetch("http://localhost:8080/api/logged", {
-    method: "POST",
-    credentials: "include",
-  })
-    .then(async (res) => {
-      if (!res.ok) {
-        const text = await res.text();
-        console.log("Error checking login status:", text);
-        return null;
+  const [currentView, setCurrentView] = useState<"auth" | "profile" | "home">("auth");
+  const [isOwnProfile, setIsOwnProfile] = useState(true);
+  const [isNewPostModalOpen, setIsNewPostModalOpen] = useState(false);
+
+  useEffect(() => {
+    const checkLogin = async () => {
+      try {
+        const res = await fetch("http://localhost:8080/api/logged", {
+          method: "POST",
+          credentials: "include",
+        });
+
+        if (!res.ok) {
+          const text = await res.text();
+          console.log("Error checking login status:", text);
+          return;
+        }
+
+        const data = await res.json();
+        if (data.loggedIn) {
+          setCurrentView("home");
+          sampleUserData = data.user;
+        } else {
+          setCurrentView("auth");
+        }
+      } catch (err) {
+        console.error("Error fetching login:", err);
       }
-      return res.json();
-    })
-    .then((data) => {
-      if (data && data.loggedIn) {
-        setCurrentView("profile");
-        sampleUserData = data.user;
-      }
-    })
-    .catch((err) => console.error(err));
+    };
+
+    checkLogin();
+  }, []);
 
   const handleNewPost = () => {
-    setIsNewPostModalOpen(true)
-  }
+    setIsNewPostModalOpen(true);
+  };
 
   const handleNavigate = (itemId: string) => {
     switch (itemId) {
       case "home":
-        setCurrentView("home")
-        break
+        setCurrentView("home");
+        break;
       case "profile":
-        setCurrentView("profile")
-        break
+        setCurrentView("profile");
+        break;
       case "auth":
-        setCurrentView("auth")
-        break
+        setCurrentView("auth");
+        break;
       default:
-        setCurrentView("home")
+        setCurrentView("home");
     }
-  }
+  };
 
   const handlePostSubmit = (postData: any) => {
-    console.log("New post submitted:", postData)
-    // Send the post to the back end (not implemented)
-    setIsNewPostModalOpen(false)
-  }
+    console.log("New post submitted:", postData);
+    // TODO: Send the post to the backend
+    setIsNewPostModalOpen(false);
+  };
 
   return (
     <div className="min-h-screen bg-background">
       <div className="fixed top-4 right-4 z-50 flex gap-2">
-        <Button variant={currentView === "auth" ? "default" : "outline"} onClick={() => setCurrentView("auth")}>
+        <Button
+          variant={currentView === "auth" ? "default" : "outline"}
+          onClick={() => setCurrentView("auth")}
+        >
           Auth Form
         </Button>
-        <Button variant={currentView === "home" ? "default" : "outline"} onClick={() => setCurrentView("home")}>
+        <Button
+          variant={currentView === "home" ? "default" : "outline"}
+          onClick={() => setCurrentView("home")}
+        >
           Home Feed
         </Button>
-        <Button variant={currentView === "profile" ? "default" : "outline"} onClick={() => setCurrentView("profile")}>
+        <Button
+          variant={currentView === "profile" ? "default" : "outline"}
+          onClick={() => setCurrentView("profile")}
+        >
           Profile Page
         </Button>
         {currentView === "profile" && (
-          <Button variant={isOwnProfile ? "secondary" : "outline"} onClick={() => setIsOwnProfile(!isOwnProfile)}>
+          <Button
+            variant={isOwnProfile ? "secondary" : "outline"}
+            onClick={() => setIsOwnProfile(!isOwnProfile)}
+          >
             {isOwnProfile ? "Owner View" : "Visitor View"}
           </Button>
         )}
@@ -154,5 +163,5 @@ export default function HomePage() {
         onPost={handlePostSubmit}
       />
     </div>
-  )
+  );
 }
