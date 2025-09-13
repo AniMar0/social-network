@@ -62,12 +62,6 @@ interface FormErrors {
   general?: string;
 }
 
-interface UserProfileProps {
-  isOwnProfile?: boolean; // Is this the current user's profile?
-  isFollowing?: boolean; // Is the current user following this profile?
-  userData: UserData; // User profile data
-  posts: Post[]; // List of user posts
-}
 export function AuthForm() {
   // State management for form mode and data
   const [isLogin, setIsLogin] = useState(true);
@@ -232,6 +226,7 @@ export function AuthForm() {
           headers: {
             "Content-Type": "application/json",
           },
+          credentials: "include",
           body: JSON.stringify({
             identifier: formData.email,
             password: formData.password,
@@ -256,6 +251,7 @@ export function AuthForm() {
           await fetch("http://localhost:8080/api/upload-avatar", {
             method: "POST",
             body: avatarForm,
+            credentials: "include",
           })
             .then((res) => res.json())
             .then((data) => (avatarUrl = data.avatarUrl))
@@ -269,6 +265,7 @@ export function AuthForm() {
           headers: {
             "Content-Type": "application/json",
           },
+          credentials: "include",
           body: JSON.stringify({
             email: formData.email,
             password: formData.password,

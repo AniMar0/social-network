@@ -62,7 +62,7 @@ const sampleFollowers = [
 ]
 
 export default function HomePage() {
-  const [currentView, setCurrentView] = useState<"auth" | "profile">("profile")
+  const [currentView, setCurrentView] = useState<"auth" | "profile">("auth")
   const [isOwnProfile, setIsOwnProfile] = useState(true)
 
   return (

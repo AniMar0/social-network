@@ -116,7 +116,7 @@ func (S *Server) GetHashedPasswordFromDB(identifier string) (string, string, int
 func (S *Server) MakeToken(Writer http.ResponseWriter, id int) {
 	sessionID := uuid.NewV4().String()
 	expirationTime := time.Now().Add(24 * time.Hour)
-	
+
 	_, err := S.db.Exec("INSERT INTO sessions (session_id, user_id, expires_at) VALUES (?, ?, ?)",
 		sessionID, id, expirationTime)
 	if err != nil {
@@ -130,6 +130,9 @@ func (S *Server) MakeToken(Writer http.ResponseWriter, id int) {
 		Value:    sessionID,
 		Expires:  expirationTime,
 		HttpOnly: true,
+		Path:     "/",
+		SameSite: http.SameSiteLaxMode,
+		Secure:   false,                
 	})
 }
 
@@ -223,7 +226,7 @@ func (S *Server) GetUserData(url string) (UserData, error) {
 	}
 
 	user.FollowersCount, _ = S.GetFollowersCount(url)
-	
+
 	user.FollowingCount, _ = S.GetFollowingCount(url)
 
 	// نجيب postsCount
@@ -232,4 +235,3 @@ func (S *Server) GetUserData(url string) (UserData, error) {
 
 	return user, nil
 }
-

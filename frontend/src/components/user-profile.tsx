@@ -57,9 +57,11 @@ function UserProfile({
     setProfileData(updatedData);
     // TODO: Send updated profile data to backend
     console.log("Profile updated:", updatedData);
-    const nickname = "6591f4ea-ff1c-4dd0-b441-42bd9d20c314";
+    const nickname = "AniMaro"; // Replace with actual nickname from updatedData
 
-    fetch(`http://localhost:8080/api/profile?nickname=${nickname}`)
+    fetch(`http://localhost:8080/api/profile?nickname=${nickname}`, {
+      credentials: "include",
+    })
       .then((res) => res.json())
       .then((data) => console.log(data))
       .catch((err) => console.error(err));
@@ -74,6 +76,7 @@ function UserProfile({
       await fetch("http://localhost:8080/api/unfollow", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           follower: "user1",
           following: "user2",
@@ -84,6 +87,7 @@ function UserProfile({
       await fetch("http://localhost:8080/api/follow", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           follower: "user1",
           following: "user2",

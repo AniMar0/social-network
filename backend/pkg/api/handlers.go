@@ -32,7 +32,7 @@ func (S *Server) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		tools.RenderErrorPage(w, r, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
-	
+
 	if found {
 		fmt.Println("User already exists")
 		tools.RenderErrorPage(w, r, "Status Conflict", http.StatusConflict)
@@ -55,6 +55,9 @@ func (S *Server) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (S *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
+
 	if r.Method != http.MethodPost {
 		http.Redirect(w, r, "/404", http.StatusSeeOther)
 		return
@@ -134,6 +137,7 @@ func (S *Server) UploadAvatarHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (S *Server) ProfileHandler(w http.ResponseWriter, r *http.Request) {
+	// http://localhost:8080/api/profile?nickname=aniMaro
 	url := r.URL.Query().Get("nickname")
 	if url == "" {
 		http.Error(w, "nickname required", http.StatusBadRequest)
