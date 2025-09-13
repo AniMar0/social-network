@@ -7,6 +7,7 @@ import (
 	"html"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/rs/cors"
@@ -234,4 +235,26 @@ func (S *Server) GetUserData(url string, id int) (UserData, error) {
 	// row.Scan(&user.PostsCount)
 
 	return user, nil
+}
+
+func (S *Server) RemoveOldAvatar(userID int) error {
+	// Get the avatar filename from the database
+	var avatar string
+	err := S.db.QueryRow(`SELECT avatar FROM users WHERE id = ?`, userID).Scan(&avatar)
+	if err != nil {
+		return err
+	}
+
+	if avatar == "/uploads/default.jpg" {
+		return nil
+	}
+	// Remove the avatar file from uploads folder if it exists and is not empty
+	if avatar != "" {
+		avatarPath := fmt.Sprintf(".%s", avatar)
+		if err := os.Remove(avatarPath); err != nil && !os.IsNotExist(err) {
+			return err
+		}
+	}
+
+	return nil
 }

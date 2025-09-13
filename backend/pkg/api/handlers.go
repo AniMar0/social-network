@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/twinj/uuid"
 )
@@ -112,7 +113,7 @@ func (S *Server) UploadAvatarHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer file.Close()
-	
+
 	avatarPath := "uploads/" + uuid.NewV4().String() + tools.GetTheExtension(header.Filename)
 
 	out, err := os.Create(avatarPath)
@@ -250,8 +251,14 @@ func (S *Server) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
-
-	_, err := S.db.Exec(`
+	
+	id, _ := strconv.Atoi(user.ID)
+	err := S.RemoveOldAvatar(id)
+	if err != nil {
+		http.Error(w, "Failed to remove old avatar", http.StatusInternalServerError)
+		return
+	}
+	_, err = S.db.Exec(`
         UPDATE users
         SET first_name = ?, last_name = ?, nickname = ?, email = ?, birthdate = ?, avatar = ?, about_me = ?, is_private = ?
 		WHERE id = ?

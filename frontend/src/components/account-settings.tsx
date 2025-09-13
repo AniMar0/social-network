@@ -43,6 +43,8 @@ interface ProfileSettingsProps {
 
 let avatarUrl = "";
 
+let avatarFile: File;
+
 export function ProfileSettings({ userData, onSave }: ProfileSettingsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState<UserData>(userData);
@@ -76,18 +78,7 @@ export function ProfileSettings({ userData, onSave }: ProfileSettingsProps) {
         avatar: previewUrl,
       }));
       // TODO: Implement actual file upload to server
-      const avatarForm = new FormData();
-      avatarForm.append("avatar", file);
-      await fetch("http://localhost:8080/api/upload-avatar", {
-        method: "POST",
-        body: avatarForm,
-        credentials: "include",
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          avatarUrl = data.avatarUrl;
-        })
-        .catch((err) => console.error(err));
+      avatarFile = file;
     }
   };
 
@@ -96,36 +87,32 @@ export function ProfileSettings({ userData, onSave }: ProfileSettingsProps) {
    */
   const handleSave = async () => {
     setIsLoading(true);
-    formData.avatar = avatarUrl;
-    if (formData.avatar === "") {
-      formData.avatar = userData.avatar;
-    }
-    if (formData.nickname === "") {
-      formData.nickname = userData.nickname;
-    }
-    if (formData.aboutMe === "") {
-      formData.aboutMe = userData.aboutMe;
-    }
-    if (formData.dateOfBirth === "") {
-      formData.dateOfBirth = userData.dateOfBirth;
-    }
-    if (formData.firstName === "") {
-      formData.firstName = userData.firstName;
-    }
-    if (formData.lastName === "") {
-      formData.lastName = userData.lastName;
-    }
-    if (formData.email === "") {
-      formData.email = userData.email;
-    }
+    const avatarForm = new FormData();
+    avatarForm.append("avatar", avatarFile);
+
+    await fetch("http://localhost:8080/api/upload-avatar", {
+      method: "POST",
+      body: avatarForm,
+      credentials: "include",
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        avatarUrl = data.avatarUrl;
+      })
+      .catch((err) => console.error(err));
+
+    formData.avatar = avatarUrl || userData.avatar;
+    formData.nickname = formData.nickname || userData.nickname;
+    formData.aboutMe = formData.aboutMe || userData.aboutMe;
+    formData.dateOfBirth = formData.dateOfBirth || userData.dateOfBirth;
+    formData.firstName = formData.firstName || userData.firstName;
+    formData.lastName = formData.lastName || userData.lastName;
+    formData.email = formData.email || userData.email;
+    formData.id = formData.id || userData.id;
+    formData.joinedDate = formData.joinedDate || userData.joinedDate;
+
     if (formData.isPrivate === null) {
       formData.isPrivate = userData.isPrivate;
-    }
-    if (formData.id === "") {
-      formData.id = userData.id;
-    }
-    if (formData.joinedDate === "") {
-      formData.joinedDate = userData.joinedDate;
     }
     if (formData.followersCount === null) {
       formData.followersCount = userData.followersCount;
@@ -136,7 +123,7 @@ export function ProfileSettings({ userData, onSave }: ProfileSettingsProps) {
     if (formData.postsCount === null) {
       formData.postsCount = userData.postsCount;
     }
-    
+
     try {
       const res = await fetch("http://localhost:8080/api/user/update", {
         method: "PUT",
@@ -192,8 +179,11 @@ export function ProfileSettings({ userData, onSave }: ProfileSettingsProps) {
               <Avatar className="h-24 w-24 border-4 border-primary/20">
                 <AvatarImage
                   src={
-                    `http://localhost:8080/${formData.avatar}` ||
-                    `/placeholder.svg?height=96&width=96&query=user+avatar`
+                    formData.avatar?.startsWith("blob:")
+                      ? formData.avatar
+                      : formData.avatar
+                      ? `http://localhost:8080/${formData.avatar}` 
+                      : `/placeholder.svg?height=96&width=96&query=user+avatar`
                   }
                   alt="Profile avatar"
                 />

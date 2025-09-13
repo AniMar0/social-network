@@ -569,7 +569,7 @@ export function AuthForm() {
                     <div className="flex items-center space-x-4">
                       <Avatar className="h-16 w-16">
                         <AvatarImage
-                          src={avatarPreview || "/placeholder.svg"}
+                          src={avatarPreview || "http://localhost:8080/uploads/default.jpg"}
                         />
                         <AvatarFallback>
                           <Upload className="h-6 w-6 text-muted-foreground" />
