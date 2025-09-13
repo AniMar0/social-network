@@ -43,7 +43,7 @@ type Post struct {
 	Content   string  `json:"content"`
 	Image     *string `json:"image,omitempty"`
 	Privacy   string  `json:"privacy"`
-	CreatedAt string  `json:"timestamp"`
+	CreatedAt string  `json:"createdAt"`
 	Likes     int     `json:"likes"`
 	Comments  int     `json:"comments"`
 	Shares    int     `json:"shares"`
