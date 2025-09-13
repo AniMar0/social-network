@@ -89,7 +89,7 @@ func (S *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("User logged in:", userData)
+	//fmt.Println("User logged in:", userData)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{

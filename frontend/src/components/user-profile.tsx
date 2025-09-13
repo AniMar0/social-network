@@ -148,7 +148,7 @@ function UserProfile({
               <Avatar className="h-32 w-32 border-4 border-primary/20 flex-shrink-0">
                 <AvatarImage
                   src={
-                    profileData.avatar ||
+                    `http://localhost:8080/${profileData.avatar}` ||
                     `/placeholder.svg?height=128&width=128&query=user+avatar`
                   }
                   alt={`${profileData.firstName} ${profileData.lastName}`}

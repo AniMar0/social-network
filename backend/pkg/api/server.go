@@ -24,7 +24,7 @@ func (S *Server) Run(addr string) {
 	defer S.db.Close()
 
 	S.mux = http.NewServeMux()
-	S.initRuts()
+	S.initRoutes()
 
 	// CORS configuration
 	c := cors.New(cors.Options{
@@ -43,7 +43,9 @@ func (S *Server) Run(addr string) {
 	}
 }
 
-func (S *Server) initRuts() {
+func (S *Server) initRoutes() {
+	S.mux.Handle("/uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir("./uploads"))))
+
 	S.mux.HandleFunc("/api/register", S.RegisterHandler)
 	S.mux.HandleFunc("/api/upload-avatar", S.UploadAvatarHandler)
 
