@@ -1,7 +1,6 @@
 "use client";
 
-import type React from "react";
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -29,6 +28,7 @@ import {
 } from "lucide-react";
 import EmojiPicker from "emoji-picker-react";
 import GifPicker from "gif-picker-react";
+import { authUtils } from "@/lib/navigation";
 
 interface NewPostModalProps {
   isOpen: boolean;
@@ -41,9 +41,11 @@ interface PostData {
   image?: string;
   privacy: "public" | "almost-private" | "private";
 }
+
 let avatarFile: File;
 
-function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
+export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [content, setContent] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [privacy, setPrivacy] = useState<
@@ -53,16 +55,26 @@ function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
   const [showGifPicker, setShowGifPicker] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setSelectedImage(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-      avatarFile = file;
-    }
+  // Fetch current user
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const { loggedIn, user } = await authUtils.checkAuth();
+        if (loggedIn && user) setCurrentUser(user);
+      } catch (err) {
+        console.error("Error fetching user:", err);
+      }
+    };
+    fetchCurrentUser();
+  }, []);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => setSelectedImage(ev.target?.result as string);
+    reader.readAsDataURL(file);
+    avatarFile = file;
   };
 
   const handleEmojiSelect = (emoji: string) => {
@@ -75,68 +87,6 @@ function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
     setShowGifPicker(false);
   };
 
-  const handlePost = async () => {
-    if (!content.trim() && !selectedImage) return;
-
-    const postData: PostData = {
-      content: content.trim(),
-      image: selectedImage || undefined,
-      privacy,
-    };
-    const avatarForm = new FormData();
-    avatarForm.append("avatar", avatarFile);
-
-    await fetch("http://localhost:8080/api/upload-avatar", {
-      method: "POST",
-      body: avatarForm,
-      credentials: "include",
-    })
-      .then(async (res) => {
-        if (!res.ok) {
-          const text = await res.text();
-          throw new Error(text || "Upload failed");
-        }
-        return res.json();
-      })
-      .then((data) => {
-        console.log("Avatar uploaded:", data.avatarUrl);
-        postData.image = data.avatarUrl;
-      })
-      .catch((err) => {
-        console.error(err);
-      });
-    try {
-      const res = await fetch("http://localhost:8080/api/create-post", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify(postData),
-      });
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.error("Error creating post:", errorText);
-        return;
-      }
-
-      const createdPost = await res.json();
-      console.log("Post created successfully:", createdPost);
-
-      onPost?.(createdPost);
-
-      setContent("");
-      setSelectedImage(null);
-      setPrivacy("public");
-      setShowEmojiPicker(false);
-      setShowGifPicker(false);
-      onClose();
-    } catch (error) {
-      console.error("Network error:", error);
-    }
-  };
-
   const handleClose = () => {
     setContent("");
     setSelectedImage(null);
@@ -146,8 +96,54 @@ function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
     onClose();
   };
 
-  const getPrivacyIcon = (privacyType: string) => {
-    switch (privacyType) {
+  const handlePost = async () => {
+    if (!content.trim() && !selectedImage) return;
+
+    const postData: PostData = {
+      content: content.trim(),
+      image: selectedImage || undefined,
+      privacy,
+    };
+
+    if (avatarFile) {
+      const avatarForm = new FormData();
+      avatarForm.append("avatar", avatarFile);
+      try {
+        const res = await fetch("http://localhost:8080/api/upload-avatar", {
+          method: "POST",
+          body: avatarForm,
+          credentials: "include",
+        });
+        const data = await res.json();
+        postData.image = data.avatarUrl;
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    try {
+      const res = await fetch("http://localhost:8080/api/create-post", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(postData),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("Error creating post:", text);
+        return;
+      }
+      const createdPost = await res.json();
+      onPost?.(createdPost);
+
+      handleClose();
+    } catch (err) {
+      console.error("Network error:", err);
+    }
+  };
+
+  const getPrivacyIcon = (type: string) => {
+    switch (type) {
       case "public":
         return <Globe className="h-4 w-4" />;
       case "almost-private":
@@ -159,8 +155,8 @@ function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
     }
   };
 
-  const getPrivacyLabel = (privacyType: string) => {
-    switch (privacyType) {
+  const getPrivacyLabel = (type: string) => {
+    switch (type) {
       case "public":
         return "Public - Everyone can see";
       case "almost-private":
@@ -171,6 +167,13 @@ function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
         return "Public - Everyone can see";
     }
   };
+
+  if (!currentUser)
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading user...
+      </div>
+    );
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -186,49 +189,47 @@ function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
           <div className="flex items-center gap-3">
             <Avatar className="h-12 w-12">
               <AvatarImage
-                src="https://imgur.com/v1oBVXE.png"
-                alt="Your avatar"
+                src={`http://localhost:8080/${currentUser.avatar}`}
+                alt={currentUser.fullName}
               />
               <AvatarFallback className="bg-muted text-foreground">
-                TL
+                {currentUser.firstName?.charAt(0)}
               </AvatarFallback>
             </Avatar>
             <div>
-              <h3 className="font-semibold text-foreground">Thomas T Link</h3>
-              <p className="text-sm text-muted-foreground">@thomas.tlink</p>
+              <h3 className="font-semibold text-foreground">
+                {currentUser.firstName + " " + currentUser.lastName}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {currentUser.nickname}
+              </p>
             </div>
           </div>
 
-          {/* Content Input */}
-          <div className="space-y-3">
-            <Textarea
-              placeholder="What's on your mind?"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className="min-h-[120px] resize-none border-0 text-lg placeholder:text-muted-foreground focus-visible:ring-0"
-              maxLength={500}
-            />
-
-            {/* Character Count */}
-            <div className="text-right">
-              <span
-                className={`text-sm ${
-                  content.length > 450
-                    ? "text-red-500"
-                    : "text-muted-foreground"
-                }`}
-              >
-                {content.length}/500
-              </span>
-            </div>
+          {/* Textarea */}
+          <Textarea
+            placeholder="What's on your mind?"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            className="min-h-[120px] resize-none border-0 text-lg placeholder:text-muted-foreground focus-visible:ring-0"
+            maxLength={500}
+          />
+          <div className="text-right">
+            <span
+              className={`text-sm ${
+                content.length > 450 ? "text-red-500" : "text-muted-foreground"
+              }`}
+            >
+              {content.length}/500
+            </span>
           </div>
 
-          {/* Selected Image Preview */}
+          {/* Image Preview */}
           {selectedImage && (
             <div className="relative">
               <img
-                src={selectedImage || "/placeholder.svg"}
-                alt="Selected content"
+                src={selectedImage}
+                alt="Selected"
                 className="w-full max-h-64 object-cover rounded-lg"
               />
               <Button
@@ -242,37 +243,30 @@ function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
             </div>
           )}
 
-          {/* Emoji Picker */}
+          {/* Emoji & GIF */}
           {showEmojiPicker && (
-            <div>
-              <EmojiPicker
-                onEmojiClick={(emojiData) => handleEmojiSelect(emojiData.emoji)}
-                theme="dark"
-              />
-            </div>
+            <EmojiPicker
+              onEmojiClick={(e) => handleEmojiSelect(e.emoji)}
+              theme="dark"
+            />
           )}
-
-          {/* GIF Picker */}
           {showGifPicker && (
-            <div>
-              <GifPicker
-                onGifClick={(gifData) => handleGifSelect(gifData.url)}
-                tenorApiKey={"AIzaSyB78CUkLJjdlA67853bVqpcwjJaywRAlaQ"}
-                categoryHeight={100}
-                theme="dark"
-              />
-            </div>
+            <GifPicker
+              onGifClick={(g) => handleGifSelect(g.url)}
+              tenorApiKey="AIzaSyB78CUkLJjdlA67853bVqpcwjJaywRAlaQ"
+              categoryHeight={100}
+              theme="dark"
+            />
           )}
 
-          {/* Media and Options Bar */}
+          {/* Media Buttons */}
           <div className="flex items-center justify-between pt-4 border-t border-border">
             <div className="flex items-center gap-2">
-              {/* Image Upload */}
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => fileInputRef.current?.click()}
-                className="text-muted-foreground hover:text-foreground cursor-pointer"
+                className="text-muted-foreground hover:text-foreground"
               >
                 <ImageIcon className="h-5 w-5" />
               </Button>
@@ -283,8 +277,6 @@ function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
                 onChange={handleImageUpload}
                 className="hidden"
               />
-
-              {/* Emoji Picker Toggle */}
               <Button
                 variant="ghost"
                 size="sm"
@@ -292,12 +284,10 @@ function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
                   setShowEmojiPicker(!showEmojiPicker);
                   setShowGifPicker(false);
                 }}
-                className="text-muted-foreground hover:text-foreground cursor-pointer"
+                className="text-muted-foreground hover:text-foreground"
               >
                 <Smile className="h-5 w-5" />
               </Button>
-
-              {/* GIF Picker Toggle */}
               <Button
                 variant="ghost"
                 size="sm"
@@ -305,59 +295,44 @@ function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
                   setShowGifPicker(!showGifPicker);
                   setShowEmojiPicker(false);
                 }}
-                className="text-muted-foreground hover:text-foreground cursor-pointer"
+                className="text-muted-foreground hover:text-foreground"
               >
                 <ImagePlay className="h-5 w-5" />
               </Button>
             </div>
 
-            {/* Privacy Selector */}
+            {/* Privacy */}
             <Select
               value={privacy}
-              onValueChange={(value: "public" | "almost-private" | "private") =>
-                setPrivacy(value)
+              onValueChange={(v: "public" | "almost-private" | "private") =>
+                setPrivacy(v)
               }
             >
-              <SelectTrigger className="w-48">
-                <div className="flex items-center gap-2">
-                  {getPrivacyIcon(privacy)}
-                  <SelectValue />
-                </div>
+              <SelectTrigger className="w-48 flex items-center gap-2">
+                {getPrivacyIcon(privacy)}
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="public">
-                  <div className="flex items-center gap-2">
-                    <span>Public</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="almost-private">
-                  <div className="flex items-center gap-2">
-                    <span>Followers</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="private">
-                  <div className="flex items-center gap-2">
-                    <span>Private</span>
-                  </div>
-                </SelectItem>
+                <SelectItem value="public">Public</SelectItem>
+                <SelectItem value="almost-private">Followers</SelectItem>
+                <SelectItem value="private">Private</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          {/* Privacy Description */}
           <p className="text-sm text-muted-foreground">
             {getPrivacyLabel(privacy)}
           </p>
 
           {/* Action Buttons */}
-          <div className="flex justify-end gap-3 pt-4 cursor-pointer">
+          <div className="flex justify-end gap-3 pt-4">
             <Button variant="outline" onClick={handleClose}>
               Cancel
             </Button>
             <Button
               onClick={handlePost}
               disabled={!content.trim() && !selectedImage}
-              className="bg-primary hover:bg-primary/90 cursor-pointer"
+              className="bg-primary hover:bg-primary/90"
             >
               Post
             </Button>
@@ -367,6 +342,3 @@ function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
     </Dialog>
   );
 }
-
-export { NewPostModal };
-export default NewPostModal;
