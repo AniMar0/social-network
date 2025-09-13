@@ -311,7 +311,6 @@ function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
               </Button>
             </div>
 
-<<<<<<< HEAD
             {/* Privacy Selector */}
             <Select
               value={privacy}
@@ -323,120 +322,6 @@ function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
                 <div className="flex items-center gap-2">
                   {getPrivacyIcon(privacy)}
                   <SelectValue />
-=======
-                    {/* Emoji Picker */}
-                    {showEmojiPicker && (
-                        <div>
-                        <EmojiPicker
-                                onEmojiClick={(emojiData) => handleEmojiSelect(emojiData.emoji)}
-                                theme="dark"
-                    />
-                        </div>
-                    )}
-
-                    {/* GIF Picker */}
-                    {showGifPicker && (
-                        <div>
-                            <GifPicker
-                                onGifClick={(gifData) => handleGifSelect(gifData.url)}
-                                tenorApiKey={"AIzaSyB78CUkLJjdlA67853bVqpcwjJaywRAlaQ"}
-                                categoryHeight={100}
-                                theme="dark"
-                            />
-                        </div>
-                    )}
-
-                    {/* Media and Options Bar */}
-                    <div className="flex items-center justify-between pt-4 border-t border-border">
-                        <div className="flex items-center gap-2">
-                            {/* Image Upload */}
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => fileInputRef.current?.click()}
-                                className="text-muted-foreground hover:text-foreground cursor-pointer"
-                            >
-                                <ImageIcon className="h-5 w-5" />
-                            </Button>
-                            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-
-                            {/* Emoji Picker Toggle */}
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                    setShowEmojiPicker(!showEmojiPicker)
-                                    setShowGifPicker(false)
-                                }}
-                                className="text-muted-foreground hover:text-foreground cursor-pointer"
-                            >
-                                <Smile className="h-5 w-5" />
-                            </Button>
-
-                            {/* GIF Picker Toggle */}
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                    setShowGifPicker(!showGifPicker)
-                                    setShowEmojiPicker(false)
-                                }}
-                                className="text-muted-foreground hover:text-foreground cursor-pointer"
-                            >
-                                <ImagePlay className="h-5 w-5" />
-                            </Button>
-                        </div>
-
-                        {/* Privacy Selector */}
-                        <Select
-                            value={privacy}
-                            onValueChange={(value: "public" | "almost-private" | "private") => setPrivacy(value)}
-                        >
-                            <SelectTrigger className="w-48">
-                                <div className="flex items-center gap-2">
-                                    {getPrivacyIcon(privacy)}
-                                    <SelectValue />
-                                </div>
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="public">
-                                    <div className="flex items-center gap-2">
-                                        <span>Public</span>
-                                    </div>
-                                </SelectItem>
-                                <SelectItem value="almost-private">
-                                    <div className="flex items-center gap-2">
-                                        
-                                        <span>Followers</span>
-                                    </div>
-                                </SelectItem>
-                                <SelectItem value="private">
-                                    <div className="flex items-center gap-2">
-                                        
-                                        <span>Private</span>
-                                    </div>
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    {/* Privacy Description */}
-                    <p className="text-sm text-muted-foreground">{getPrivacyLabel(privacy)}</p>
-
-                    {/* Action Buttons */}
-                    <div className="flex justify-end gap-3 pt-4 cursor-pointer">
-                        <Button variant="outline" onClick={handleClose}>
-                            Cancel
-                        </Button>
-                        <Button
-                            onClick={handlePost}
-                            disabled={!content.trim() && !selectedImage}
-                            className="bg-primary hover:bg-primary/90 cursor-pointer"
-                        >
-                            Post
-                        </Button>
-                    </div>
->>>>>>> 897dc49deab185c91edd92e5dab08b4639be375a
                 </div>
               </SelectTrigger>
               <SelectContent>
