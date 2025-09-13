@@ -61,23 +61,6 @@ function UserProfile({
     setProfileData(updatedData);
     // TODO: Send updated profile data to backend
     console.log("Profile updated:", updatedData);
-    const nickname = "AniMaro"; // Replace with actual nickname from updatedData
-
-    fetch(`http://localhost:8080/api/profile?nickname=${nickname}`, {
-      credentials: "include",
-    })
-      .then(async (res) => {
-        if (!res.ok) {
-          const text = await res.text();
-          console.error("/api/profile error:", text);
-          return null;
-        }
-        return res.json();
-      })
-      .then((data) => {
-        if (data) console.log(data);
-      })
-      .catch((err) => console.error(err));
   };
 
   // Toggle follow/unfollow state

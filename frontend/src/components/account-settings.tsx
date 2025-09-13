@@ -93,25 +93,27 @@ export function ProfileSettings({ userData, onSave }: ProfileSettingsProps) {
     setIsLoading(true);
     const avatarForm = new FormData();
     avatarForm.append("avatar", avatarFile);
-
-    await fetch("http://localhost:8080/api/upload-avatar", {
-      method: "POST",
-      body: avatarForm,
-      credentials: "include",
-    })
-      .then(async (res) => {
-        if (!res.ok) {
-          const text = await res.text();
-          throw new Error(text || "Upload failed");
-        }
-        return res.json();
+    if (avatarFile) {
+      // TODO: Implement actual file upload to server and get the URL
+      await fetch("http://localhost:8080/api/upload-avatar", {
+        method: "POST",
+        body: avatarForm,
+        credentials: "include",
       })
-      .then((data) => {
-        avatarUrl = data.avatarUrl;
-      })
-      .catch((err) => {
-        console.error(err);
-      });
+        .then(async (res) => {
+          if (!res.ok) {
+            const text = await res.text();
+            throw new Error(text || "Upload failed");
+          }
+          return res.json();
+        })
+        .then((data) => {
+          avatarUrl = data.avatarUrl;
+        })
+        .catch((err) => {
+          console.error(err);
+        });
+    }
 
     formData.avatar = avatarUrl || userData.avatar;
     formData.nickname = formData.nickname || userData.nickname;

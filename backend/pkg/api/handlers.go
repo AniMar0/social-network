@@ -297,8 +297,6 @@ func (S *Server) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (S *Server) LogoutHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("LogoutHandler called")
-
 	if r.Method != http.MethodPost {
 		fmt.Println("Method not allowed:", r.Method)
 		http.Redirect(w, r, "/404", http.StatusSeeOther)
@@ -349,7 +347,6 @@ func (S *Server) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	// 	S.broadcastUserStatusChange()
 	// }()
 
-	fmt.Println("User logged out:", userID)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"message":"logged out"}`))

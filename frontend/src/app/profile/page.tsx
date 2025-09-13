@@ -22,7 +22,6 @@ export default function ProfileRedirectPage() {
 
         // Get user's profile URL/username
         const profileUrl = getUserProfileUrl(user);
-
         router.push(`/profile/${profileUrl}`);
       } catch (err) {
         console.error("Error redirecting to profile:", err);

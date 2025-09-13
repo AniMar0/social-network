@@ -94,21 +94,8 @@ export default function UserProfilePage() {
         if (isOwn) {
           // If viewing own profile, use the current user's data
           setUserData(authData.user);
-          // TODO: ADD YOUR BACKEND LOGIC HERE - Fetch current user's posts
-          // Replace this section with your backend call to get current user's posts
-          try {
-            const postsRes = await fetch(`/api/user/posts`, {
-              method: "GET",
-              credentials: "include",
-            });
-            if (postsRes.ok) {
-              const postsData = await postsRes.json();
-              setPosts(postsData.posts || []);
-            }
-          } catch (postsErr) {
-            console.error("Error fetching posts:", postsErr);
-            // Keep sample posts as fallback
-          }
+          console.log("Using current user's data for profile:", authData.user);
+          setPosts(authData.posts || []);
         } else {
           // If viewing another user's profile, fetch their data
           // TODO: ADD YOUR BACKEND LOGIC HERE - Fetch other user's profile data
@@ -126,6 +113,7 @@ export default function UserProfilePage() {
             }
             
             const profileData = await profileRes.json();
+            console.log("Fetched profile data:", profileData);
             setUserData(profileData.user);
             setPosts(profileData.posts || []);
           } catch (profileErr) {
@@ -135,11 +123,6 @@ export default function UserProfilePage() {
             return;
           }
         }
-
-        console.log(`Loading profile for username: ${username}`);
-        console.log(`Is own profile: ${isOwn}`);
-        console.log(`Current user:`, authData.user);
-        
       } catch (err) {
         console.error("Error loading profile:", err);
         router.push("/home");
@@ -167,7 +150,7 @@ export default function UserProfilePage() {
         if (currentUser) {
           // TODO: ADD YOUR BACKEND LOGIC HERE - Get user's profile URL from database
           // Replace this logic to use the actual profile URL field from your database
-          const profileUrl = currentUser.profileUrl || currentUser.nickname || currentUser.email?.split('@')[0] || currentUser.id;
+          const profileUrl = currentUser.url || currentUser.nickname || currentUser.email?.split('@')[0] || currentUser.id;
           router.push(`/profile/${profileUrl}`);
         }
         break;
