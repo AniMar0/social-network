@@ -5,8 +5,8 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
-        source: "/:path*",
-        destination: "http://localhost:8080/:path*", // backend dyalk
+        source: "/api/:path*",
+        destination: "http://localhost:8080/api/:path*", // Only rewrite API routes to backend
       },
     ];
   },

@@ -26,20 +26,20 @@ func (S *Server) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		fmt.Println(err)
-		tools.RenderErrorPage(w, r, "Invalid request body", http.StatusBadRequest)
+		tools.SendJSONError(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
 	err, found := S.UserFound(user)
 	if err != nil {
 		fmt.Println(err)
-		tools.RenderErrorPage(w, r, "Internal Server Error", http.StatusInternalServerError)
+		tools.SendJSONError(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
 	if found {
 		fmt.Println("User already exists")
-		tools.RenderErrorPage(w, r, "Status Conflict", http.StatusConflict)
+		tools.SendJSONError(w, "User already exists", http.StatusConflict)
 		return
 	}
 
@@ -53,9 +53,14 @@ func (S *Server) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err := S.AddUser(user); err != nil {
 		fmt.Println(err)
-		tools.RenderErrorPage(w, r, "Internal Server Error", http.StatusInternalServerError)
+		tools.SendJSONError(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
+
+	// Send success response
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]string{"message": "User registered successfully"})
 }
 
 func (S *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
@@ -63,27 +68,27 @@ func (S *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
 
 	if r.Method != http.MethodPost {
-		http.Redirect(w, r, "/404", http.StatusSeeOther)
+		tools.SendJSONError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
 	var user LoginUser
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
-		tools.RenderErrorPage(w, r, "Bad Request", http.StatusBadRequest)
+		tools.SendJSONError(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 	if user.Identifier == "" || user.Password == "" {
-		tools.RenderErrorPage(w, r, "Bad Request", http.StatusBadRequest)
+		tools.SendJSONError(w, "Email and password are required", http.StatusBadRequest)
 		return
 	}
 	url, hashedPassword, id, err := S.GetHashedPasswordFromDB(user.Identifier)
 	if err != nil {
-		tools.RenderErrorPage(w, r, "User Not Found", http.StatusBadRequest)
+		tools.SendJSONError(w, "Invalid email or password", http.StatusUnauthorized)
 		return
 	}
 	if err := tools.CheckPassword(hashedPassword, user.Password); err != nil {
-		tools.RenderErrorPage(w, r, "Incorrect password", http.StatusInternalServerError)
+		tools.SendJSONError(w, "Invalid email or password", http.StatusUnauthorized)
 		return
 	}
 
@@ -92,7 +97,7 @@ func (S *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	userData, err := S.GetUserData(url, id)
 	if err != nil {
 		fmt.Println(err)
-		tools.RenderErrorPage(w, r, "User Not Found", http.StatusBadRequest)
+		tools.SendJSONError(w, "Failed to retrieve user data", http.StatusInternalServerError)
 		return
 	}
 
