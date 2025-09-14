@@ -20,7 +20,7 @@ export default function ProfileRedirectPage() {
           return;
         }
         // coruunt url 
-        console.log("Current URL:", window.location.href);
+        //console.log("Current URL:", window.location.href);
         // Get user's profile URL/username
         
         router.push(`/profile/${user.url}`);

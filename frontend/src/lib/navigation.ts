@@ -19,11 +19,6 @@ export const useAppNavigation = () => {
     router.push(route);
   };
 
-/*************  ✨ Windsurf Command ⭐  *************/
-/**
- * Navigate to a user profile page using their username or custom URL
- * @param {string} url - The username or custom URL of the user to navigate to
-/*******  a4544b18-9416-4a4d-a94c-cc7ed5b8f11d  *******/
   const navigateToProfile = (url: string) => {
     router.push(`/profile/${url}`);
   };
@@ -118,7 +113,7 @@ export const authUtils = {
         credentials: "include",
       });
       const data = await res.json();
-      return data.user;
+      return data;
     } catch (err) {
       console.error("Error fetching user profile:", err);
       return null;

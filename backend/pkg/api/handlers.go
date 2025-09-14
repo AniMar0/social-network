@@ -300,7 +300,7 @@ func (S *Server) LoggedHandler(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	
+
 	userData, err := S.GetUserData("", id)
 	if err != nil {
 		fmt.Println(err)
@@ -486,7 +486,7 @@ func (S *Server) MeHandler(w http.ResponseWriter, r *http.Request) {
 		tools.RenderErrorPage(w, r, "User Not Found", http.StatusBadRequest)
 		return
 	}
-
+	
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(userData)

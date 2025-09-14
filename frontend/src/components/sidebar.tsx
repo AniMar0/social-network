@@ -46,10 +46,12 @@ function SidebarNavigation({
   ];
 
   const handleItemClick = (itemId: string) => {
+    if (currentActive === itemId) return;
     setCurrentActive(itemId);
     onNavigate?.(itemId);
     console.log("Navigation item clicked:", itemId);
   };
+  
 
   const handleNewPost = () => {
     onNewPost?.();

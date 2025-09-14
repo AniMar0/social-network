@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { HomeFeed } from "@/components/home";
 import { NewPostModal } from "@/components/newpost";
+import { authUtils } from "@/lib/navigation";
 
 const samplePosts = [
   {
@@ -70,14 +71,17 @@ export default function HomePageRoute() {
     setIsNewPostModalOpen(true);
   };
 
-  const handleNavigate = (itemId: string) => {
+  const handleNavigate = async (itemId: string) => {
     switch (itemId) {
       case "home":
         router.push("/home");
         break;
       case "profile":
         // Navigate to /profile which will redirect to current user's profile
-        router.push("/profile");
+        // TODO: ADD YOUR BACKEND LOGIC HERE - Get user's profile URL from database
+        // const user = await authUtils.CurrentUser();
+        // console.log(user);
+        // router.push(`/profile/${user.url}`);
         break;
       case "auth":
         // Handle logout
