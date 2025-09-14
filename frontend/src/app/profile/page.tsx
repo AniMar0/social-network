@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { authUtils } from "@/lib/navigation";
 
 export default function ProfileRedirectPage() {
-  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {

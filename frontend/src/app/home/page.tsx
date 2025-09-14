@@ -6,28 +6,6 @@ import { HomeFeed } from "@/components/home";
 import { NewPostModal } from "@/components/newpost";
 import { authUtils } from "@/lib/navigation";
 
-const samplePosts = [
-  {
-    id: "1",
-    content:
-      "When navigating the social network the user should be able to follow and unfollow other users. Needless to say that to unfollow a user you have to be following him/her. 🔥🔥",
-    image: "https://pbs.twimg.com/media/EdYcDByWsAAdokm?format=jpg&name=small",
-    createdAt: "2025-12-09",
-    likes: 15,
-    comments: 3,
-    isLiked: false,
-  },
-  {
-    id: "2",
-    content:
-      "Just finished working on an amazing new project! The intersection of AI and user experience design continues to fascinate me. What are your thoughts on how AI will shape the future of digital interfaces?",
-    createdAt: "2025-12-08",
-    likes: 28,
-    comments: 7,
-    isLiked: true,
-  },
-];
-
 export default function HomePageRoute() {
   const [isNewPostModalOpen, setIsNewPostModalOpen] = useState(false);
   const [userLoggedIn, setUserLoggedIn] = useState(false);
@@ -80,8 +58,7 @@ export default function HomePageRoute() {
         // Navigate to /profile which will redirect to current user's profile
         // TODO: ADD YOUR BACKEND LOGIC HERE - Get user's profile URL from database
         const user = await authUtils.CurrentUser();
-        console.log(user);
-        router.push(`/profile/${user.url}`);
+        handleUserProfileClick(user.url);
         break;
       case "auth":
         // Handle logout
@@ -92,9 +69,9 @@ export default function HomePageRoute() {
     }
   };
 
-  const handleUserProfileClick = (username: string) => {
+  const handleUserProfileClick = (url: string) => {
     // Navigate to user profile using their username/url
-    router.push(`/profile/${username}`);
+    router.push(`/profile/${url}`);
   };
 
   const handlePostSubmit = (postData: any) => {

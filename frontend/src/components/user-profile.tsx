@@ -52,7 +52,9 @@ function UserProfile({
   // State for profile data (can be updated by settings dialog)
   const [profileData, setProfileData] = useState(userData);
   // State for following/unfollowing this user
-  const [followingState, setFollowingState] = useState(userData.isfollowing || isFollowing);
+  const [followingState, setFollowingState] = useState(
+    userData.isfollowing || isFollowing
+  );
   // State for liked posts (IDs)
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
 
@@ -66,58 +68,58 @@ function UserProfile({
   // Toggle follow/unfollow state
   // TODO: Call backend to follow/unfollow user
   const handleFollowToggle = async () => {
-  try {
-    const res = await fetch("http://localhost:8080/api/logged", {
-      method: "POST",
-      credentials: "include",
-    });
-
-    //if (!res.ok) throw new Error("Auth check failed");
-
-    const data = await res.json();
-    const currentUser: UserData = data.user;
-
-    if (!currentUser) {
-      console.error("No logged in user");
-      return;
-    }
-
-    const body = {
-      follower: currentUser.id,      // اللي دار الفولو (أنا)
-      following: profileData.id,     // اللي نْدارلو الفولو
-    };
-
-    if (followingState) {
-      await fetch("http://localhost:8080/api/unfollow", {
+    try {
+      const res = await fetch("http://localhost:8080/api/logged", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(body),
       });
 
-      setProfileData((prev) => ({
-        ...prev,
-        followersCount: prev.followersCount - 1,
-      }));
-    } else {
-      await fetch("http://localhost:8080/api/follow", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(body),
-      });
+      //if (!res.ok) throw new Error("Auth check failed");
 
-      setProfileData((prev) => ({
-        ...prev,
-        followersCount: prev.followersCount + 1,
-      }));
+      const data = await res.json();
+      const currentUser: UserData = data.user;
+
+      if (!currentUser) {
+        console.error("No logged in user");
+        return;
+      }
+
+      const body = {
+        follower: currentUser.id,
+        following: profileData.id,
+      };
+
+      if (followingState) {
+        await fetch("http://localhost:8080/api/unfollow", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(body),
+        });
+
+        setProfileData((prev) => ({
+          ...prev,
+          followersCount: prev.followersCount - 1,
+        }));
+      } else {
+        await fetch("http://localhost:8080/api/follow", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(body),
+        });
+
+        setProfileData((prev) => ({
+          ...prev,
+          followersCount: prev.followersCount + 1,
+        }));
+      }
+
+      setFollowingState(!followingState);
+    } catch (err) {
+      console.error("Error toggling follow:", err);
     }
-
-    setFollowingState(!followingState);
-  } catch (err) {
-    console.error("Error toggling follow:", err);
-  }
-};
+  };
 
   // Like or unlike a post
   // TODO: Call backend to like/unlike post
@@ -316,7 +318,11 @@ function UserProfile({
                         {post.image && (
                           <div className="rounded-lg overflow-hidden">
                             <img
-                              src={`http://localhost:8080/${post.image}`}
+                              src={
+                                post.image.startsWith("http")
+                                  ? post.image // external URL
+                                  : `http://localhost:8080/${post.image}` // internal URL 
+                              }
                               alt="Post content"
                               className="w-full h-auto max-h-96 object-cover"
                             />

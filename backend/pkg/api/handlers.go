@@ -440,7 +440,7 @@ func (S *Server) CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if strings.TrimSpace(post.Content) == "" {
+	if strings.TrimSpace(post.Content) == "" && post.Image == nil {
 		http.Error(w, "Content cannot be empty", http.StatusBadRequest)
 		return
 	}
@@ -486,7 +486,7 @@ func (S *Server) MeHandler(w http.ResponseWriter, r *http.Request) {
 		tools.RenderErrorPage(w, r, "User Not Found", http.StatusBadRequest)
 		return
 	}
-	
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(userData)
