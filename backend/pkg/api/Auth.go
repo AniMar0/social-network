@@ -39,7 +39,6 @@ func (S *Server) LoggedHandler(w http.ResponseWriter, r *http.Request) {
 		"loggedIn": true,
 	})
 }
-
 func (S *Server) MakeToken(Writer http.ResponseWriter, id int) {
 	sessionID := uuid.NewV4().String()
 	expirationTime := time.Now().Add(24 * time.Hour)
