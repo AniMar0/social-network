@@ -26,7 +26,7 @@ import {
   Users,
   Lock,
 } from "lucide-react";
-import EmojiPicker from "emoji-picker-react";
+import EmojiPicker, { Theme } from "emoji-picker-react";
 import GifPicker from "gif-picker-react";
 import { authUtils } from "@/lib/navigation";
 
@@ -248,7 +248,7 @@ export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
           {showEmojiPicker && (
             <EmojiPicker
               onEmojiClick={(e) => handleEmojiSelect(e.emoji)}
-              theme="dark"
+              theme={Theme.DARK}
             />
           )}
           {showGifPicker && (
@@ -256,7 +256,7 @@ export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
               onGifClick={(g) => handleGifSelect(g.url)}
               tenorApiKey="AIzaSyB78CUkLJjdlA67853bVqpcwjJaywRAlaQ"
               categoryHeight={100}
-              theme="dark"
+              theme={Theme.DARK}
             />
           )}
 

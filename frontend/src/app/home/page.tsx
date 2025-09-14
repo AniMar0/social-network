@@ -79,9 +79,9 @@ export default function HomePageRoute() {
       case "profile":
         // Navigate to /profile which will redirect to current user's profile
         // TODO: ADD YOUR BACKEND LOGIC HERE - Get user's profile URL from database
-        // const user = await authUtils.CurrentUser();
-        // console.log(user);
-        // router.push(`/profile/${user.url}`);
+        const user = await authUtils.CurrentUser();
+        console.log(user);
+        router.push(`/profile/${user.url}`);
         break;
       case "auth":
         // Handle logout
