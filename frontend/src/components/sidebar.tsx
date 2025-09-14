@@ -43,6 +43,7 @@ function SidebarNavigation({
     { id: "messages", label: "Messages", icon: MessageSquare },
     { id: "groups", label: "Groups", icon: Users },
     { id: "profile", label: "Profile", icon: User },
+
   ];
 
   const handleItemClick = (itemId: string) => {

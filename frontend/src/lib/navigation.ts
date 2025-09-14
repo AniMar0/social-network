@@ -152,7 +152,7 @@ export const profileUtils = {
       }
 
       const data = await res.json();
-      return data.user;
+      return data;
     } catch (err) {
       console.error("Error fetching user profile:", err);
       return null;

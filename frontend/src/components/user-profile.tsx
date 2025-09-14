@@ -19,6 +19,7 @@ import {
   MessageSquare,
   Lock,
 } from "lucide-react";
+import { authUtils } from "@/lib/navigation";
 
 // Post interface for user posts
 export interface Post {
@@ -69,16 +70,7 @@ function UserProfile({
   // TODO: Call backend to follow/unfollow user
   const handleFollowToggle = async () => {
     try {
-      const res = await fetch("http://localhost:8080/api/logged", {
-        method: "POST",
-        credentials: "include",
-      });
-
-      //if (!res.ok) throw new Error("Auth check failed");
-
-      const data = await res.json();
-      const currentUser: UserData = data.user;
-
+      const currentUser = await authUtils.CurrentUser();
       if (!currentUser) {
         console.error("No logged in user");
         return;
@@ -154,7 +146,7 @@ function UserProfile({
       {/* Sidebar Navigation - fixed and full height */}
       <aside className="fixed top-0 left-0 h-screen w-64 z-30 border-r border-border bg-card">
         <SidebarNavigation
-          activeItem="profile"
+          activeItem={isOwnProfile ? "profile" : ""}
           onNavigate={handleNavigation}
           onNewPost={handleNewPost}
         />
