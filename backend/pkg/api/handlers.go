@@ -293,9 +293,14 @@ func (S *Server) LoggedHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	id, _, err := S.CheckSession(r)
 	if err != nil {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"user":     nil,
+			"loggedIn": false,
+		})
 		return
 	}
+	
 	userData, err := S.GetUserData("", id)
 	if err != nil {
 		fmt.Println(err)
@@ -474,7 +479,7 @@ func (S *Server) MeHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	
+
 	userData, err := S.GetUserData("", id)
 	if err != nil {
 		fmt.Println(err)
