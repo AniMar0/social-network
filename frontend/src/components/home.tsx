@@ -124,7 +124,7 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
     const handleNavigation = (itemId: string) => {
         // bubble up navigation to parent if provided
         onNavigate?.(itemId)
-        console.log("Navigating to:", itemId)
+        console.log("Navigating to: home", itemId)
     }
 
     return (

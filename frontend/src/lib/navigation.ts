@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 
 export interface NavigationProps {
   onNavigate?: (itemId: string) => void;
-  onUserProfileClick?: (username: string) => void;
+  onUserProfileClick?: (url: string) => void;
 }
 
 /**
@@ -19,8 +19,13 @@ export const useAppNavigation = () => {
     router.push(route);
   };
 
-  const navigateToProfile = (username: string) => {
-    router.push(`/profile/${username}`);
+/*************  ✨ Windsurf Command ⭐  *************/
+/**
+ * Navigate to a user profile page using their username or custom URL
+ * @param {string} url - The username or custom URL of the user to navigate to
+/*******  a4544b18-9416-4a4d-a94c-cc7ed5b8f11d  *******/
+  const navigateToProfile = (url: string) => {
+    router.push(`/profile/${url}`);
   };
 
   const navigateToHome = () => {
@@ -31,14 +36,16 @@ export const useAppNavigation = () => {
     router.push("/");
   };
 
-  const handleStandardNavigation = (itemId: string) => {
+  const handleStandardNavigation = async (itemId: string) => {
     switch (itemId) {
       case "home":
         navigateToHome();
         break;
       case "profile":
-        // Navigate to /profile which will redirect to current user's profile
-        navigateTo("/profile");
+        // Navigate to current user's profile
+        // TODO: ADD YOUR BACKEND LOGIC HERE - Get user's profile URL from database
+        const user = await authUtils.CurrentUser();
+        navigateToProfile(user.url);
         break;
       case "auth":
         navigateToAuth();
@@ -60,33 +67,6 @@ export const useAppNavigation = () => {
 /**
  * Utility function to get user profile URL
  */
-export const getUserProfileUrl = (user: any): string => {
-  // TODO: Update this based on your backend user structure
-  // If users have a custom URL field, use that, otherwise use nickname or id
-  
-  // Priority order: profileUrl > nickname > email (before @) > id
-
-  if (user.nickname && user.nickname.trim()) {
-    return user.nickname.trim();
-  }
-
-  if (user.url && user.url.trim()) {
-    return user.url.trim();
-  }
-  
-  
-  
-  // Fallback: use email username part (before @)
-  if (user.email) {
-    const emailUsername = user.email.split('@')[0];
-    if (emailUsername && isValidProfileUrl(emailUsername)) {
-      return emailUsername;
-    }
-  }
-  
-  // Final fallback: use user ID
-  return user.id || 'user';
-};
 
 /**
  * Utility function to check if a URL is a valid username/profile URL
@@ -101,7 +81,7 @@ export const isValidProfileUrl = (url: string): boolean => {
  * Utility function to extract username from current URL
  */
 export const extractUsernameFromUrl = (pathname: string): string | null => {
-  const segments = pathname.split('/').filter(Boolean);
+  const segments = pathname.split("/").filter(Boolean);
   if (segments.length === 1 && isValidProfileUrl(segments[0])) {
     return segments[0];
   }
@@ -131,6 +111,19 @@ export const authUtils = {
     }
   },
 
+  CurrentUser: async () => {
+    try {
+      const res = await fetch("http://localhost:8080/api/me", {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = await res.json();
+      return data.user;
+    } catch (err) {
+      console.error("Error fetching user profile:", err);
+      return null;
+    }
+  },
   logout: async () => {
     try {
       await fetch("http://localhost:8080/api/logout", {

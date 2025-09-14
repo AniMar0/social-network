@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { authUtils, getUserProfileUrl } from "@/lib/navigation";
+import { authUtils } from "@/lib/navigation";
 
 export default function ProfileRedirectPage() {
   const [loading, setLoading] = useState(true);
@@ -19,10 +19,11 @@ export default function ProfileRedirectPage() {
           router.push("/");
           return;
         }
-
+        // coruunt url 
+        console.log("Current URL:", window.location.href);
         // Get user's profile URL/username
-        const profileUrl = getUserProfileUrl(user);
-        router.push(`/profile/${profileUrl}`);
+        
+        router.push(`/profile/${user.url}`);
       } catch (err) {
         console.error("Error redirecting to profile:", err);
         // If there's an error, redirect to home

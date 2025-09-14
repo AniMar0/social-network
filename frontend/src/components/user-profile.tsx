@@ -138,7 +138,7 @@ function UserProfile({
   const handleNavigation = (itemId: string) => {
     // bubble navigation event to parent if provided
     onNavigate?.(itemId);
-    console.log("Navigating to:", itemId);
+    console.log("Navigating to 1:", itemId);
   };
 
   const handleNewPost = () => {
