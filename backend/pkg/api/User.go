@@ -2,12 +2,15 @@ package backend
 
 import (
 	tools "SOCIAL-NETWORK/pkg"
+	"database/sql"
 	"encoding/json"
 	"fmt"
+	"html"
 	"net/http"
 	"time"
 
 	"github.com/twinj/uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func (S *Server) RegisterHandler(w http.ResponseWriter, r *http.Request) {
@@ -181,4 +184,98 @@ func (S *Server) MeHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(userData)
+}
+
+func (S *Server) AddUser(user User) error {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	// Handle nullable nickname - insert NULL if empty
+	var nickname interface{}
+	if user.Nickname == "" {
+		nickname = nil
+	} else {
+		nickname = html.EscapeString(user.Nickname)
+	}
+
+	// Handle nullable aboutMe - insert NULL if empty
+	var aboutMe interface{}
+	if user.AboutMe == "" {
+		aboutMe = nil
+	} else {
+		aboutMe = html.EscapeString(user.AboutMe)
+	}
+
+	query := `INSERT INTO users (first_name, last_name, birthdate, age, avatar, nickname, about_me,email,password,gender, url)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	_, err = S.db.Exec(query,
+		html.EscapeString(user.FirstName),
+		html.EscapeString(user.LastName),
+		html.EscapeString(user.DateOfBirth),
+		user.Age,
+		html.EscapeString(user.AvatarUrl),
+		nickname,
+		aboutMe,
+		html.EscapeString(user.Email),
+		string(hashedPassword),
+		html.EscapeString(user.Gender),
+		html.EscapeString(user.Url))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (S *Server) GetHashedPasswordFromDB(identifier string) (string, string, int, error) {
+	var hashedPassword, url string
+	var id int
+
+	err := S.db.QueryRow(`
+		SELECT password, id, url FROM users 
+		WHERE nickname = ? OR email = ?
+	`, identifier, identifier).Scan(&hashedPassword, &id, &url)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", "", 0, fmt.Errorf("this user does not exist")
+		}
+		return "", "", 0, err
+	}
+	return url, hashedPassword, id, nil
+}
+
+func (S *Server) GetUserData(url string, id int) (UserData, error) {
+	var user UserData
+
+	err := S.db.QueryRow(`
+		SELECT id, first_name, last_name, nickname, email, birthdate, avatar, about_me, is_private, created_at, url
+		FROM users 
+		WHERE url = ? OR id = ?
+	`, url, id).Scan(
+		&user.ID,
+		&user.FirstName,
+		&user.LastName,
+		&user.Nickname,
+		&user.Email,
+		&user.DateOfBirth,
+		&user.Avatar,
+		&user.AboutMe,
+		&user.IsPrivate,
+		&user.JoinedDate,
+		&user.Url,
+	)
+	if err != nil {
+		return UserData{}, err
+	}
+
+	user.FollowersCount, _ = S.GetFollowersCount(url)
+
+	user.FollowingCount, _ = S.GetFollowingCount(url)
+
+	// row := S.db.QueryRow(`SELECT COUNT(*) FROM posts WHERE author_id = ?`, user.ID)
+	// row.Scan(&user.PostsCount)
+
+	return user, nil
 }

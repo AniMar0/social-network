@@ -1,0 +1,113 @@
+package backend
+
+import (
+	tools "SOCIAL-NETWORK/pkg"
+	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"time"
+
+	"github.com/twinj/uuid"
+)
+
+func (S *Server) LoggedHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/404", http.StatusSeeOther)
+		return
+	}
+	id, _, err := S.CheckSession(r)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"user":     nil,
+			"loggedIn": false,
+		})
+		return
+	}
+
+	userData, err := S.GetUserData("", id)
+	if err != nil {
+		fmt.Println(err)
+		tools.RenderErrorPage(w, r, "User Not Found", http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"user":     userData,
+		"loggedIn": true,
+	})
+}
+
+func (S *Server) MakeToken(Writer http.ResponseWriter, id int) {
+	sessionID := uuid.NewV4().String()
+	expirationTime := time.Now().Add(24 * time.Hour)
+
+	_, err := S.db.Exec("INSERT INTO sessions (session_id, user_id, expires_at) VALUES (?, ?, ?)",
+		sessionID, id, expirationTime)
+	if err != nil {
+		fmt.Println("Error creating session:", err)
+		http.Error(Writer, "Error creating session", http.StatusInternalServerError)
+		return
+	}
+
+	http.SetCookie(Writer, &http.Cookie{
+		Name:     "session_token",
+		Value:    sessionID,
+		Expires:  expirationTime,
+		HttpOnly: true,
+		Path:     "/",
+		SameSite: http.SameSiteLaxMode,
+		Secure:   false,
+	})
+}
+
+func (S *Server) CheckSession(r *http.Request) (int, string, error) {
+
+	cookie, err := r.Cookie("session_token")
+	if err != nil {
+		return 0, "", fmt.Errorf("no session cookie")
+	}
+	sessionID := cookie.Value
+	var userID int
+	err = S.db.QueryRow(`
+        SELECT user_id FROM sessions 
+        WHERE session_id = ? AND expires_at > CURRENT_TIMESTAMP
+    `, sessionID).Scan(&userID)
+
+	if err != nil {
+		return 0, "", fmt.Errorf("invalid or expired session")
+	}
+	return userID, sessionID, nil
+}
+
+func (S *Server) IsFollowing(r *http.Request, followingURL string) (bool, error) {
+	followerID, _, _ := S.CheckSession(r)
+	var followingID int
+	err := S.db.QueryRow(`SELECT id FROM users WHERE url = ?`, followingURL).Scan(&followingID)
+	if err != nil {
+		return false, err
+	}
+
+	var isFollowing bool
+	err = S.db.QueryRow(`SELECT EXISTS(SELECT 1 FROM follows WHERE follower_id = ? AND following_id = ?)`, followerID, followingID).Scan(&isFollowing)
+	if err != nil {
+		return false, err
+	}
+
+	return isFollowing, nil
+}
+
+func (S *Server) SessionMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		username, _, err := S.CheckSession(r)
+		if err != nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), "username", username)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}

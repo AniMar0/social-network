@@ -123,6 +123,57 @@ func (S *Server) UnfollowHandler(w http.ResponseWriter, r *http.Request) {
 		"message": "unfollowed successfully",
 	})
 }
+
+func (S *Server) FollowUser(follower, following string) error {
+	if follower == following {
+		return fmt.Errorf("you cannot follow yourself")
+	}
+
+	_, err := S.db.Exec(`
+		INSERT INTO follows (follower_id, following_id) VALUES (?, ?)
+		ON CONFLICT(follower_id, following_id) DO NOTHING
+	`, follower, following)
+
+	return err
+}
+
+func (S *Server) UnfollowUser(follower, following string) error {
+	_, err := S.db.Exec(`
+		DELETE FROM follows WHERE follower_id = ? AND following_id = ?
+	`, follower, following)
+
+	return err
+}
+
+func (S *Server) GetFollowersCount(url string) (int, error) {
+	row := S.db.QueryRow(`
+		SELECT COUNT(*) 
+		FROM follows f
+		JOIN users u ON u.id = f.following_id
+		WHERE u.url = ?
+	`, url)
+
+	var count int
+	if err := row.Scan(&count); err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+func (S *Server) GetFollowingCount(url string) (int, error) {
+	row := S.db.QueryRow(`
+		SELECT COUNT(*) 
+		FROM follows f
+		JOIN users u ON u.id = f.follower_id
+		WHERE u.url = ?
+	`, url)
+
+	var count int
+	if err := row.Scan(&count); err != nil {
+		return 0, err
+	}
+	return count, nil
+}
 func (S *Server) UploadAvatarHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("called AvatarHandeler")
 	if r.Method != http.MethodPost {
@@ -193,4 +244,51 @@ func (S *Server) UpdateProfileHandler(w http.ResponseWriter, r *http.Request) {
 		"success": true,
 		"user":    user,
 	})
+}
+
+func (S *Server) UserFound(user User) (error, bool) {
+	var exists int
+	var query string
+	var args []interface{}
+
+	if user.Nickname != "" {
+		// Check both email and nickname if nickname is provided
+		query = "SELECT COUNT(*) FROM users WHERE email = ? OR nickname = ?"
+		args = []interface{}{user.Email, user.Nickname}
+	} else {
+		// Only check email if nickname is empty (we allow multiple NULL nicknames)
+		query = "SELECT COUNT(*) FROM users WHERE email = ?"
+		args = []interface{}{user.Email}
+	}
+
+	err := S.db.QueryRow(query, args...).Scan(&exists)
+	if err != nil {
+		return err, false
+	}
+	if exists > 0 {
+		return nil, true
+	}
+	return nil, false
+}
+
+func (S *Server) RemoveOldAvatar(userID int, newAvatar string) error {
+	// Get the avatar filename from the database
+	var oldAvatar string
+	err := S.db.QueryRow(`SELECT avatar FROM users WHERE id = ?`, userID).Scan(&oldAvatar)
+	if err != nil {
+		return err
+	}
+
+	if oldAvatar == "/uploads/default.jpg" || oldAvatar == newAvatar {
+		return nil
+	}
+	// Remove the avatar file from uploads folder if it exists and is not empty
+	if oldAvatar != "" {
+		avatarPath := fmt.Sprintf(".%s", oldAvatar)
+		if err := os.Remove(avatarPath); err != nil && !os.IsNotExist(err) {
+			return err
+		}
+	}
+
+	return nil
 }
