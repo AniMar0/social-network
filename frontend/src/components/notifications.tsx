@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -18,41 +17,6 @@ interface NotificationsPageProps {
 }
 
 function NotificationsPage({ onNewPost, onNavigate }: NotificationsPageProps) {
-  const [userLoggedIn, setUserLoggedIn] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const res = await fetch("http://localhost:8080/api/logged", {
-          method: "POST",
-          credentials: "include",
-        });
-
-        if (!res.ok) {
-          router.push("/");
-          return;
-        }
-
-        const data = await res.json();
-        if (!data.loggedIn) {
-          router.push("/");
-          return;
-        }
-
-        setUserLoggedIn(true);
-      } catch (err) {
-        console.error("Error checking auth:", err);
-        router.push("/");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, [router]);
-
   // Use shared notification utilities
   const notificationCount = useNotificationCount();
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -68,10 +32,8 @@ function NotificationsPage({ onNewPost, onNavigate }: NotificationsPageProps) {
       }
     };
 
-    if (userLoggedIn) {
-      loadNotifications();
-    }
-  }, [userLoggedIn]);
+    loadNotifications();
+  }, []);
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -113,59 +75,26 @@ function NotificationsPage({ onNewPost, onNavigate }: NotificationsPageProps) {
     handleDelete(notificationId);
   };
 
-  const handleNavigate = async (itemId: string) => {
-    switch (itemId) {
-      case "home":
-        router.push("/home");
-        break;
-      case "notifications":
-        router.push("/notifications");
-        break;
-      case "profile":
-        const user = await authUtils.CurrentUser();
-        router.push(`/profile/${user.url}`);
-        break;
-      case "auth":
-        router.push("/");
-        break;
-      default:
-        router.push("/home");
+  const handleMarkAllAsRead = async () => {
+    try {
+      const unreadNotifications = notifications.filter((notif) => !notif.isRead);
+      await Promise.all(unreadNotifications.map((notif) => markNotificationAsRead(notif.id)));
+      setNotifications((prev) => prev.map((notif) => ({ ...notif, isRead: true })));
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
     }
-    };
-    const handleMarkAllAsRead = async () => {
-      try {
-        const unreadNotifications = notifications.filter((notif) => !notif.isRead);
-        await Promise.all(unreadNotifications.map((notif) => markNotificationAsRead(notif.id)));
-        setNotifications((prev) => prev.map((notif) => ({ ...notif, isRead: true })));
-      } catch (error) {
-        console.error('Error marking all notifications as read:', error);
-      }
-    };
+  };
 
-    const handleNewPost = () => {
+  const handleNewPost = () => {
     onNewPost?.();
     console.log("New post clicked");
   };
-
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div>Loading...</div>
-      </div>
-    );
-  }
-
-  if (!userLoggedIn) {
-    return null; // Will redirect
-  }
-
 
   return (
     <div className="flex h-screen bg-background">
       <SidebarNavigation
         activeItem="notifications"
-        onNavigate={handleNavigate}
+        onNavigate={onNavigate}
         onNewPost={handleNewPost}
         notificationCount={notificationCount}
       />
