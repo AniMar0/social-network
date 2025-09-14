@@ -27,12 +27,14 @@ interface SidebarNavigationProps {
   activeItem?: string;
   onNavigate?: (itemId: string) => void;
   onNewPost?: () => void;
+  notificationCount?: number;
 }
 
 function SidebarNavigation({
   activeItem = "home",
   onNavigate,
   onNewPost,
+  notificationCount = 0,
 }: SidebarNavigationProps) {
   const [currentActive, setCurrentActive] = useState(activeItem);
 
@@ -47,7 +49,7 @@ function SidebarNavigation({
   ];
 
   const handleItemClick = (itemId: string) => {
-    if (currentActive === itemId) return;
+    // Always allow navigation to ensure routing works properly
     setCurrentActive(itemId);
     onNavigate?.(itemId);
     console.log("Navigation item clicked:", itemId);
@@ -102,7 +104,7 @@ function SidebarNavigation({
               <li key={item.id}>
                 <button
                   onClick={() => handleItemClick(item.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors relative ${
                     isActive
                       ? "bg-primary/10 text-primary font-medium"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
@@ -110,6 +112,11 @@ function SidebarNavigation({
                 >
                   <Icon className="h-5 w-5" />
                   <span>{item.label}</span>
+                  {item.id === "notifications" && notificationCount > 0 && (
+                    <span className="ml-auto bg-primary/90 text-white text-xs rounded-sm h-5 w-5 flex items-center justify-center">
+                      {notificationCount > 99 ? "99+" : notificationCount}
+                    </span>
+                  )}
                 </button>
               </li>
             );

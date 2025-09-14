@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Heart, MessageCircle, Share, MoreHorizontal } from "lucide-react"
+import { useNotificationCount } from "@/lib/notifications"
 
 interface Post {
     id: string
@@ -31,6 +32,9 @@ interface HomeFeedProps {
 }
 
 function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
+    // Get notification count for sidebar
+    const notificationCount = useNotificationCount();
+    
     const [posts, setPosts] = useState<Post[]>([
         {
             id: "1",
@@ -135,6 +139,7 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
                     activeItem="home"
                     onNavigate={handleNavigation}
                     onNewPost={handleNewPost}
+                    notificationCount={notificationCount}
                 />
             </aside>
 
@@ -171,9 +176,6 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
                                             </p>
                                         </div>
                                     </div>
-                                    <Button variant="ghost" size="sm">
-                                        <MoreHorizontal className="h-4 w-4" />
-                                    </Button>
                                 </div>
 
                                 {/* Post Content */}
@@ -190,23 +192,7 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
                                     )}
                                 </div>
 
-                                {/* Privacy Indicator */}
-                                <div className="mb-4">
-                                    <span
-                                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${post.privacy === "public"
-                                                ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                                                : post.privacy === "almost-private"
-                                                    ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
-                                                    : "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
-                                            }`}
-                                    >
-                                        {post.privacy === "public"
-                                            ? "🌍 Public"
-                                            : post.privacy === "almost-private"
-                                                ? "👥 Followers"
-                                                : "🔒 Private"}
-                                    </span>
-                                </div>
+                            
 
                                 {/* Post Actions */}
                                 <div className="flex items-center justify-between pt-4 border-t border-border">
@@ -223,10 +209,6 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
                                         <Button variant="ghost" size="sm" className="flex items-center gap-2 text-muted-foreground">
                                             <MessageCircle className="h-4 w-4" />
                                             <span>{post.comments}</span>
-                                        </Button>
-                                        <Button variant="ghost" size="sm" className="flex items-center gap-2 text-muted-foreground">
-                                            <Share className="h-4 w-4" />
-                                            <span>{post.shares}</span>
                                         </Button>
                                     </div>
                                 </div>

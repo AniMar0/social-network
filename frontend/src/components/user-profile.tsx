@@ -20,6 +20,7 @@ import {
   Lock,
 } from "lucide-react";
 import { authUtils } from "@/lib/navigation";
+import { useNotificationCount } from "@/lib/notifications";
 
 // Post interface for user posts
 export interface Post {
@@ -50,11 +51,18 @@ function UserProfile({
   onNewPost,
   onNavigate,
 }: UserProfileProps) {
+  // Get notification count for sidebar
+  const notificationCount = useNotificationCount();
+  
   // State for profile data (can be updated by settings dialog)
   const [profileData, setProfileData] = useState(userData);
   // State for following/unfollowing this user
   const [followingState, setFollowingState] = useState(
     userData.isfollowing || isFollowing
+  );
+  // State for follow request status
+  const [followRequestStatus, setFollowRequestStatus] = useState<"none" | "pending" | "accepted" | "declined">(
+    userData.followRequestStatus || "none"
   );
   // State for liked posts (IDs)
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
@@ -66,8 +74,7 @@ function UserProfile({
     console.log("Profile updated:", updatedData);
   };
 
-  // Toggle follow/unfollow state
-  // TODO: Call backend to follow/unfollow user
+  // Toggle follow/unfollow state or send follow request for private profiles
   const handleFollowToggle = async () => {
     try {
       const currentUser = await authUtils.CurrentUser();
@@ -82,6 +89,7 @@ function UserProfile({
       };
 
       if (followingState) {
+        // Unfollow user
         await fetch("http://localhost:8080/api/unfollow", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -93,21 +101,47 @@ function UserProfile({
           ...prev,
           followersCount: prev.followersCount - 1,
         }));
-      } else {
-        await fetch("http://localhost:8080/api/follow", {
+        setFollowingState(false);
+        setFollowRequestStatus("none");
+      } else if (followRequestStatus === "pending") {
+        // Cancel pending follow request
+        await fetch("http://localhost:8080/api/cancel-follow-request", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify(body),
         });
+        
+        setFollowRequestStatus("none");
+      } else {
+        // Check if profile is private
+        if (profileData.isPrivate) {
+          // Send follow request for private profile
+          await fetch("http://localhost:8080/api/follow-request", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(body),
+          });
+          
+          setFollowRequestStatus("pending");
+        } else {
+          // Follow public profile instantly
+          await fetch("http://localhost:8080/api/follow", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(body),
+          });
 
-        setProfileData((prev) => ({
-          ...prev,
-          followersCount: prev.followersCount + 1,
-        }));
+          setProfileData((prev) => ({
+            ...prev,
+            followersCount: prev.followersCount + 1,
+          }));
+          setFollowingState(true);
+          setFollowRequestStatus("accepted");
+        }
       }
-
-      setFollowingState(!followingState);
     } catch (err) {
       console.error("Error toggling follow:", err);
     }
@@ -127,12 +161,57 @@ function UserProfile({
   };
 
   // Can the current user view posts? (private logic)
-  const canViewPosts = isOwnProfile || !profileData.isPrivate || followingState;
+  const canViewPosts = isOwnProfile || !profileData.isPrivate || (followingState && followRequestStatus === "accepted");
+
+  // Get follow button text based on current state
+  const getFollowButtonText = () => {
+    if (followingState) {
+      return "Following";
+    }
+    
+    if (profileData.isPrivate) {
+      switch (followRequestStatus) {
+        case "pending":
+          return "Cancel Request";
+        case "declined":
+          return "Request Declined";
+        default:
+          return "Send Follow Request";
+      }
+    }
+    
+    return "Follow";
+  };
+
+  // Get follow button variant based on current state
+  const getFollowButtonVariant = () => {
+    if (followingState) {
+      return "outline" as const;
+    }
+    
+    if (followRequestStatus === "pending") {
+      return "outline" as const;
+    }
+    
+    if (followRequestStatus === "declined") {
+      return "destructive" as const;
+    }
+    
+    return "default" as const;
+  };
 
   const handleNavigation = (itemId: string) => {
-    // bubble navigation event to parent if provided
-    onNavigate?.(itemId);
-    console.log("Navigating to 1:", itemId);
+    // If parent provides navigation handler, use it
+    if (onNavigate) {
+      onNavigate(itemId);
+      console.log("Navigating via parent handler:", itemId);
+    } else {
+      // Fallback navigation for standalone usage
+      console.log("Using fallback navigation:", itemId);
+      // This component can be used independently, so provide basic routing
+      // Note: You may want to use Next.js router here if this component
+      // is used in pages without proper navigation handlers
+    }
   };
 
   const handleNewPost = () => {
@@ -149,6 +228,7 @@ function UserProfile({
           activeItem={isOwnProfile ? "profile" : ""}
           onNavigate={handleNavigation}
           onNewPost={handleNewPost}
+          notificationCount={notificationCount}
         />
       </aside>
 
@@ -243,11 +323,12 @@ function UserProfile({
                     </Button>
                     <Button
                       onClick={handleFollowToggle}
-                      variant={followingState ? "outline" : "default"}
+                      variant={getFollowButtonVariant()}
                       className="flex items-center gap-2 cursor-pointer"
+                      disabled={followRequestStatus === "declined"}
                     >
                       <Users className="h-4 w-4" />
-                      {followingState ? "Following" : "Follow"}
+                      {getFollowButtonText()}
                     </Button>
                   </div>
                 )}
@@ -373,18 +454,24 @@ function UserProfile({
                   This profile is private
                 </h3>
                 <p className="text-muted-foreground mb-6">
-                  Follow {profileData.firstName} to see their posts and
-                  activity.
+                  {followRequestStatus === "pending" 
+                    ? `Your follow request to ${profileData.firstName} is pending approval.`
+                    : followRequestStatus === "declined"
+                    ? `Your follow request to ${profileData.firstName} was declined.`
+                    : `Follow ${profileData.firstName} to see their posts and activity.`
+                  }
                 </p>
                 {/* Show follow button if not own profile */}
                 {!isOwnProfile && (
                   <div className="flex justify-center">
                     <Button
                       onClick={handleFollowToggle}
+                      variant={getFollowButtonVariant()}
                       className="flex items-center gap-2 cursor-pointer"
+                      disabled={followRequestStatus === "declined"}
                     >
                       <Users className="h-4 w-4" />
-                      Send Follow Request
+                      {getFollowButtonText()}
                     </Button>
                   </div>
                 )}

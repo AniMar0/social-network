@@ -54,6 +54,9 @@ export default function HomePageRoute() {
       case "home":
         router.push("/home");
         break;
+      case "notifications":
+        router.push("/notifications");
+        break;
       case "profile":
         // Navigate to /profile which will redirect to current user's profile
         // TODO: ADD YOUR BACKEND LOGIC HERE - Get user's profile URL from database
