@@ -128,11 +128,23 @@ func (S *Server) FollowUser(follower, following string) error {
 	if follower == following {
 		return fmt.Errorf("you cannot follow yourself")
 	}
+	var IsPrivate bool
 
-	_, err := S.db.Exec(`
-		INSERT INTO follows (follower_id, following_id) VALUES (?, ?)
-		ON CONFLICT(follower_id, following_id) DO NOTHING
-	`, follower, following)
+	err := S.db.QueryRow(`SELECT is_private FROM users WHERE id = ?`, following).Scan(&IsPrivate)
+	if err != nil {
+		return err
+	}
+	query := ""
+	if IsPrivate {
+		query = `
+		INSERT INTO follows (follower_id, following_id,status) VALUES (?, ?, 'pending') 
+		ON CONFLICT(follower_id, following_id) DO UPDATE SET status = 'pending'`
+	} else {
+		query = `
+		INSERT INTO follows (follower_id, following_id) VALUES (?, ?) 
+		ON CONFLICT(follower_id, following_id) DO NOTHING`
+	}
+	_, err = S.db.Exec(query, follower, following)
 
 	return err
 }
