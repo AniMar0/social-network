@@ -30,6 +30,7 @@ type UserData struct {
 	PostsCount     int     `json:"postsCount"`
 	JoinedDate     string  `json:"joinedDate"`
 	Url            string  `json:"url"`
+	Isfollowing    bool    `json:"isfollowing"`
 }
 
 type LoginUser struct {

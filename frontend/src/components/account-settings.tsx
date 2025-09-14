@@ -37,6 +37,8 @@ export interface UserData {
   followingCount: number;
   postsCount: number;
   joinedDate: string;
+  url?: string;
+  isfollowing?: boolean;
 }
 
 interface ProfileSettingsProps {

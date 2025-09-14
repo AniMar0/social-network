@@ -128,7 +128,7 @@ export default function UserProfilePage() {
               return;
             }
             const profileData = await profileRes.json();
-            console.log("Fetched profile data:", profileData);
+            profileData.user.isfollowing = profileData.isfollowing;
             setUserData(profileData.user);
             setPosts(profileData.posts || []);
           } catch (profileErr) {

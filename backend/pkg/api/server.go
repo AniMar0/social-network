@@ -365,3 +365,21 @@ func (S *Server) GetUserPosts(userID int) ([]Post, error) {
 
 	return posts, nil
 }
+
+// check if the user follows another user
+func (S *Server) IsFollowing(r *http.Request, followingURL string) (bool, error) {
+	followerID, _, _ := S.CheckSession(r)
+	var followingID int
+	err := S.db.QueryRow(`SELECT id FROM users WHERE url = ?`, followingURL).Scan(&followingID)
+	if err != nil {
+		return false, err
+	}
+
+	var isFollowing bool
+	err = S.db.QueryRow(`SELECT EXISTS(SELECT 1 FROM follows WHERE follower_id = ? AND following_id = ?)`, followerID, followingID).Scan(&isFollowing)
+	if err != nil {
+		return false, err
+	}
+
+	return isFollowing, nil
+}

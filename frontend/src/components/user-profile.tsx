@@ -52,7 +52,7 @@ function UserProfile({
   // State for profile data (can be updated by settings dialog)
   const [profileData, setProfileData] = useState(userData);
   // State for following/unfollowing this user
-  const [followingState, setFollowingState] = useState(isFollowing);
+  const [followingState, setFollowingState] = useState(userData.isfollowing || isFollowing);
   // State for liked posts (IDs)
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
 

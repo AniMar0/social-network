@@ -145,6 +145,8 @@ func (S *Server) UploadAvatarHandler(w http.ResponseWriter, r *http.Request) {
 func (S *Server) ProfileHandler(w http.ResponseWriter, r *http.Request) {
 	url := strings.TrimPrefix(r.URL.Path, "/api/profile/")
 
+	fmt.Println("Profile URL:", url)
+
 	if url == "" {
 		http.Error(w, "url required", http.StatusBadRequest)
 		return
@@ -178,12 +180,21 @@ func (S *Server) ProfileHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "error getting posts", http.StatusInternalServerError)
 		return
 	}
-	
+
+	var isFollowing bool
+	isFollowing, err = S.IsFollowing(r, user.Url)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Failed to check following status", http.StatusInternalServerError)
+		return
+	}
+
 	resp := map[string]interface{}{
-		"posts":     posts,
-		"user":      user,
-		"followers": followers,
-		"following": following,
+		"posts":       posts,
+		"user":        user,
+		"followers":   followers,
+		"following":   following,
+		"isfollowing": isFollowing,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
