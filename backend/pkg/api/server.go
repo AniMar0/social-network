@@ -50,6 +50,7 @@ func (S *Server) initRoutes() {
 
 	S.mux.HandleFunc("/api/register", S.RegisterHandler)
 	S.mux.HandleFunc("/api/upload-avatar", S.UploadAvatarHandler)
+	S.mux.HandleFunc("/api/upload-post-file", S.UploadPostHandler)
 	S.mux.HandleFunc("/api/user/update", S.UpdateUserHandler)
 
 	S.mux.HandleFunc("/api/login", S.LoginHandler)
@@ -60,6 +61,7 @@ func (S *Server) initRoutes() {
 	S.mux.HandleFunc("/api/unfollow", S.UnfollowHandler)
 
 	S.mux.HandleFunc("/api/profile/", S.ProfileHandler)
+	S.mux.HandleFunc("/api/me", S.MeHandler)
 
 	S.mux.Handle("/api/create-post", S.SessionMiddleware(http.HandlerFunc(S.CreatePostHandler)))
 	//S.mux.HandleFunc("/api/load-posts", S.LoadPostsHandler)
@@ -278,20 +280,20 @@ func (S *Server) GetUserData(url string, id int) (UserData, error) {
 	return user, nil
 }
 
-func (S *Server) RemoveOldAvatar(userID int) error {
+func (S *Server) RemoveOldAvatar(userID int, newAvatar string) error {
 	// Get the avatar filename from the database
-	var avatar string
-	err := S.db.QueryRow(`SELECT avatar FROM users WHERE id = ?`, userID).Scan(&avatar)
+	var oldAvatar string
+	err := S.db.QueryRow(`SELECT avatar FROM users WHERE id = ?`, userID).Scan(&oldAvatar)
 	if err != nil {
 		return err
 	}
 
-	if avatar == "/uploads/default.jpg" {
+	if oldAvatar == "/uploads/default.jpg" || oldAvatar == newAvatar {
 		return nil
 	}
 	// Remove the avatar file from uploads folder if it exists and is not empty
-	if avatar != "" {
-		avatarPath := fmt.Sprintf(".%s", avatar)
+	if oldAvatar != "" {
+		avatarPath := fmt.Sprintf(".%s", oldAvatar)
 		if err := os.Remove(avatarPath); err != nil && !os.IsNotExist(err) {
 			return err
 		}

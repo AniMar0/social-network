@@ -200,7 +200,7 @@ export function ProfileSettings({ userData, onSave }: ProfileSettingsProps) {
                       ? formData.avatar
                       : formData.avatar
                       ? `http://localhost:8080/${formData.avatar}`
-                      : `/placeholder.svg?height=96&width=96&query=user+avatar`
+                      : `http://localhost:8080/${userData.avatar}`
                   }
                   alt="Profile avatar"
                 />

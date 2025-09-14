@@ -118,15 +118,15 @@ func (S *Server) UploadAvatarHandler(w http.ResponseWriter, r *http.Request) {
 
 	file, header, err := r.FormFile("avatar")
 	if err != nil {
-		fmt.Println(err)
 		http.Error(w, "Cannot read avatar", http.StatusBadRequest)
 		return
 	}
 	defer file.Close()
-	avatarPath := "uploads/" + uuid.NewV4().String() + tools.GetTheExtension(header.Filename)
+	avatarPath := "uploads/Avatars/" + uuid.NewV4().String() + tools.GetTheExtension(header.Filename)
 
 	out, err := os.Create(avatarPath)
 	if err != nil {
+		fmt.Println(err)
 		http.Error(w, "Cannot save avatar", http.StatusInternalServerError)
 		return
 	}
@@ -140,6 +140,37 @@ func (S *Server) UploadAvatarHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(fmt.Sprintf(`{"avatarUrl": "/%s"}`, avatarPath)))
+}
+
+func (S *Server) UploadPostHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	file, header, err := r.FormFile("post")
+	if err != nil {
+		http.Error(w, "Cannot read post", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+	postPath := "uploads/Posts/" + uuid.NewV4().String() + tools.GetTheExtension(header.Filename)
+
+	out, err := os.Create(postPath)
+	if err != nil {
+		http.Error(w, "Cannot save post", http.StatusInternalServerError)
+		return
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, file)
+	if err != nil {
+		http.Error(w, "Failed to save post", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(fmt.Sprintf(`{"postUrl": "/%s"}`, postPath)))
 }
 
 func (S *Server) ProfileHandler(w http.ResponseWriter, r *http.Request) {
@@ -292,7 +323,7 @@ func (S *Server) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	id, _ := strconv.Atoi(user.ID)
-	err := S.RemoveOldAvatar(id)
+	err := S.RemoveOldAvatar(id, *user.Avatar)
 	if err != nil {
 		http.Error(w, "Failed to remove old avatar", http.StatusInternalServerError)
 		return
@@ -429,4 +460,29 @@ func (S *Server) CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(post)
+}
+
+// get the current user data
+func (S *Server) MeHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/404", http.StatusSeeOther)
+		return
+	}
+
+	id, _, err := S.CheckSession(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	
+	userData, err := S.GetUserData("", id)
+	if err != nil {
+		fmt.Println(err)
+		tools.RenderErrorPage(w, r, "User Not Found", http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(userData)
 }

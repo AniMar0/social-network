@@ -46,6 +46,11 @@ function SidebarNavigation({
   ];
 
   const handleItemClick = (itemId: string) => {
+    if (currentActive === itemId) return;
+    if (itemId === "profile"){
+      // Navigate to /profile${user.url}
+      
+    }
     setCurrentActive(itemId);
     onNavigate?.(itemId);
     console.log("Navigation item clicked:", itemId);

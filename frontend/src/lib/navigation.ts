@@ -151,10 +151,10 @@ export const authUtils = {
  */
 export const profileUtils = {
   // TODO: Add function to fetch user profile by username
-  fetchUserProfile: async (username: string) => {
+  fetchUserProfile: async (url: string) => {
     try {
       // TODO: Replace with actual backend endpoint
-      const res = await fetch(`http://localhost:8080/api/profile/${username}`, {
+      const res = await fetch(`http://localhost:8080/api/profile/${url}`, {
         method: "GET",
         credentials: "include",
       });
@@ -168,27 +168,6 @@ export const profileUtils = {
     } catch (err) {
       console.error("Error fetching user profile:", err);
       return null;
-    }
-  },
-
-  // TODO: Add function to fetch user posts
-  fetchUserPosts: async (username: string) => {
-    try {
-      // TODO: Replace with actual backend endpoint
-      const res = await fetch(`http://localhost:8080/api/profile/${username}/posts`, {
-        method: "GET",
-        credentials: "include",
-      });
-
-      if (!res.ok) {
-        return [];
-      }
-
-      const data = await res.json();
-      return data.posts || [];
-    } catch (err) {
-      console.error("Error fetching user posts:", err);
-      return [];
     }
   },
 };

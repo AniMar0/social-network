@@ -42,7 +42,7 @@ interface PostData {
   privacy: "public" | "almost-private" | "private";
 }
 
-let avatarFile: File;
+let postFile: File;
 
 export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -74,7 +74,7 @@ export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
     const reader = new FileReader();
     reader.onload = (ev) => setSelectedImage(ev.target?.result as string);
     reader.readAsDataURL(file);
-    avatarFile = file;
+    postFile = file;
   };
 
   const handleEmojiSelect = (emoji: string) => {
@@ -105,17 +105,18 @@ export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
       privacy,
     };
 
-    if (avatarFile) {
+    if (postFile) {
       const avatarForm = new FormData();
-      avatarForm.append("avatar", avatarFile);
+      avatarForm.append("post", postFile);
       try {
-        const res = await fetch("http://localhost:8080/api/upload-avatar", {
+        const res = await fetch("http://localhost:8080/api/upload-post-file", {
           method: "POST",
           body: avatarForm,
           credentials: "include",
         });
         const data = await res.json();
-        postData.image = data.avatarUrl;
+        console.log(data.postUrl);
+        postData.image = data.postUrl;
       } catch (err) {
         console.error(err);
       }

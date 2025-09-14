@@ -109,6 +109,8 @@ export default function UserProfilePage() {
             const data = await res.json();
             setUserData(data.user);
             setPosts(data.posts || []);
+
+            console.log(data.posts);
           } catch (err) {
             console.error("Error checking auth:", err);
           }
