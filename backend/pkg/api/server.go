@@ -303,7 +303,6 @@ func (S *Server) RemoveOldAvatar(userID int, newAvatar string) error {
 
 	return nil
 }
-
 func (S *Server) SessionMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		username, _, err := S.CheckSession(r)
