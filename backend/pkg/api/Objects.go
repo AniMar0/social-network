@@ -1,5 +1,7 @@
 package backend
 
+import "time"
+
 type User struct {
 	Email       string `json:"email"`
 	Password    string `json:"password"`
@@ -58,14 +60,13 @@ type Post struct {
 }
 
 type Notification struct {
-	ID        int
+	ID        string
 	Type      string
 	Content   string
 	IsRead    bool
-	CreatedAt string
-	ActorID   int
+	CreatedAt time.Time
+	ActorID   string
 	FirstName string
 	LastName  string
 	Avatar    string
 }
-

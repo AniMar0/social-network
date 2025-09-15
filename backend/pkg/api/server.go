@@ -51,7 +51,11 @@ func (S *Server) initRoutes() {
 	S.mux.HandleFunc("/api/upload-avatar", S.UploadAvatarHandler)
 	S.mux.HandleFunc("/api/upload-post-file", S.UploadPostHandler)
 	S.mux.HandleFunc("/api/user/update", S.UpdateProfileHandler)
+
+	//notification handlers
 	S.mux.HandleFunc("/api/notifications", S.GetNotificationsHandler)
+	S.mux.HandleFunc("/api/mark-notification-as-read/", S.MarkNotificationAsReadHandler)
+	S.mux.HandleFunc("/api/delete-notification/", S.DeleteNotificationHandler)
 
 	//Websocket handlers
 	S.mux.HandleFunc("/ws", S.WebSocketHandler)

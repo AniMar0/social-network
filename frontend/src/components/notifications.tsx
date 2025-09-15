@@ -3,17 +3,37 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { Star, Heart, UserPlus, MessageSquare, MoreHorizontal, Trash2, Check, MailOpen, Trash } from "lucide-react";
+import {
+  Star,
+  Heart,
+  UserPlus,
+  MessageSquare,
+  MoreHorizontal,
+  Trash2,
+  Check,
+  MailOpen,
+  Trash,
+} from "lucide-react";
 import { SidebarNavigation } from "./sidebar";
 import { authUtils } from "@/lib/navigation";
-import { useNotificationCount, fetchNotifications, markNotificationAsRead, deleteNotification, type Notification } from "@/lib/notifications";
-
+import {
+  useNotificationCount,
+  fetchNotifications,
+  markNotificationAsRead,
+  deleteNotification,
+  type Notification,
+} from "@/lib/notifications";
 
 interface NotificationsPageProps {
-    onNavigate?: (page: string) => void;
-    onNewPost?: () => void;
+  onNavigate?: (page: string) => void;
+  onNewPost?: () => void;
 }
 
 function NotificationsPage({ onNewPost, onNavigate }: NotificationsPageProps) {
@@ -28,7 +48,7 @@ function NotificationsPage({ onNewPost, onNavigate }: NotificationsPageProps) {
         const fetchedNotifications = await fetchNotifications();
         setNotifications(fetchedNotifications);
       } catch (error) {
-        console.error('Error loading notifications:', error);
+        console.error("Error loading notifications:", error);
       }
     };
 
@@ -53,22 +73,31 @@ function NotificationsPage({ onNewPost, onNavigate }: NotificationsPageProps) {
   const handleMarkAsRead = async (notificationId: string) => {
     try {
       await markNotificationAsRead(notificationId);
-      setNotifications((prev) => prev.map((notif) => (notif.id === notificationId ? { ...notif, isRead: true } : notif)));
+      setNotifications((prev) =>
+        prev.map((notif) =>
+          notif.id === notificationId ? { ...notif, isRead: true } : notif
+        )
+      );
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      console.error("Error marking notification as read:", error);
     }
   };
 
   const handleDelete = async (notificationId: string) => {
     try {
       await deleteNotification(notificationId);
-      setNotifications((prev) => prev.filter((notif) => notif.id !== notificationId));
+      setNotifications((prev) =>
+        prev.filter((notif) => notif.id !== notificationId)
+      );
     } catch (error) {
-      console.error('Error deleting notification:', error);
+      console.error("Error deleting notification:", error);
     }
   };
 
-  const handleFollowRequest = (notificationId: string, action: "accept" | "decline") => {
+  const handleFollowRequest = (
+    notificationId: string,
+    action: "accept" | "decline"
+  ) => {
     console.log(`Follow request ${action}ed for notification:`, notificationId);
     // TODO: Add backend logic here to handle follow requests
     // Remove the notification after handling
@@ -77,11 +106,17 @@ function NotificationsPage({ onNewPost, onNavigate }: NotificationsPageProps) {
 
   const handleMarkAllAsRead = async () => {
     try {
-      const unreadNotifications = notifications.filter((notif) => !notif.isRead);
-      await Promise.all(unreadNotifications.map((notif) => markNotificationAsRead(notif.id)));
-      setNotifications((prev) => prev.map((notif) => ({ ...notif, isRead: true })));
+      const unreadNotifications = notifications.filter(
+        (notif) => !notif.isRead
+      );
+      await Promise.all(
+        unreadNotifications.map((notif) => markNotificationAsRead(notif.id))
+      );
+      setNotifications((prev) =>
+        prev.map((notif) => ({ ...notif, isRead: true }))
+      );
     } catch (error) {
-      console.error('Error marking all notifications as read:', error);
+      console.error("Error marking all notifications as read:", error);
     }
   };
 
@@ -103,17 +138,17 @@ function NotificationsPage({ onNewPost, onNavigate }: NotificationsPageProps) {
       <div className="flex-1 flex flex-col">
         {/* Header */}
         <div className="border-b border-border p-6 flex items-center justify-between">
-                  <h1 className="text-2xl font-bold text-foreground">Notifications</h1>
+          <h1 className="text-2xl font-bold text-foreground">Notifications</h1>
 
-                  <Button variant="ghost"
-                      size="sm"
-                      onClick={handleMarkAllAsRead}
-                      className="bg-muted hover:bg-primary/70 cursor-pointer"
-                    >
-                      <MailOpen className="h-5 w-5" /> Mark all as read
-                  </Button>
-              </div>
-              
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleMarkAllAsRead}
+            className="bg-muted hover:bg-primary/70 cursor-pointer"
+          >
+            <MailOpen className="h-5 w-5" /> Mark all as read
+          </Button>
+        </div>
 
         {/* Notifications List */}
         <div className="flex-1 overflow-y-auto">
@@ -126,15 +161,24 @@ function NotificationsPage({ onNewPost, onNavigate }: NotificationsPageProps) {
               {notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`p-4 hover:bg-muted/50 transition-colors ${!notification.isRead ? "bg-muted/20" : ""}`}
+                  className={`p-4 hover:bg-muted/50 transition-colors ${
+                    !notification.isRead ? "bg-muted/20" : ""
+                  }`}
                 >
-                <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-3">
                     {/* Notification Icon */}
-                    <div className="flex-shrink-0 mt-1 bg-accent p-3 rounded-sm">{getNotificationIcon(notification.type)}</div>
+                    <div className="flex-shrink-0 mt-1 bg-accent p-3 rounded-sm">
+                      {getNotificationIcon(notification.type)}
+                    </div>
 
                     {/* User Avatar */}
                     <Avatar className="h-10 w-10 flex-shrink-0">
-                      <AvatarImage src={notification.user.avatar || "https://i.imgur.com/aSlIJks.png"} />
+                      <AvatarImage
+                        src={
+                          `http://localhost:8080/${notification.user.avatar}` ||
+                          "http://localhost:8080/uploads/default.jpg"
+                        }
+                      />
                       <AvatarFallback className="bg-muted text-foreground">
                         {notification.user.name.charAt(0)}
                       </AvatarFallback>
@@ -145,31 +189,42 @@ function NotificationsPage({ onNewPost, onNavigate }: NotificationsPageProps) {
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <p className="text-sm">
-                                        <span className="font-semibold text-foreground">{notification.user.name}</span>{" "}
-                                        <br />
-                                        <span className="text-muted-foreground">{notification.content}</span>
+                            <span className="font-semibold text-foreground">
+                              {notification.user.name}
+                            </span>{" "}
+                            <br />
+                            <span className="text-muted-foreground">
+                              {notification.content}
+                            </span>
                           </p>
 
                           {/* Follow Request Actions */}
-                                      {notification.type === "follow_request" && (
-                                          <div className="flex gap-2 mt-2">
-                                              <Button
-                                                  size="sm"
-                                                  onClick={() => handleFollowRequest(notification.id, "accept")}
-                                                  className="bg-primary hover:bg-primary/90 cursor-pointer"
-                                              >
-                                                  Accept
-                                              </Button>
-                                              <Button
-                                                  size="sm"
-                                                  variant="outline"
-                                                  onClick={() => handleFollowRequest(notification.id, "decline")}
-                                                  className="bg-muted hover:bg-destructive cursor-pointer"
-                                              >
-                                                  Decline
-                                              </Button>
-                                          </div>
-                                      )}
+                          {notification.type === "follow_request" && (
+                            <div className="flex gap-2 mt-2">
+                              <Button
+                                size="sm"
+                                onClick={() =>
+                                  handleFollowRequest(notification.id, "accept")
+                                }
+                                className="bg-primary hover:bg-primary/90 cursor-pointer"
+                              >
+                                Accept
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() =>
+                                  handleFollowRequest(
+                                    notification.id,
+                                    "decline"
+                                  )
+                                }
+                                className="bg-muted hover:bg-destructive cursor-pointer"
+                              >
+                                Decline
+                              </Button>
+                            </div>
+                          )}
                         </div>
 
                         <div className="flex items-center gap-2 ml-4">
@@ -177,18 +232,31 @@ function NotificationsPage({ onNewPost, onNavigate }: NotificationsPageProps) {
                             {notification.timestamp}
                           </span>
 
-                          {!notification.isRead && <Badge variant="secondary" className="h-2 w-2 p-0 bg-blue-500" />}
+                          {!notification.isRead && (
+                            <Badge
+                              variant="secondary"
+                              className="h-2 w-2 p-0 bg-blue-500"
+                            />
+                          )}
 
                           {/* Options Menu */}
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                              >
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               {!notification.isRead && (
-                                <DropdownMenuItem onClick={() => handleMarkAsRead(notification.id)}>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    handleMarkAsRead(notification.id)
+                                  }
+                                >
                                   <Check className="h-4 w-4 mr-2" />
                                   Mark as read
                                 </DropdownMenuItem>

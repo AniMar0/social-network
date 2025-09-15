@@ -6,6 +6,9 @@ import { HomeFeed } from "@/components/home";
 import { NewPostModal } from "@/components/newpost";
 import { authUtils } from "@/lib/navigation";
 
+
+
+
 // WebSocket singleton (module-level variable)
 let ws: WebSocket | null = null;
 

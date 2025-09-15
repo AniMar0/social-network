@@ -101,7 +101,6 @@ func (S *Server) CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(post)
 }
 func (S *Server) LikeHandler(w http.ResponseWriter, r *http.Request) {}
-
 func (S *Server) GetUserPosts(userID int) ([]Post, error) {
 	rows, err := S.db.Query(`
 		SELECT 
