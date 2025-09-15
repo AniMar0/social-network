@@ -117,7 +117,7 @@ function UserProfile({
         // Check if profile is private
         if (profileData.isPrivate) {
           // Send follow request for private profile
-          await fetch("http://localhost:8080/api/follow-request", {
+          await fetch("http://localhost:8080/api/send-follow-request", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
