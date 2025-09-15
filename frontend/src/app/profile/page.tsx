@@ -18,15 +18,15 @@ export default function ProfileRedirectPage() {
           router.push("/");
           return;
         }
-        // coruunt url 
+        // coruunt url
         //console.log("Current URL:", window.location.href);
         // Get user's profile URL/username
-        
+
         router.push(`/profile/${user.url}`);
       } catch (err) {
         console.error("Error redirecting to profile:", err);
         // If there's an error, redirect to home
-        router.push("/home");
+        router.push("/");
       }
     };
 

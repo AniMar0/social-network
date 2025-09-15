@@ -337,6 +337,15 @@ func (S *Server) SendFollowRequestHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	_, err = S.db.Exec(`
+    INSERT INTO notifications (user_id, actor_id, type, content)
+    VALUES (?, ?, 'follow_request', 'sent you a follow request')
+	`, req.Following, req.Follower)
+	if err != nil {
+		http.Error(w, "Error inserting notification: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{
 		"message": "Follow request sent",

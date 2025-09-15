@@ -24,11 +24,11 @@ export const useAppNavigation = () => {
   };
 
   const navigateToHome = () => {
-    router.push("/home");
+    router.push("/");
   };
 
   const navigateToAuth = () => {
-    router.push("/");
+    router.push("/auth");
   };
 
   const handleStandardNavigation = async (itemId: string) => {

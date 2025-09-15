@@ -50,7 +50,7 @@ export default function Notifications() {
   const handleNavigate = async (itemId: string) => {
     switch (itemId) {
       case "home":
-        router.push("/home");
+        router.push("/");
         break;
       case "notifications":
         router.push("/notifications");
@@ -63,7 +63,7 @@ export default function Notifications() {
         router.push("/");
         break;
       default:
-        router.push("/home");
+        router.push("/");
     }
   };
 
@@ -87,8 +87,8 @@ export default function Notifications() {
 
   return (
     <div className="min-h-screen bg-background">
-      <NotificationsPage 
-        onNewPost={handleNewPost} 
+      <NotificationsPage
+        onNewPost={handleNewPost}
         onNavigate={handleNavigate}
       />
 

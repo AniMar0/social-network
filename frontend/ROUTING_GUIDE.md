@@ -1,11 +1,13 @@
 # Dynamic Routing Implementation - Social Network
 
 ## Overview
+
 Your social network### Required Backend Endpoints
 
 To complete the integration, you'll need these backend endpoints:
 
 1. **GET `/api/profile/{username}`**
+
    - Returns user profile data
    - Should handle both username and custom URL lookups
    - Returns 404 if user not found
@@ -16,21 +18,23 @@ To complete the integration, you'll need these backend endpoints:
    - Pagination support recommended Next.js dynamic routing with the following URL structure:
 
 - `/` - Authentication page (login/register)
-- `/home` - Main home feed for logged-in users
+- `/` - Main home feed for logged-in users
 - `/profile` - Redirects to current user's profile
 - `/profile/[username]` - Dynamic user profile pages (e.g., `/profile/johndoe`, `/profile/alice123`)
 
 ## Route Structure
 
 ### 1. Root Route (`/`)
+
 - **File**: `app/page.tsx`
 - **Purpose**: Authentication and redirect logic
-- **Behavior**: 
+- **Behavior**:
   - Shows login/register form if user is not authenticated
-  - Automatically redirects to `/home` if user is already logged in
+  - Automatically redirects to `/` if user is already logged in
 
-### 2. Home Route (`/home`)
-- **File**: `app/home/page.tsx`
+### 2. Home Route (`/`)
+
+- **File**: `app//page.tsx`
 - **Purpose**: Main feed for authenticated users
 - **Features**:
   - Checks authentication before loading
@@ -39,6 +43,7 @@ To complete the integration, you'll need these backend endpoints:
   - Handles navigation to user profiles
 
 ### 3. Profile Redirect Route (`/profile`)
+
 - **File**: `app/profile/page.tsx`
 - **Purpose**: Redirects to current user's profile page
 - **Features**:
@@ -48,6 +53,7 @@ To complete the integration, you'll need these backend endpoints:
   - Temporary solution for profile navigation
 
 ### 4. Dynamic User Profile Route (`/profile/[username]`)
+
 - **File**: `app/profile/[username]/page.tsx`
 - **Purpose**: Individual user profile pages
 - **Features**:
@@ -62,6 +68,7 @@ To complete the integration, you'll need these backend endpoints:
 ### Location: `lib/navigation.ts`
 
 #### Key Functions:
+
 - `useAppNavigation()` - Hook for programmatic navigation
 - `getUserProfileUrl(user)` - Get user's profile URL
 - `authUtils.checkAuth()` - Check authentication status
@@ -72,6 +79,7 @@ To complete the integration, you'll need these backend endpoints:
 You mentioned users have URLs saved in the database. Here are the integration points where you'll need to add your backend logic:
 
 ### 1. User Profile Loading (`app/[username]/page.tsx`)
+
 ```typescript
 // TODO: Replace this with actual backend call
 // const profileRes = await fetch(`http://localhost:8080/api/user/${username}`, {
@@ -81,6 +89,7 @@ You mentioned users have URLs saved in the database. Here are the integration po
 ```
 
 ### 2. Profile URL Utilities (`lib/navigation.ts`)
+
 ```typescript
 export const getUserProfileUrl = (user: any): string => {
   // TODO: Update this based on your backend user structure
@@ -89,6 +98,7 @@ export const getUserProfileUrl = (user: any): string => {
 ```
 
 ### 3. Profile Data Fetching (`lib/navigation.ts`)
+
 ```typescript
 // TODO: Add backend endpoints for:
 // - /api/user/{username} - Get user profile
@@ -100,11 +110,13 @@ export const getUserProfileUrl = (user: any): string => {
 To complete the integration, you'll need these backend endpoints:
 
 1. **GET `/api/user/{username}`**
+
    - Returns user profile data
    - Should handle both username and custom URL lookups
    - Returns 404 if user not found
 
 2. **GET `/api/user/{username}/posts`**
+
    - Returns user's posts
    - Handles privacy settings
    - Pagination support recommended
@@ -116,6 +128,7 @@ To complete the integration, you'll need these backend endpoints:
 ## Navigation Examples
 
 ### Programmatic Navigation:
+
 ```typescript
 import { useAppNavigation } from "@/lib/navigation";
 
@@ -129,6 +142,7 @@ navigateToHome();
 ```
 
 ### Profile URL Generation:
+
 ```typescript
 import { getUserProfileUrl } from "@/lib/navigation";
 
@@ -141,12 +155,13 @@ const profileUrl = getUserProfileUrl(user); // Returns "john-doe-123"
 1. User visits any URL
 2. Each protected route checks authentication
 3. If not authenticated → redirect to `/`
-4. If authenticated but on `/` → redirect to `/home`
+4. If authenticated but on `/` → redirect to `/`
 5. Profile routes determine ownership (own vs. other user's profile)
 
 ## Current Status
 
 ✅ **Completed:**
+
 - Dynamic routing structure
 - Authentication redirects
 - Navigation utilities
@@ -154,6 +169,7 @@ const profileUrl = getUserProfileUrl(user); // Returns "john-doe-123"
 - Profile ownership detection
 
 🔄 **Ready for Backend Integration:**
+
 - User profile fetching by username/URL
 - Post loading for profiles
 - Custom URL handling from database

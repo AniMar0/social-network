@@ -6,12 +6,15 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/gorilla/websocket"
 	"github.com/rs/cors"
 )
 
 type Server struct {
-	db  *sql.DB
-	mux *http.ServeMux
+	db        *sql.DB
+	mux       *http.ServeMux
+	wsClients *wsClients
+	upgrader  websocket.Upgrader
 }
 
 func (S *Server) Run(addr string) {
@@ -20,6 +23,8 @@ func (S *Server) Run(addr string) {
 
 	S.mux = http.NewServeMux()
 	S.initRoutes()
+
+	S.wsClients = &wsClients{m: make(map[int][]*websocket.Conn)}
 
 	// CORS configuration
 	c := cors.New(cors.Options{
@@ -46,6 +51,10 @@ func (S *Server) initRoutes() {
 	S.mux.HandleFunc("/api/upload-avatar", S.UploadAvatarHandler)
 	S.mux.HandleFunc("/api/upload-post-file", S.UploadPostHandler)
 	S.mux.HandleFunc("/api/user/update", S.UpdateProfileHandler)
+	S.mux.HandleFunc("/api/notifications", S.GetNotificationsHandler)
+
+	//Websocket handlers
+	S.mux.HandleFunc("/ws", S.WebSocketHandler)
 
 	//auth handlers
 	S.mux.HandleFunc("/api/login", S.LoginHandler)
@@ -67,6 +76,14 @@ func (S *Server) initRoutes() {
 	//post handlers
 	S.mux.HandleFunc("/api/like", S.LikeHandler)
 	S.mux.Handle("/api/create-post", S.SessionMiddleware(http.HandlerFunc(S.CreatePostHandler)))
-	//S.mux.HandleFunc("/api/load-posts", S.LoadPostsHandler)
-	//S.mux.HandleFunc("/api/load-user-posts", S.LoadUserPostsHandler)
+}
+
+func (S *Server) initWebSocket() {
+    S.upgrader = websocket.Upgrader{
+        ReadBufferSize:  1024,
+        WriteBufferSize: 1024,
+        CheckOrigin: func(r *http.Request) bool {
+            return r.Header.Get("Origin") == "http://localhost:3000"
+        },
+    }
 }

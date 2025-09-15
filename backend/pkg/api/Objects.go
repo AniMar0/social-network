@@ -56,3 +56,16 @@ type Post struct {
 		IsPrivate bool   `json:"isPrivate"` // بدل isVerified
 	} `json:"author"`
 }
+
+type Notification struct {
+	ID        int
+	Type      string
+	Content   string
+	IsRead    bool
+	CreatedAt string
+	ActorID   int
+	FirstName string
+	LastName  string
+	Avatar    string
+}
+

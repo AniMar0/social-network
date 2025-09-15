@@ -66,7 +66,7 @@ export default function UserProfilePage() {
         }
       } catch (err) {
         console.error("Error loading profile:", err);
-        router.push("/home");
+        router.push("/");
       } finally {
         setLoading(false);
       }
@@ -84,7 +84,7 @@ export default function UserProfilePage() {
   const handleNavigate = async (itemId: string) => {
     switch (itemId) {
       case "home":
-        router.push("/home");
+        router.push("/");
         break;
       case "notifications":
         router.push("/notifications");
@@ -103,7 +103,7 @@ export default function UserProfilePage() {
         router.push("/");
         break;
       default:
-        router.push("/home");
+        router.push("/");
     }
   };
 

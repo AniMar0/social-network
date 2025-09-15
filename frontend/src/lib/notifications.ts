@@ -24,12 +24,12 @@ export interface Notification {
 // Global state for notification updates
 let notificationUpdateListeners: (() => void)[] = [];
 
-const triggerNotificationUpdate = () => {
+export const triggerNotificationUpdate = () => {
   notificationUpdateListeners.forEach(listener => listener());
 };
 
 // Mock notifications data (replace with API call later)
-let mockNotifications: Notification[] = [
+export let mockNotifications: Notification[] = [
   {
     id: "1",
     type: "like",

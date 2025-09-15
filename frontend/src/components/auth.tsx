@@ -241,9 +241,7 @@ export function AuthForm() {
             if (data.error) {
               setErrors({ general: data.error });
             } else {
-              console.log("Login successful:", data.user);
-              // Redirect to home page
-              router.push("/home");
+              router.push("/");
             }
           })
           .catch((err) => {
