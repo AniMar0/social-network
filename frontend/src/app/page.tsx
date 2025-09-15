@@ -5,33 +5,7 @@ import { useRouter } from "next/navigation";
 import { HomeFeed } from "@/components/home";
 import { NewPostModal } from "@/components/newpost";
 import { authUtils } from "@/lib/navigation";
-
-
-
-
-// WebSocket singleton (module-level variable)
-let ws: WebSocket | null = null;
-
-function initWebSocket(userId: number) {
-  if (ws) return ws;
-
-  ws = new WebSocket("ws://localhost:8080/ws");
-
-  ws.onopen = () => console.log("WebSocket connected for user", userId);
-
-  ws.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    console.log("WS message received:", data);
-    
-  };
-
-  ws.onclose = () => {
-    console.log("WebSocket closed for user", userId);
-    ws = null;
-  };
-
-  return ws;
-}
+import { initWebSocket, closeWebSocket } from "@/lib/websocket";
 
 export default function HomePage() {
   const [isNewPostModalOpen, setIsNewPostModalOpen] = useState(false);
@@ -80,10 +54,7 @@ export default function HomePage() {
         break;
       case "auth":
         // close WS on logout
-        if (ws) {
-          ws.close();
-          ws = null;
-        }
+        closeWebSocket();
         router.push("/auth");
         break;
       default:

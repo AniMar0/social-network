@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import NotificationsPage from "@/components/notifications";
 import { NewPostModal } from "@/components/newpost";
 import { authUtils } from "@/lib/navigation";
+import { initWebSocket, closeWebSocket } from "@/lib/websocket";
 
 export default function Notifications() {
   const [isNewPostModalOpen, setIsNewPostModalOpen] = useState(false);
@@ -30,7 +31,7 @@ export default function Notifications() {
           router.push("/");
           return;
         }
-
+        initWebSocket(data.user.id);
         setUserLoggedIn(true);
       } catch (err) {
         console.error("Error checking auth:", err);

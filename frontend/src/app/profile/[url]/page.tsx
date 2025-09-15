@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import UserProfile from "@/components/user-profile";
 import { NewPostModal } from "@/components/newpost";
 import { profileUtils } from "@/lib/navigation";
+import { initWebSocket, closeWebSocket } from "@/lib/websocket";
 
 export default function UserProfilePage() {
   const [isNewPostModalOpen, setIsNewPostModalOpen] = useState(false);
@@ -42,7 +43,7 @@ export default function UserProfilePage() {
           router.push("/");
           return;
         }
-
+        initWebSocket(authData.user.id);
         setUserLoggedIn(true);
         setCurrentUser(authData.user);
 

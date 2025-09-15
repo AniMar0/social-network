@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { authUtils } from "@/lib/navigation";
-
+import { initWebSocket, closeWebSocket } from "@/lib/websocket";
 export default function ProfileRedirectPage() {
   const router = useRouter();
 
@@ -21,7 +21,7 @@ export default function ProfileRedirectPage() {
         // coruunt url
         //console.log("Current URL:", window.location.href);
         // Get user's profile URL/username
-
+        initWebSocket(user.id);
         router.push(`/profile/${user.url}`);
       } catch (err) {
         console.error("Error redirecting to profile:", err);
