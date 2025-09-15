@@ -1,37 +1,33 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { HomeFeed } from "@/components/home";
 import { NewPostModal } from "@/components/newpost";
 import { authUtils } from "@/lib/navigation";
 
-// WebSocket hook
-export function useWebSocket(userId: number | null) {
-  const wsRef = useRef<WebSocket | null>(null);
+// WebSocket singleton (module-level variable)
+let ws: WebSocket | null = null;
 
-  useEffect(() => {
-    if (!userId) return;
+function initWebSocket(userId: number) {
+  if (ws) return ws;
+
+  ws = new WebSocket("ws://localhost:8080/ws");
+
+  ws.onopen = () => console.log("WebSocket connected for user", userId);
+
+  ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    console.log("WS message received:", data);
     
-    if (wsRef.current) {
-      wsRef.current.close();
-    }
+  };
 
-    const ws = new WebSocket("ws://localhost:8080/ws");
-    wsRef.current = ws;
+  ws.onclose = () => {
+    console.log("WebSocket closed for user", userId);
+    ws = null;
+  };
 
-    ws.onopen = () => console.log("WebSocket connected");
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      console.log("WS message received:", data);
-    };
-    ws.onclose = () => console.log("WebSocket closed");
-
-    return () => {
-      ws.close(); 
-      wsRef.current = null;
-    };
-  }, [userId]);
+  return ws;
 }
 
 export default function HomePage() {
@@ -50,6 +46,7 @@ export default function HomePage() {
         if (loggedIn) {
           setUserId(user.id);
           setUserLoggedIn(true);
+          initWebSocket(user.id); // init WS once when user is logged in
         } else {
           router.push("/auth");
         }
@@ -63,9 +60,6 @@ export default function HomePage() {
 
     checkAuth();
   }, [router]);
-
-  // Run WebSocket after user is logged in
-  useWebSocket(userId);
 
   const handleNewPost = () => setIsNewPostModalOpen(true);
 
@@ -82,6 +76,11 @@ export default function HomePage() {
         router.push(`/profile/${user.url}`);
         break;
       case "auth":
+        // close WS on logout
+        if (ws) {
+          ws.close();
+          ws = null;
+        }
         router.push("/auth");
         break;
       default:
