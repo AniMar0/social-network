@@ -1,6 +1,7 @@
 package backend
 
 import (
+	tools "SOCIAL-NETWORK/pkg"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -42,12 +43,13 @@ func (S *Server) AcceptFollowRequestHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	var body struct {
-		FollowerID  string `json:"follower"`
-		FollowingID string `json:"following"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		http.Error(w, "invalid body", http.StatusBadRequest)
+	var FollowerID, FollowingID string
+	id := r.URL.Path[len("/api/accept-follow-request/"):]
+
+	FollowerID, FollowingID, err := S.GetSenderAndReceiverIDs(id)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -61,7 +63,7 @@ func (S *Server) AcceptFollowRequestHandler(w http.ResponseWriter, r *http.Reque
 	_, err = tx.Exec(`
 		DELETE FROM follow_requests 
 		WHERE sender_id = ? AND receiver_id = ?`,
-		body.FollowerID, body.FollowingID,
+		FollowerID, FollowingID,
 	)
 	if err != nil {
 		http.Error(w, "failed to delete follow request", http.StatusInternalServerError)
@@ -71,7 +73,7 @@ func (S *Server) AcceptFollowRequestHandler(w http.ResponseWriter, r *http.Reque
 	_, err = tx.Exec(`
 		INSERT INTO follows (follower_id, following_id) 
 		VALUES (?, ?)`,
-		body.FollowerID, body.FollowingID,
+		FollowerID, FollowingID,
 	)
 	if err != nil {
 		http.Error(w, "failed to accept follow request", http.StatusInternalServerError)
@@ -92,19 +94,20 @@ func (S *Server) DeclineFollowRequestHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	var body struct {
-		FollowerID  string `json:"follower"`
-		FollowingID string `json:"following"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		http.Error(w, "invalid body", http.StatusBadRequest)
+	var FollowerID, FollowingID string
+	id := r.URL.Path[len("/api/decline-follow-request/"):]
+
+	FollowerID, FollowingID, err := S.GetSenderAndReceiverIDs(id)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	_, err := S.db.Exec(`
+	_, err = S.db.Exec(`
 		DELETE FROM follow_requests 
 		WHERE sender_id = ? AND receiver_id = ?`,
-		body.FollowerID, body.FollowingID,
+		FollowerID, FollowingID,
 	)
 	if err != nil {
 		http.Error(w, "failed to decline follow request", http.StatusInternalServerError)
@@ -157,8 +160,8 @@ func (S *Server) SendFollowRequestHandler(w http.ResponseWriter, r *http.Request
 
 	// save notification in DB
 	if err := S.IsertNotification(Notification{
-		ID:        req.Following,
-		ActorID:   req.Follower,
+		ID:        tools.StringToInt(req.Following),
+		ActorID:   tools.StringToInt(req.Follower),
 		Type:      "follow_request",
 		Content:   "Follow request",
 		IsRead:    false,
@@ -171,8 +174,8 @@ func (S *Server) SendFollowRequestHandler(w http.ResponseWriter, r *http.Request
 	// push notification via websocket
 	Following, _ := strconv.Atoi(req.Following)
 	S.PushNotification(Following, Notification{
-		ID:        req.Following,
-		ActorID:   req.Follower,
+		ID:        tools.StringToInt(req.Following),
+		ActorID:   tools.StringToInt(req.Follower),
 		Type:      "follow_request",
 		Content:   "Follow request",
 		IsRead:    false,
@@ -205,8 +208,8 @@ func (S *Server) FollowHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := S.IsertNotification(Notification{
-		ID:        body.Following,
-		ActorID:   body.Follower,
+		ID:        tools.StringToInt(body.Following),
+		ActorID:   tools.StringToInt(body.Follower),
 		Type:      "follow",
 		Content:   "Follow",
 		IsRead:    false,
@@ -220,8 +223,8 @@ func (S *Server) FollowHandler(w http.ResponseWriter, r *http.Request) {
 	Following, _ := strconv.Atoi(body.Following)
 
 	S.PushNotification(Following, Notification{
-		ID:        body.Following,
-		ActorID:   body.Follower,
+		ID:        tools.StringToInt(body.Following),
+		ActorID:   tools.StringToInt(body.Follower),
 		Type:      "follow",
 		Content:   "Follow",
 		IsRead:    false,
@@ -313,7 +316,7 @@ func (S *Server) GetFollowRequestStatus(r *http.Request, followingURL string) (s
 	if err != nil {
 		return "", err
 	}
-	
+
 	var status string
 	if err := S.db.QueryRow(`
 		SELECT status 
@@ -324,7 +327,6 @@ func (S *Server) GetFollowRequestStatus(r *http.Request, followingURL string) (s
 	}
 	return status, nil
 }
-
 func (S *Server) IsFollowing(r *http.Request, followingURL string) (bool, error) {
 	followerID, _, _ := S.CheckSession(r)
 	var followingID int

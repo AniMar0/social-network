@@ -70,9 +70,9 @@ func (S *Server) initRoutes() {
 	//follow handlers
 	S.mux.HandleFunc("/api/follow", S.FollowHandler)
 	S.mux.HandleFunc("/api/unfollow", S.UnfollowHandler)
-	S.mux.HandleFunc("/api/cancel-follow-request", S.CancelFollowRequestHandler)
-	S.mux.HandleFunc("/api/accept-follow-request", S.AcceptFollowRequestHandler)
-	S.mux.HandleFunc("/api/decline-follow-request", S.DeclineFollowRequestHandler)
+	S.mux.HandleFunc("/api/cancel-follow-request/", S.CancelFollowRequestHandler)
+	S.mux.HandleFunc("/api/accept-follow-request/", S.AcceptFollowRequestHandler)
+	S.mux.HandleFunc("/api/decline-follow-request/", S.DeclineFollowRequestHandler)
 	S.mux.HandleFunc("/api/send-follow-request", S.SendFollowRequestHandler)
 
 	//profile handlers

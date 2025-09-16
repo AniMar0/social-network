@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 export interface Notification {
-  id: string;
+  id: number;
   type: "like" | "follow" | "comment" | "mention" | "follow_request";
   user: {
     id: string;
@@ -82,7 +82,7 @@ export const fetchNotifications = async (): Promise<Notification[]> => {
 
 // Function to mark notification as read
 export const markNotificationAsRead = async (
-  notificationId: string
+  notificationId: number
 ): Promise<void> => {
   try {
     // TODO: Replace with actual API call
@@ -102,7 +102,7 @@ export const markNotificationAsRead = async (
 
 // Function to delete notification
 export const deleteNotification = async (
-  notificationId: string
+  notificationId: number
 ): Promise<void> => {
   try {
     // TODO: Replace with actual API call

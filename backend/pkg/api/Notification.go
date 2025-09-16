@@ -1,6 +1,7 @@
 package backend
 
 import (
+	tools "SOCIAL-NETWORK/pkg"
 	"encoding/json"
 	"net/http"
 )
@@ -85,4 +86,19 @@ func (S *Server) DeleteNotificationHandler(w http.ResponseWriter, r *http.Reques
 		http.Error(w, "DB error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+// get sender id and resiver id from follow_requests table by notfication id and the ids are string
+
+func (S *Server) GetSenderAndReceiverIDs(notificationID string) (string, string, error) {
+	var senderID, receiverID int
+	err := S.db.QueryRow(`
+		SELECT actor_id, user_id
+		FROM notifications
+		WHERE id = ?
+	`, tools.StringToInt(notificationID)).Scan(&senderID, &receiverID)
+	if err != nil {
+		return "", "", err
+	}
+	return tools.IntToString(senderID), tools.IntToString(receiverID), nil
 }

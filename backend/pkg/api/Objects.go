@@ -61,13 +61,13 @@ type Post struct {
 }
 
 type Notification struct {
-	ID        string
-	Type      string
-	Content   string
-	IsRead    bool
-	CreatedAt time.Time
-	ActorID   string
-	FirstName string
-	LastName  string
-	Avatar    string
+	ID        int       `json:"id"`
+	Type      string    `json:"type"`
+	Content   string    `json:"content"`
+	IsRead    bool      `json:"isRead"`
+	CreatedAt time.Time `json:"timestamp"`
+	ActorID   int       `json:"actorId"`
+	FirstName string    `json:"firstName"`
+	LastName  string    `json:"lastName"`
+	Avatar    string    `json:"avatar"`
 }

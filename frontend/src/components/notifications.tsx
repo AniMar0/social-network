@@ -35,14 +35,14 @@ interface NotificationsPageProps {
   onNewPost?: () => void;
 }
 
- function NotificationsPage({ onNewPost, onNavigate }: NotificationsPageProps) {
+function NotificationsPage({ onNewPost, onNavigate }: NotificationsPageProps) {
   // Use shared notification utilities
   const notificationCount = useNotificationCount();
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   // Load notifications when component mounts
   useEffect(() => {
-     const loadNotifications = async () => {
+    const loadNotifications = async () => {
       try {
         const fetchedNotifications = await fetchNotifications();
         setNotifications(fetchedNotifications);
@@ -69,7 +69,7 @@ interface NotificationsPageProps {
     }
   };
 
-  const handleMarkAsRead = async (notificationId: string) => {
+  const handleMarkAsRead = async (notificationId: number) => {
     try {
       await markNotificationAsRead(notificationId);
       setNotifications((prev) =>
@@ -82,7 +82,7 @@ interface NotificationsPageProps {
     }
   };
 
-  const handleDelete = async (notificationId: string) => {
+  const handleDelete = async (notificationId: number) => {
     try {
       await deleteNotification(notificationId);
       setNotifications((prev) =>
@@ -93,12 +93,16 @@ interface NotificationsPageProps {
     }
   };
 
-  const handleFollowRequest = (
-    notificationId: string,
+  const handleFollowRequest = async (
+    notificationId: number,
     action: "accept" | "decline"
   ) => {
     console.log(`Follow request ${action}ed for notification:`, notificationId);
     // TODO: Add backend logic here to handle follow requests
+    await fetch(`/api/${action}-follow-request/${notificationId}`, {
+      method: "POST",
+      credentials: "include",
+    });
     // Remove the notification after handling
     handleDelete(notificationId);
   };

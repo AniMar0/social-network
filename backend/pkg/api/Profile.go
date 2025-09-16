@@ -73,9 +73,6 @@ func (S *Server) ProfileHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	fmt.Println("isFollowing:", isFollowing)
-	fmt.Println("followRequestStatus:", user.FollowRequestStatus)
-
 	resp := map[string]interface{}{
 		"posts":         posts,
 		"user":          user,

@@ -3,6 +3,7 @@ package tools
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -43,4 +44,18 @@ func GetTheExtension(fileName string) string {
 		}
 	}
 	return ext
+}
+
+// confert string to int and int to string functions
+func StringToInt(s string) int {
+	i, err := strconv.Atoi(s)
+	if err != nil {
+		panic(err)
+	}
+	return i
+}
+
+func IntToString(i int) string {
+	s := strconv.Itoa(i)
+	return s
 }
