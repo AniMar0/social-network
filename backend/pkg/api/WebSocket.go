@@ -4,21 +4,23 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"sync"
 
 	"github.com/gorilla/websocket"
+	"github.com/twinj/uuid"
 )
 
-type wsClients struct {
-	sync.RWMutex
-	m map[int][]*websocket.Conn
+type Client struct {
+	ID        string           `json:"id"`
+	Conn      *websocket.Conn  `json:"-"`
+	Send      chan interface{} `json:"-"`
+	UserID    int              `json:"user_id"`
+	SessionID string           `json:"session_id"`
 }
 
 // WebSocket handler
 func (S *Server) WebSocketHandler(w http.ResponseWriter, r *http.Request) {
-	userID, _, ok := S.CheckSession(r) // user authentication
+	userID, SessionID, ok := S.CheckSession(r)
 	if ok != nil {
-		fmt.Println("Session not found", ok)
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
@@ -26,71 +28,102 @@ func (S *Server) WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 	S.initWebSocket()
 	conn, err := S.upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		fmt.Println("Error upgrading connection", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	S.wsClients.Lock()
-	S.wsClients.m[userID] = append(S.wsClients.m[userID], conn)
-	S.wsClients.Unlock()
+	client := &Client{
+		ID:        uuid.NewV4().String(),
+		Conn:      conn,
+		UserID:    userID,
+		SessionID: SessionID,
+		Send:      make(chan interface{}, 10),
+	}
 
-	fmt.Println("User", userID, "connected to WebSocket")
-	go func() {
-		defer func() {
-			conn.Close()
-			S.wsClients.Lock()
-			conns := S.wsClients.m[userID]
-			for i, c := range conns {
-				if c == conn {
-					fmt.Println("User", userID, "disconnected from WebSocket")
-					S.wsClients.m[userID] = append(conns[:i], conns[i+1:]...)
-					break
-				}
-			}
-			S.wsClients.Unlock()
-		}()
+	// add client
+	S.Lock()
+	if S.Users[userID] == nil {
+		S.Users[userID] = []*Client{}
+	}
+	S.Users[userID] = append(S.Users[userID], client)
+	S.Unlock()
 
-		for {
-			var msg map[string]interface{}
-			if err := conn.ReadJSON(&msg); err != nil {
+	// start writer
+	go S.StartWriter(client)
+
+	// start reader
+	go S.StartReader(client)
+}
+
+func (S *Server) StartReader(client *Client) {
+	defer func() {
+		client.Conn.Close()
+		S.Lock()
+		conns := S.Users[client.UserID]
+		for i, c := range conns {
+			if c == client {
+				S.Users[client.UserID] = append(conns[:i], conns[i+1:]...)
 				break
 			}
-
-			switch msg["type"] {
-			case "chat":
-				targetID, _ := strconv.Atoi(msg["to"].(string))
-				S.PushMessage(targetID, msg)
-			case "notification":
-				targetID, _ := strconv.Atoi(msg["to"].(string))
-				S.PushNotification(targetID, msg)
-			}
 		}
+		S.Unlock()
 	}()
+
+	for {
+		var msg map[string]interface{}
+		if err := client.Conn.ReadJSON(&msg); err != nil {
+			return
+		}
+		fmt.Println("Received message:", msg)
+		// unified channel switch
+		switch msg["channel"] {
+		case "chat":
+			targetID, _ := strconv.Atoi(msg["to"].(string))
+			S.PushMessage(targetID, msg)
+		case "notifications":
+			fmt.Println("Received notification:", msg)
+			targetID, _ := strconv.Atoi(msg["to"].(string))
+			S.PushNotification(targetID, msg)
+		}
+	}
 }
 
+func (S *Server) StartWriter(c *Client) {
+	defer func() {
+		c.Conn.Close()
+		close(c.Send)
+	}()
+
+	for msg := range c.Send {
+		if err := c.Conn.WriteJSON(msg); err != nil {
+			fmt.Println("Error writing to client:", err)
+			return
+		}
+	}
+}
+
+// Push notification
 func (S *Server) PushNotification(userID int, notif interface{}) {
-	S.wsClients.RLock()
-	defer S.wsClients.RUnlock()
-	for _, conn := range S.wsClients.m[userID] {
-		conn.WriteJSON(notif)
+	S.RLock()
+	defer S.RUnlock()
+	for _, Session := range S.Users[userID] {
+		fmt.Println("Sending notification to user", userID)
+		Session.Send <- map[string]interface{}{
+			"channel": "notifications",
+			"to":      userID,
+			"payload": notif,
+		}
 	}
 }
 
+// Push message
 func (S *Server) PushMessage(userID int, msg interface{}) {
-	S.wsClients.RLock()
-	defer S.wsClients.RUnlock()
-	for _, conn := range S.wsClients.m[userID] {
-		conn.WriteJSON(msg)
-	}
-}
-
-func (S *Server) BroadcastMessage(msg interface{}) {
-	S.wsClients.RLock()
-	defer S.wsClients.RUnlock()
-	for _, conns := range S.wsClients.m {
-		for _, conn := range conns {
-			conn.WriteJSON(msg)
+	S.RLock()
+	defer S.RUnlock()
+	for _, Session := range S.Users[userID] {
+		Session.Send <- map[string]interface{}{
+			"channel": "chat",
+			"payload": msg,
 		}
 	}
 }

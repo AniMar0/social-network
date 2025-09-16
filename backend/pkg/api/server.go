@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
+	"sync"
 
 	"github.com/gorilla/websocket"
 	"github.com/rs/cors"
@@ -13,8 +14,9 @@ import (
 type Server struct {
 	db        *sql.DB
 	mux       *http.ServeMux
-	wsClients *wsClients
 	upgrader  websocket.Upgrader
+	Users   map[int][]*Client
+	sync.RWMutex
 }
 
 func (S *Server) Run(addr string) {
@@ -24,7 +26,7 @@ func (S *Server) Run(addr string) {
 	S.mux = http.NewServeMux()
 	S.initRoutes()
 
-	S.wsClients = &wsClients{m: make(map[int][]*websocket.Conn)}
+	S.Users = make(map[int][]*Client)
 
 	// CORS configuration
 	c := cors.New(cors.Options{
@@ -83,11 +85,11 @@ func (S *Server) initRoutes() {
 }
 
 func (S *Server) initWebSocket() {
-    S.upgrader = websocket.Upgrader{
-        ReadBufferSize:  1024,
-        WriteBufferSize: 1024,
-        CheckOrigin: func(r *http.Request) bool {
-            return r.Header.Get("Origin") == "http://localhost:3000"
-        },
-    }
+	S.upgrader = websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+		CheckOrigin: func(r *http.Request) bool {
+			return r.Header.Get("Origin") == "http://localhost:3000"
+		},
+	}
 }

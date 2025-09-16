@@ -22,12 +22,11 @@ export interface Notification {
 }
 
 // Global state for notification updates
-let notificationUpdateListeners: (() => void)[] = [];
+export let notificationUpdateListeners: (() => void)[] = [];
 
 export const triggerNotificationUpdate = () => {
   notificationUpdateListeners.forEach((listener) => listener());
 };
-
 // Hook to get unread notification count
 export const useNotificationCount = () => {
   const [notificationCount, setNotificationCount] = useState(0);
@@ -59,7 +58,6 @@ export const useNotificationCount = () => {
 
   return notificationCount;
 };
-
 // Function to fetch notifications from API (placeholder)
 export const fetchNotifications = async (): Promise<Notification[]> => {
   try {

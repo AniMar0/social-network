@@ -22,7 +22,6 @@ import {
   Trash,
 } from "lucide-react";
 import { SidebarNavigation } from "./sidebar";
-import { authUtils } from "@/lib/navigation";
 import {
   useNotificationCount,
   fetchNotifications,
@@ -36,14 +35,14 @@ interface NotificationsPageProps {
   onNewPost?: () => void;
 }
 
-function NotificationsPage({ onNewPost, onNavigate }: NotificationsPageProps) {
+ function NotificationsPage({ onNewPost, onNavigate }: NotificationsPageProps) {
   // Use shared notification utilities
   const notificationCount = useNotificationCount();
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   // Load notifications when component mounts
   useEffect(() => {
-    const loadNotifications = async () => {
+     const loadNotifications = async () => {
       try {
         const fetchedNotifications = await fetchNotifications();
         setNotifications(fetchedNotifications);

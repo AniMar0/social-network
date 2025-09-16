@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -128,7 +129,7 @@ func (S *Server) SendFollowRequestHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// Check if already requested
+	// check duplicate
 	var exists int
 	err := S.db.QueryRow(`
 		SELECT COUNT(*) 
@@ -144,7 +145,7 @@ func (S *Server) SendFollowRequestHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// Insert new follow request (status = pending)
+	// insert follow request
 	_, err = S.db.Exec(`
 		INSERT INTO follow_requests (sender_id, receiver_id, status) 
 		VALUES (?, ?, 'pending')
@@ -154,6 +155,7 @@ func (S *Server) SendFollowRequestHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	// save notification in DB
 	if err := S.IsertNotification(Notification{
 		ID:        req.Following,
 		ActorID:   req.Follower,
@@ -162,12 +164,21 @@ func (S *Server) SendFollowRequestHandler(w http.ResponseWriter, r *http.Request
 		IsRead:    false,
 		CreatedAt: time.Now(),
 	}); err != nil {
-		fmt.Println(err)
 		http.Error(w, "Error inserting notification: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	// push notification via websocket
+	Following, _ := strconv.Atoi(req.Following)
+	S.PushNotification(Following, Notification{
+		ID:        req.Following,
+		ActorID:   req.Follower,
+		Type:      "follow_request",
+		Content:   "Follow request",
+		IsRead:    false,
+		CreatedAt: time.Now(),
+	})
+
 	json.NewEncoder(w).Encode(map[string]string{
 		"message": "Follow request sent",
 	})
@@ -205,6 +216,17 @@ func (S *Server) FollowHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error inserting notification: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	Following, _ := strconv.Atoi(body.Following)
+
+	S.PushNotification(Following, Notification{
+		ID:        body.Following,
+		ActorID:   body.Follower,
+		Type:      "follow",
+		Content:   "Follow",
+		IsRead:    false,
+		CreatedAt: time.Now(),
+	})
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{
