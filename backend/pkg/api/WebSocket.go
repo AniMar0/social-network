@@ -17,7 +17,6 @@ type Client struct {
 	SessionID string           `json:"session_id"`
 }
 
-// WebSocket handler
 func (S *Server) WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 	userID, SessionID, ok := S.CheckSession(r)
 	if ok != nil {
@@ -102,7 +101,6 @@ func (S *Server) StartWriter(c *Client) {
 	}
 }
 
-// Push notification
 func (S *Server) PushNotification(userID int, notif interface{}) {
 	S.RLock()
 	defer S.RUnlock()
@@ -116,7 +114,6 @@ func (S *Server) PushNotification(userID int, notif interface{}) {
 	}
 }
 
-// Push message
 func (S *Server) PushMessage(userID int, msg interface{}) {
 	S.RLock()
 	defer S.RUnlock()

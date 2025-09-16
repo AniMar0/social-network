@@ -1,6 +1,6 @@
 "use client";
 
-import { useNotificationCount } from "@/lib/notifications";
+import { triggerNotificationUpdate } from "@/lib/notifications";
 let ws: WebSocket | null = null;
 
 export function initWebSocket(userId: number) {
@@ -12,9 +12,8 @@ export function initWebSocket(userId: number) {
 
   ws.onmessage = (event) => {
     const data = JSON.parse(event.data);
-    if (data.type === "notification") {
-      console.log("Received notification:", data);
-      useNotificationCount();
+    if (data.channel === "notifications") {
+      triggerNotificationUpdate();
     }
   };
 
