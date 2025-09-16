@@ -61,6 +61,7 @@ function UserProfile({
     userData.isfollowing || isFollowing
   );
   // State for follow request status
+  console.log("Follow request status:", userData);
   const [followRequestStatus, setFollowRequestStatus] = useState<"none" | "pending" | "accepted" | "declined">(
     userData.followRequestStatus || "none"
   );

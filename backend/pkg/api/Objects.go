@@ -18,21 +18,22 @@ type User struct {
 }
 
 type UserData struct {
-	ID             string  `json:"id"`
-	FirstName      string  `json:"firstName"`
-	LastName       string  `json:"lastName"`
-	Nickname       *string `json:"nickname,omitempty"`
-	Email          string  `json:"email"`
-	DateOfBirth    string  `json:"dateOfBirth"`
-	Avatar         *string `json:"avatar,omitempty"`
-	AboutMe        *string `json:"aboutMe,omitempty"`
-	IsPrivate      bool    `json:"isPrivate"`
-	FollowersCount int     `json:"followersCount"`
-	FollowingCount int     `json:"followingCount"`
-	PostsCount     int     `json:"postsCount"`
-	JoinedDate     string  `json:"joinedDate"`
-	Url            string  `json:"url"`
-	Isfollowing    bool    `json:"isfollowing"`
+	ID                  string  `json:"id"`
+	FirstName           string  `json:"firstName"`
+	LastName            string  `json:"lastName"`
+	Nickname            *string `json:"nickname,omitempty"`
+	Email               string  `json:"email"`
+	DateOfBirth         string  `json:"dateOfBirth"`
+	Avatar              *string `json:"avatar,omitempty"`
+	AboutMe             *string `json:"aboutMe,omitempty"`
+	IsPrivate           bool    `json:"isPrivate"`
+	FollowersCount      int     `json:"followersCount"`
+	FollowingCount      int     `json:"followingCount"`
+	PostsCount          int     `json:"postsCount"`
+	JoinedDate          string  `json:"joinedDate"`
+	Url                 string  `json:"url"`
+	Isfollowing         bool    `json:"isfollowing"`
+	FollowRequestStatus string  `json:"followRequestStatus"`
 }
 
 type LoginUser struct {

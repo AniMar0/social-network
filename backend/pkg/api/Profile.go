@@ -60,12 +60,28 @@ func (S *Server) ProfileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !isFollowing && user.IsPrivate {
+		user.FollowRequestStatus, err = S.GetFollowRequestStatus(r, user.Url)
+		if err != nil {
+			if err.Error() == "sql: no rows in result set" {
+				user.FollowRequestStatus = "none"
+			} else {
+				fmt.Println(err)
+				http.Error(w, "Failed to get follow request status", http.StatusInternalServerError)
+				return
+			}
+		}
+	}
+
+	fmt.Println("isFollowing:", isFollowing)
+	fmt.Println("followRequestStatus:", user.FollowRequestStatus)
+
 	resp := map[string]interface{}{
-		"posts":       posts,
-		"user":        user,
-		"followers":   followers,
-		"following":   following,
-		"isfollowing": isFollowing,
+		"posts":         posts,
+		"user":          user,
+		"followers":     followers,
+		"following":     following,
+		"isfollowing":   isFollowing,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
