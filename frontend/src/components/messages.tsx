@@ -141,6 +141,7 @@ export function MessagesPage({ onNavigate, onNewPost }: MessagesPageProps) {
     const [userOnlineStatus, setUserOnlineStatus] = useState<boolean>(true);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+    const [messagesLoading, setMessagesLoading] = useState(false);
 
     // Get notification count for sidebar
     const notificationCount = useNotificationCount();
@@ -150,8 +151,27 @@ export function MessagesPage({ onNavigate, onNewPost }: MessagesPageProps) {
         if (selectedChat) {
             fetchUserProfile(selectedChat.id);
             fetchUserOnlineStatus(selectedChat.id);
+            fetchMessages(selectedChat.id);
         }
     }, [selectedChat]);
+
+    const fetchMessages = async (userId: string) => {
+        try {
+            setMessagesLoading(true);
+            console.log("Fetching messages for user:", userId);
+            // TODO: Replace with actual API call
+            // const response = await fetch(`/api/messages/${userId}`);
+            // const messagesData = await response.json();
+            // setMessages(messagesData);
+            
+            // For now, using mock data - you can remove this when implementing backend
+            setMessages(sampleMessages);
+        } catch (error) {
+            console.error("Error fetching messages:", error);
+        } finally {
+            setMessagesLoading(false);
+        }
+    };
 
     const fetchUserProfile = async (userId: string) => {
         try {
@@ -191,8 +211,8 @@ export function MessagesPage({ onNavigate, onNewPost }: MessagesPageProps) {
             chat.username.toLowerCase().includes(searchQuery.toLowerCase()),
     );
 
-    const handleSendMessage = () => {
-        if (newMessage.trim()) {
+    const handleSendMessage = async () => {
+        if (newMessage.trim() && selectedChat) {
             // Check if message is only emojis
             const isOnlyEmojis = /^[\u{1F600}-\u{1F64F}|\u{1F300}-\u{1F5FF}|\u{1F680}-\u{1F6FF}|\u{1F1E0}-\u{1F1FF}|\u{2600}-\u{26FF}|\u{2700}-\u{27BF}]+$/u.test(newMessage.trim());
             
@@ -212,15 +232,38 @@ export function MessagesPage({ onNavigate, onNewPost }: MessagesPageProps) {
                 } : undefined
             };
             
-            // Add message to the list
+            // Add message to the list immediately for instant feedback
             setMessages(prev => [...prev, message]);
             
-            console.log("Sending message:", newMessage);
-            if (replyingTo) {
-                console.log("Reply to message:", replyingTo.id);
-                // TODO: Add backend logic to send reply with context
+            try {
+                console.log("Sending message to user:", selectedChat.id, "Message:", newMessage);
+                // TODO: Replace with actual API call
+                // const response = await fetch('/api/messages/send', {
+                //     method: 'POST',
+                //     headers: {
+                //         'Content-Type': 'application/json',
+                //     },
+                //     body: JSON.stringify({
+                //         recipientId: selectedChat.id,
+                //         content: newMessage.trim(),
+                //         type: isOnlyEmojis ? "emoji" : "text",
+                //         replyToId: replyingTo?.id || null
+                //     })
+                // });
+                // 
+                // if (!response.ok) {
+                //     throw new Error('Failed to send message');
+                // }
+                
+                if (replyingTo) {
+                    console.log("Reply to message:", replyingTo.id);
+                }
+            } catch (error) {
+                console.error("Error sending message:", error);
+                // Remove the message from UI if sending failed
+                setMessages(prev => prev.filter(msg => msg.id !== message.id));
+                // You could also show an error toast here
             }
-            // TODO: Add backend logic to send message
             
             setNewMessage("");
             setReplyingTo(null); // Clear reply state
@@ -444,8 +487,16 @@ export function MessagesPage({ onNavigate, onNewPost }: MessagesPageProps) {
                     <div 
                         className="flex-1 p-4 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
                     >
-                        <div className="space-y-4">
-                            {messages.map((message) => (
+                        {messagesLoading ? (
+                            <div className="flex items-center justify-center h-full">
+                                <div className="text-center">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
+                                    <p className="text-sm text-muted-foreground">Loading messages...</p>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {messages.map((message) => (
                                 <div key={message.id} className={`flex ${message.isOwn ? "justify-end" : "justify-start"}`}>
                                     <div className={`max-w-xs lg:max-w-md ${message.isOwn ? "order-2" : "order-1"}`}>
                                         <ContextMenu>
@@ -526,8 +577,9 @@ export function MessagesPage({ onNavigate, onNewPost }: MessagesPageProps) {
                                         </div>
                                     </div>
                                 </div>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     {/* Emoji & GIF */}
