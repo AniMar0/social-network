@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 )
 
@@ -85,6 +84,23 @@ func (S *Server) AcceptFollowRequestHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	notification := Notification{
+		ID:        tools.StringToInt(FollowerID),
+		ActorID:   tools.StringToInt(FollowingID),
+		Type:      "follow",
+		Content:   "Follow Request Accepted",
+		IsRead:    false,
+		CreatedAt: time.Now(),
+	}
+
+	if err := S.IsertNotification(notification); err != nil {
+		fmt.Println(err)
+		http.Error(w, "Error inserting notification: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	S.PushNotification(tools.StringToInt(FollowerID), notification)
+
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"message": "follow request accepted"})
 }
@@ -148,7 +164,6 @@ func (S *Server) SendFollowRequestHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// insert follow request
 	_, err = S.db.Exec(`
 		INSERT INTO follow_requests (sender_id, receiver_id, status) 
 		VALUES (?, ?, 'pending')
@@ -158,29 +173,20 @@ func (S *Server) SendFollowRequestHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// save notification in DB
-	if err := S.IsertNotification(Notification{
+	notification := Notification{
 		ID:        tools.StringToInt(req.Following),
 		ActorID:   tools.StringToInt(req.Follower),
 		Type:      "follow_request",
 		Content:   "Follow request",
 		IsRead:    false,
 		CreatedAt: time.Now(),
-	}); err != nil {
+	}
+	if err := S.IsertNotification(notification); err != nil {
 		http.Error(w, "Error inserting notification: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// push notification via websocket
-	Following, _ := strconv.Atoi(req.Following)
-	S.PushNotification(Following, Notification{
-		ID:        tools.StringToInt(req.Following),
-		ActorID:   tools.StringToInt(req.Follower),
-		Type:      "follow_request",
-		Content:   "Follow request",
-		IsRead:    false,
-		CreatedAt: time.Now(),
-	})
+	S.PushNotification(tools.StringToInt(req.Following), notification)
 
 	json.NewEncoder(w).Encode(map[string]string{
 		"message": "Follow request sent",
@@ -207,29 +213,22 @@ func (S *Server) FollowHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := S.IsertNotification(Notification{
+	notification := Notification{
 		ID:        tools.StringToInt(body.Following),
 		ActorID:   tools.StringToInt(body.Follower),
 		Type:      "follow",
 		Content:   "Follow",
 		IsRead:    false,
 		CreatedAt: time.Now(),
-	}); err != nil {
+	}
+
+	if err := S.IsertNotification(notification); err != nil {
 		fmt.Println(err)
 		http.Error(w, "Error inserting notification: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	Following, _ := strconv.Atoi(body.Following)
-
-	S.PushNotification(Following, Notification{
-		ID:        tools.StringToInt(body.Following),
-		ActorID:   tools.StringToInt(body.Follower),
-		Type:      "follow",
-		Content:   "Follow",
-		IsRead:    false,
-		CreatedAt: time.Now(),
-	})
+	S.PushNotification(tools.StringToInt(body.Following), notification)
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{
