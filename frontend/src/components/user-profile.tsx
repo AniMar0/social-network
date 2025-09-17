@@ -449,10 +449,10 @@ function UserProfile({
                             {post.comments}
                           </button>
                           {/* Share button */}
-                          <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
+                          {/* <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
                             <Share2 className="h-4 w-4" />
                             Share
-                          </button>
+                          </button> */}
                         </div>
                       </div>
                     </CardContent>

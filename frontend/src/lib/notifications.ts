@@ -30,7 +30,6 @@ export const triggerNotificationUpdate = () => {
 // Hook to get unread notification count
 export const useNotificationCount = () => {
   const [notificationCount, setNotificationCount] = useState(0);
-  const [forceUpdate, setForceUpdate] = useState(0);
 
   const updateCount = useCallback(async () => {
     const notifications = await fetchNotifications();
@@ -39,21 +38,9 @@ export const useNotificationCount = () => {
   }, []);
 
   useEffect(() => {
-    updateCount();
-
     // Register for updates
     notificationUpdateListeners.push(updateCount);
-
-    // Set up polling for real-time updates (every 30 seconds)
-    const interval = setInterval(updateCount, 30000);
-
-    return () => {
-      // Cleanup listener
-      notificationUpdateListeners = notificationUpdateListeners.filter(
-        (l) => l !== updateCount
-      );
-      clearInterval(interval);
-    };
+    
   }, [updateCount]);
 
   return notificationCount;
@@ -62,7 +49,7 @@ export const useNotificationCount = () => {
 export const fetchNotifications = async (): Promise<Notification[]> => {
   try {
     // TODO: Replace with actual API call
-    const response = await fetch("/api/notifications", {
+    const response = await fetch("http://localhost:8080/api/notifications", {
       credentials: "include",
     });
     if (!response.ok) throw new Error("Failed to fetch notifications");

@@ -82,6 +82,7 @@ func (S *Server) initRoutes() {
 	//post handlers
 	S.mux.HandleFunc("/api/like/", S.LikeHandler)
 	S.mux.Handle("/api/create-post", S.SessionMiddleware(http.HandlerFunc(S.CreatePostHandler)))
+	S.mux.HandleFunc("/api/get-posts", S.GetPostsHandler)
 }
 
 func (S *Server) initWebSocket() {

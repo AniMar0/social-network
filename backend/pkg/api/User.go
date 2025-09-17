@@ -279,3 +279,22 @@ func (S *Server) GetUserData(url string, id int) (UserData, error) {
 
 	return user, nil
 }
+
+// get all users ids from users table
+func (S *Server) GetAllUsers() ([]int, error) {
+	rows, err := S.db.Query(`SELECT id FROM users`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var ids []int
+	for rows.Next() {
+		var id int
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, nil
+}

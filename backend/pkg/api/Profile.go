@@ -53,7 +53,7 @@ func (S *Server) ProfileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var isFollowing bool
-	isFollowing, err = S.IsFollowing(r, user.Url)
+	isFollowing, err = S.IsFollowing(r, user.Url, "")
 	if err != nil {
 		fmt.Println(err)
 		http.Error(w, "Failed to check following status", http.StatusInternalServerError)

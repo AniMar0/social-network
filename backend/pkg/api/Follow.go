@@ -326,16 +326,16 @@ func (S *Server) GetFollowRequestStatus(r *http.Request, followingURL string) (s
 	}
 	return status, nil
 }
-func (S *Server) IsFollowing(r *http.Request, followingURL string) (bool, error) {
+func (S *Server) IsFollowing(r *http.Request, followingURL, followingID string) (bool, error) {
 	followerID, _, _ := S.CheckSession(r)
-	var followingID int
-	err := S.db.QueryRow(`SELECT id FROM users WHERE url = ?`, followingURL).Scan(&followingID)
-	if err != nil {
-		return false, err
+	if followingID == "" {
+		err := S.db.QueryRow(`SELECT id FROM users WHERE url = ?`, followingURL).Scan(&followingID)
+		if err != nil {
+			return false, err
+		}
 	}
-
 	var isFollowing bool
-	err = S.db.QueryRow(`SELECT EXISTS(SELECT 1 FROM follows WHERE follower_id = ? AND following_id = ?)`, followerID, followingID).Scan(&isFollowing)
+	err := S.db.QueryRow(`SELECT EXISTS(SELECT 1 FROM follows WHERE follower_id = ? AND following_id = ?)`, followerID, followingID).Scan(&isFollowing)
 	if err != nil {
 		return false, err
 	}

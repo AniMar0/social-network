@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -146,7 +147,7 @@ func (S *Server) LikeHandler(w http.ResponseWriter, r *http.Request) {
 		userIDs, err := S.GetUserIdFromPostID(PostID)
 
 		if userIDs != userID {
-			notification := Notification{ID: PostID, ActorID: userID, Type: "like", Content: "Like Your Post", IsRead: false}
+			notification := Notification{ID: userIDs, ActorID: userID, Type: "like", Content: "Like Your Post", IsRead: false}
 			if err != nil {
 				http.Error(w, "DB Error", http.StatusInternalServerError)
 				return
@@ -187,32 +188,37 @@ func (S *Server) GetUserPosts(userID int, r *http.Request) ([]Post, error) {
 		var post Post
 		var authorID int
 		var firstName, lastName, nickname, avatar sql.NullString
-		var isPrivate bool
+		var isPrivate, isFollowing bool
 		if err := rows.Scan(
 			&post.ID, &post.Content, &post.Image, &post.CreatedAt, &post.Privacy,
 			&authorID, &firstName, &lastName, &nickname, &avatar, &isPrivate,
-			&post.Likes, &post.IsLiked, // 👈 ضروري
+			&post.Likes, &post.IsLiked,
 		); err != nil {
 			return nil, err
 		}
-
+		if post.Privacy == "almost-private" && authorID != currentUserID {
+			isFollowing, err = S.IsFollowing(r, "", strconv.Itoa(authorID))
+			if err != nil {
+				return nil, err
+			}
+			if !isFollowing {
+				continue
+			}
+		} else if post.Privacy == "private" {
+			if authorID != currentUserID {
+				continue
+			}
+		}
 		// تحويل NullString إلى string
-		post.Author = struct {
-			Name      string `json:"name"`
-			Username  string `json:"username"`
-			Avatar    string `json:"avatar"`
-			IsPrivate bool   `json:"isPrivate"`
-		}{
+		post.Author = Author{
 			Name:      firstName.String + " " + lastName.String,
 			Username:  nickname.String,
 			Avatar:    avatar.String,
 			IsPrivate: isPrivate,
 		}
-
 		post.UserID = userID
 		post.Comments = 0
 		post.Shares = 0
-
 		posts = append(posts, post)
 	}
 
@@ -226,4 +232,36 @@ func (S *Server) GetUserIdFromPostID(postID int) (int, error) {
 		return 0, err
 	}
 	return userID, nil
+}
+
+func (S *Server) GetPostsHandler(w http.ResponseWriter, r *http.Request) {
+	userID, _, err := S.CheckSession(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	var allPosts []Post
+	ids, err := S.GetAllUsers()
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "DB Error", http.StatusInternalServerError)
+		return
+	}
+	for _, userID := range ids {
+		posts, err := S.GetUserPosts(userID, r)
+		if err != nil {
+			fmt.Println(err)
+			http.Error(w, "DB Error", http.StatusInternalServerError)
+			return
+		}
+		allPosts = append(allPosts, posts...)
+
+	}
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"posts": allPosts,
+		"user": map[string]interface{}{
+			"userID": userID,
+		},
+	})
 }

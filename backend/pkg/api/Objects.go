@@ -52,12 +52,7 @@ type Post struct {
 	Comments  int     `json:"comments"`
 	Shares    int     `json:"shares"`
 	IsLiked   bool    `json:"isLiked"`
-	Author    struct {
-		Name      string `json:"name"`
-		Username  string `json:"username"`
-		Avatar    string `json:"avatar"`
-		IsPrivate bool   `json:"isPrivate"` // بدل isVerified
-	} `json:"author"`
+	Author    Author  `json:"author"`
 }
 
 type Notification struct {
@@ -70,4 +65,11 @@ type Notification struct {
 	FirstName string    `json:"firstName"`
 	LastName  string    `json:"lastName"`
 	Avatar    string    `json:"avatar"`
+}
+
+type Author = struct {
+	Name      string `json:"name"`
+	Username  string `json:"username"`
+	Avatar    string `json:"avatar"`
+	IsPrivate bool   `json:"isPrivate"`
 }

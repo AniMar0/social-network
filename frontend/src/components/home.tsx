@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SidebarNavigation } from "./sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ interface Post {
   };
   content: string;
   image?: string;
-  timestamp: string;
+  createdAt: string;
   likes: number;
   comments: number;
   shares: number;
@@ -34,94 +34,42 @@ interface HomeFeedProps {
 function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
   // Get notification count for sidebar
   const notificationCount = useNotificationCount();
+  const [postsState, setPostsState] = useState<Post[]>([]);
 
-  const [posts, setPosts] = useState<Post[]>([
-    {
-      id: "1",
-      author: {
-        name: "Thomas T Link",
-        username: "@thomas.tlink",
-        avatar: "https://i.imgur.com/aSlIJks.png",
-        isVerified: true,
-      },
-      content:
-        "When navigating the social network the user should be able to follow and unfollow other users. Needless to say that to unfollow a user you have to be following him/her. 🔥🔥",
-      image: "https://media1.tenor.com/m/rF5ERf7ncqUAAAAC/oh-no-top-gear.gif",
-      timestamp: "09.12.2025",
-      likes: 24,
-      comments: 8,
-      shares: 3,
-      isLiked: false,
-      privacy: "public",
-    },
-    {
-      id: "2",
-      author: {
-        name: "Sarah Johnson",
-        username: "@sarah.j",
-        avatar: "https://i.imgur.com/v1oBVXE.png",
-      },
-      content:
-        "Just finished working on a new React component library! The developer experience is so much smoother now. Can't wait to share it with the team tomorrow. 💻✨",
-      timestamp: "08.12.2025",
-      image:
-        "https://pbs.twimg.com/media/G0rKUx7WEAASmnH?format=jpg&name=small",
-      likes: 156,
-      comments: 23,
-      shares: 12,
-      isLiked: true,
-      privacy: "public",
-    },
-    {
-      id: "3",
-      author: {
-        name: "Alex Rivera",
-        username: "@alex.dev",
-        avatar: "https://i.imgur.com/aSlIJks.png",
-      },
-      content:
-        "Coffee, code, repeat. Working on some exciting new features for our social platform. The future of social networking is looking bright! ☕",
-      timestamp: "07.12.2025",
-      likes: 89,
-      comments: 15,
-      shares: 7,
-      isLiked: false,
-      privacy: "almost-private",
-    },
-    {
-      id: "4",
-      author: {
-        name: "Maya Chen",
-        username: "@maya.design",
-        avatar: "https://i.imgur.com/G6ohfGN.png",
-        isVerified: true,
-      },
-      content:
-        "Design systems are the backbone of great user experiences. Just published a new article about creating consistent UI patterns across teams. Link in bio! 🎨",
-      timestamp: "06.12.2025",
-      likes: 203,
-      comments: 31,
-      shares: 18,
-      isLiked: true,
-      privacy: "public",
-    },
-  ]);
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const res = await fetch("http://localhost:8080/api/get-posts", {
+          credentials: "include",
+        });
+        const data = await res.json();
+        setPostsState(data.posts);
+      } catch (err) {
+        console.error("Failed to fetch posts", err);
+      }
+    };
+
+    fetchPosts();
+  }, []);
 
   const handleLike = async (postId: string) => {
     try {
-      const res = await fetch(`/api/like/${postId}`, {
+      const res = await fetch(`http://localhost:8080/api/like/${postId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
       });
+
       const data = await res.json();
-      console.log(data);
-      setPosts(
-        posts.map((post) =>
+      const isLiked = data.liked ?? false;
+
+      setPostsState((prevPosts) =>
+        prevPosts.map((post) =>
           post.id === postId
             ? {
                 ...post,
-                isLiked: data.IsLiked,
-                likes: data.IsLiked ? post.likes + 1 : post.likes - 1,
+                isLiked,
+                likes: isLiked ? post.likes + 1 : post.likes - 1,
               }
             : post
         )
@@ -163,7 +111,7 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
 
         {/* Posts Feed */}
         <div className="p-4 space-y-4">
-          {posts.map((post) => (
+          {postsState.map((post) => (
             <Card
               key={post.id}
               className="border border-border w-full max-w-3xl mx-auto"
@@ -175,7 +123,7 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
                     <Avatar className="h-12 w-12">
                       <AvatarImage
                         src={
-                          post.author.avatar ||
+                          `http://localhost:8080/${post.author.avatar}` ||
                           "http://localhost:8080/uploads/default.jpg"
                         }
                         alt={post.author.name}
@@ -194,7 +142,8 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
                         </h3>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {post.author.username} • {post.timestamp}
+                        {post.author.username} •{" "}
+                        {new Date(post.createdAt).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
@@ -208,7 +157,11 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
                   {post.image && (
                     <div className="mt-3 rounded-lg overflow-hidden">
                       <img
-                        src={post.image || "/placeholder.svg"}
+                        src={
+                          post.image.startsWith("http")
+                            ? post.image // external URL
+                            : `http://localhost:8080/${post.image}` // internal URL
+                        }
                         alt="Post content"
                         className="w-full h-auto object-cover"
                       />
