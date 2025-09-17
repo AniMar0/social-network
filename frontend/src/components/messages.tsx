@@ -441,7 +441,9 @@ export function MessagesPage({ onNavigate, onNewPost }: MessagesPageProps) {
                     </div>
 
                     {/* Messages */}
-                    <div className="flex-1 p-4 overflow-y-auto">
+                    <div 
+                        className="flex-1 p-4 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                    >
                         <div className="space-y-4">
                             {messages.map((message) => (
                                 <div key={message.id} className={`flex ${message.isOwn ? "justify-end" : "justify-start"}`}>
