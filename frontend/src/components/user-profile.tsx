@@ -53,7 +53,7 @@ function UserProfile({
 }: UserProfileProps) {
   // Get notification count for sidebar
   const notificationCount = useNotificationCount();
-  
+
   // State for profile data (can be updated by settings dialog)
   const [profileData, setProfileData] = useState(userData);
   // State for following/unfollowing this user
@@ -62,11 +62,11 @@ function UserProfile({
   );
   // State for follow request status
   console.log("Follow request status:", userData);
-  const [followRequestStatus, setFollowRequestStatus] = useState<"none" | "pending" | "accepted" | "declined">(
-    userData.followRequestStatus || "none"
-  );
+  const [followRequestStatus, setFollowRequestStatus] = useState<
+    "none" | "pending" | "accepted" | "declined"
+  >(userData.followRequestStatus || "none");
   // State for liked posts (IDs)
-  const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
+  const [postsState, setPostsState] = useState(posts);
 
   // Called when profile settings are saved
   const handleProfileUpdate = (updatedData: UserData) => {
@@ -112,7 +112,7 @@ function UserProfile({
           credentials: "include",
           body: JSON.stringify(body),
         });
-        
+
         setFollowRequestStatus("none");
       } else {
         // Check if profile is private
@@ -124,7 +124,7 @@ function UserProfile({
             credentials: "include",
             body: JSON.stringify(body),
           });
-          
+
           setFollowRequestStatus("pending");
         } else {
           // Follow public profile instantly
@@ -150,26 +150,47 @@ function UserProfile({
 
   // Like or unlike a post
   // TODO: Call backend to like/unlike post
-  const handleLikePost = (postId: string) => {
-    const newLikedPosts = new Set(likedPosts);
-    if (likedPosts.has(postId)) {
-      newLikedPosts.delete(postId);
-    } else {
-      newLikedPosts.add(postId);
+  const handleLikePost = async (postId: string) => {
+    try {
+      const res = await fetch(`http://localhost:8080/api/like/${postId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+
+      const data = await res.json();
+      const isLiked = data.liked ?? false;
+
+      // حدّث state
+      setPostsState((prevPosts) =>
+        prevPosts.map((post) =>
+          post.id === postId
+            ? {
+                ...post,
+                isLiked,
+                likes: isLiked ? post.likes + 1 : post.likes - 1,
+              }
+            : post
+        )
+      );
+    } catch (err) {
+      console.error("Failed to like post", err);
     }
-    setLikedPosts(newLikedPosts);
-    console.log("Post like toggled:", postId);
   };
 
   // Can the current user view posts? (private logic)
-  const canViewPosts = isOwnProfile || !profileData.isPrivate || (followingState && followRequestStatus === "accepted");
+  const canViewPosts =
+    isOwnProfile ||
+    !profileData.isPrivate ||
+    followingState ||
+    followRequestStatus === "accepted";
 
   // Get follow button text based on current state
   const getFollowButtonText = () => {
     if (followingState) {
       return "Following";
     }
-    
+
     if (profileData.isPrivate) {
       switch (followRequestStatus) {
         case "pending":
@@ -180,7 +201,7 @@ function UserProfile({
           return "Send Follow Request";
       }
     }
-    
+
     return "Follow";
   };
 
@@ -189,15 +210,15 @@ function UserProfile({
     if (followingState) {
       return "outline" as const;
     }
-    
+
     if (followRequestStatus === "pending") {
       return "outline" as const;
     }
-    
+
     if (followRequestStatus === "declined") {
       return "destructive" as const;
     }
-    
+
     return "default" as const;
   };
 
@@ -350,7 +371,7 @@ function UserProfile({
             <div className="space-y-6">
               {/* List of posts if any */}
               {posts.length > 0 ? (
-                posts.map((post) => (
+                postsState.map((post) => (
                   // Single post card
                   <Card key={post.id} className="bg-card border-border">
                     <CardContent className="p-6">
@@ -395,7 +416,7 @@ function UserProfile({
                               src={
                                 post.image.startsWith("http")
                                   ? post.image // external URL
-                                  : `http://localhost:8080/${post.image}` // internal URL 
+                                  : `http://localhost:8080/${post.image}` // internal URL
                               }
                               alt="Post content"
                               className="w-full h-auto max-h-96 object-cover"
@@ -410,17 +431,17 @@ function UserProfile({
                           <button
                             onClick={() => handleLikePost(post.id)}
                             className={`flex items-center gap-2 text-sm hover:text-primary transition-colors ${
-                              likedPosts.has(post.id)
+                              post.isLiked
                                 ? "text-primary"
                                 : "text-muted-foreground"
                             }`}
                           >
                             <Heart
                               className={`h-4 w-4 ${
-                                likedPosts.has(post.id) ? "fill-current" : ""
+                                post.isLiked ? "fill-current" : ""
                               }`}
                             />
-                            {post.likes + (likedPosts.has(post.id) ? 1 : 0)}
+                            {post.likes}
                           </button>
                           {/* Comment button */}
                           <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
@@ -455,12 +476,11 @@ function UserProfile({
                   This profile is private
                 </h3>
                 <p className="text-muted-foreground mb-6">
-                  {followRequestStatus === "pending" 
+                  {followRequestStatus === "pending"
                     ? `Your follow request to ${profileData.firstName} is pending approval.`
                     : followRequestStatus === "declined"
                     ? `Your follow request to ${profileData.firstName} was declined.`
-                    : `Follow ${profileData.firstName} to see their posts and activity.`
-                  }
+                    : `Follow ${profileData.firstName} to see their posts and activity.`}
                 </p>
                 {/* Show follow button if not own profile */}
                 {!isOwnProfile && (

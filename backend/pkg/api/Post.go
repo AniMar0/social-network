@@ -100,17 +100,83 @@ func (S *Server) CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(post)
 }
-func (S *Server) LikeHandler(w http.ResponseWriter, r *http.Request) {}
-func (S *Server) GetUserPosts(userID int) ([]Post, error) {
+func (S *Server) LikeHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	userID, _, err := S.CheckSession(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	PostID := tools.StringToInt(r.URL.Path[len("/api/like/"):])
+
+	// check if already liked
+	var exists bool
+	err = S.db.QueryRow(
+		"SELECT EXISTS(SELECT 1 FROM likes WHERE user_id=? AND post_id=?)",
+		userID, PostID,
+	).Scan(&exists)
+	if err != nil {
+		http.Error(w, "DB Error", http.StatusInternalServerError)
+		return
+	}
+
+	if exists {
+		// remove like
+		_, err = S.db.Exec("DELETE FROM likes WHERE user_id=? AND post_id=?", userID, PostID)
+		if err != nil {
+			http.Error(w, "DB Error", http.StatusInternalServerError)
+			return
+		}
+		_, _ = S.db.Exec("UPDATE posts SET likes = likes - 1 WHERE id=?", PostID)
+		json.NewEncoder(w).Encode(map[string]interface{}{"liked": false})
+	} else {
+		// add like
+		_, err = S.db.Exec("INSERT INTO likes (user_id, post_id) VALUES (?, ?)", userID, PostID)
+		if err != nil {
+			http.Error(w, "DB Error", http.StatusInternalServerError)
+			return
+		}
+		_, _ = S.db.Exec("UPDATE posts SET likes = likes + 1 WHERE id=?", PostID)
+
+		userIDs, err := S.GetUserIdFromPostID(PostID)
+
+		if userIDs != userID {
+			notification := Notification{ID: PostID, ActorID: userID, Type: "like", Content: "Like Your Post", IsRead: false}
+			if err != nil {
+				http.Error(w, "DB Error", http.StatusInternalServerError)
+				return
+			}
+			S.IsertNotification(notification)
+			S.PushNotification(userIDs, notification)
+		}
+
+		json.NewEncoder(w).Encode(map[string]interface{}{"liked": true})
+	}
+}
+
+func (S *Server) GetUserPosts(userID int, r *http.Request) ([]Post, error) {
+	currentUserID, _, err := S.CheckSession(r)
+	if err != nil {
+		return nil, err
+	}
+
 	rows, err := S.db.Query(`
-		SELECT 
-			p.id, p.content, p.image, p.created_at, p.privacy, 
-			u.id, u.first_name, u.last_name, u.nickname, u.avatar, u.is_private
-		FROM posts p
-		JOIN users u ON p.user_id = u.id
-		WHERE p.user_id = ?
-		ORDER BY p.created_at DESC
-	`, userID)
+	SELECT 
+		p.id, p.content, p.image, p.created_at, p.privacy,
+		u.id, u.first_name, u.last_name, u.nickname, u.avatar, u.is_private,
+		(SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id) as like_count,
+		EXISTS(SELECT 1 FROM likes l WHERE l.post_id = p.id AND l.user_id = ?) as is_liked
+	FROM posts p
+	JOIN users u ON p.user_id = u.id
+	WHERE p.user_id = ?
+	ORDER BY p.created_at DESC
+`, currentUserID, userID)
+
 	if err != nil {
 		return nil, err
 	}
@@ -125,6 +191,7 @@ func (S *Server) GetUserPosts(userID int) ([]Post, error) {
 		if err := rows.Scan(
 			&post.ID, &post.Content, &post.Image, &post.CreatedAt, &post.Privacy,
 			&authorID, &firstName, &lastName, &nickname, &avatar, &isPrivate,
+			&post.Likes, &post.IsLiked, // 👈 ضروري
 		); err != nil {
 			return nil, err
 		}
@@ -143,13 +210,20 @@ func (S *Server) GetUserPosts(userID int) ([]Post, error) {
 		}
 
 		post.UserID = userID
-		post.Likes = 0
 		post.Comments = 0
 		post.Shares = 0
-		post.IsLiked = false
 
 		posts = append(posts, post)
 	}
 
 	return posts, nil
+}
+
+func (S *Server) GetUserIdFromPostID(postID int) (int, error) {
+	var userID int
+	err := S.db.QueryRow("SELECT user_id FROM posts WHERE id = ?", postID).Scan(&userID)
+	if err != nil {
+		return 0, err
+	}
+	return userID, nil
 }

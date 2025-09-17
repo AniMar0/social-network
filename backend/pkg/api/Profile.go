@@ -45,7 +45,7 @@ func (S *Server) ProfileHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "error converting user ID", http.StatusInternalServerError)
 		return
 	}
-	posts, err := S.GetUserPosts(userID)
+	posts, err := S.GetUserPosts(userID, r)
 	if err != nil {
 		fmt.Println(err)
 		http.Error(w, "error getting posts", http.StatusInternalServerError)
@@ -74,11 +74,11 @@ func (S *Server) ProfileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := map[string]interface{}{
-		"posts":         posts,
-		"user":          user,
-		"followers":     followers,
-		"following":     following,
-		"isfollowing":   isFollowing,
+		"posts":       posts,
+		"user":        user,
+		"followers":   followers,
+		"following":   following,
+		"isfollowing": isFollowing,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

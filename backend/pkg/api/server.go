@@ -80,7 +80,7 @@ func (S *Server) initRoutes() {
 	S.mux.HandleFunc("/api/me", S.MeHandler)
 
 	//post handlers
-	S.mux.HandleFunc("/api/like", S.LikeHandler)
+	S.mux.HandleFunc("/api/like/", S.LikeHandler)
 	S.mux.Handle("/api/create-post", S.SessionMiddleware(http.HandlerFunc(S.CreatePostHandler)))
 }
 
