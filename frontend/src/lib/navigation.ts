@@ -39,8 +39,8 @@ export const useAppNavigation = () => {
       case "profile":
         // Navigate to current user's profile
         // TODO: ADD YOUR BACKEND LOGIC HERE - Get user's profile URL from database
-        const user = await authUtils.CurrentUser();
-        navigateToProfile(user.url);
+        // const user = await authUtils.CurrentUser();
+        // navigateToProfile(user.url);
         break;
       case "auth":
         navigateToAuth();

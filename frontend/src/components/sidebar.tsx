@@ -1,6 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import type React from "react";
+import { authUtils } from "@/lib/navigation";
+import { closeWebSocket } from "@/lib/websocket";
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -20,94 +23,84 @@ interface NavigationItem {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   href?: string;
-  isActive?: boolean;
 }
 
 interface SidebarNavigationProps {
   activeItem?: string;
-  onNavigate?: (itemId: string) => void;
   onNewPost?: () => void;
   notificationCount?: number;
 }
 
 function SidebarNavigation({
-  activeItem = "home",
-  onNavigate,
+  activeItem,
   onNewPost,
   notificationCount = 0,
 }: SidebarNavigationProps) {
-  const [currentActive, setCurrentActive] = useState(activeItem);
+  const [currentActive] = useState(activeItem);
 
   const navigationItems: NavigationItem[] = [
-    { id: "home", label: "Home", icon: Home },
-    { id: "explore", label: "Explore", icon: Search },
-    { id: "notifications", label: "Notifications", icon: Bell },
-    { id: "messages", label: "Messages", icon: MessageSquare },
-    { id: "groups", label: "Groups", icon: Users },
-    { id: "profile", label: "Profile", icon: User },
-
+    { id: "home", label: "Home", icon: Home, href: "/" },
+    { id: "explore", label: "Explore", icon: Search, href: "/explore" },
+    { id: "notifications", label: "Notifications", icon: Bell, href: "/notifications" },
+    { id: "messages", label: "Messages", icon: MessageSquare, href: "/messages" },
+    { id: "groups", label: "Groups", icon: Users, href: "/groups" },
+    { id: "profile", label: "Profile", icon: User, href: "/profile" }, // غادي نبدلها تحت
   ];
 
-  const handleItemClick = (itemId: string) => {
-    // Always allow navigation to ensure routing works properly
-    setCurrentActive(itemId);
-    onNavigate?.(itemId);
-    console.log("Navigation item clicked:", itemId);
+  const handleLogout = async (event: React.MouseEvent) => {
+    event.preventDefault();
+    await fetch("/api/logout", { method: "POST" });
+    closeWebSocket();
+    localStorage.setItem("logout", Date.now().toString());
+    window.location.href = "/auth"; // نقدر نستعمل replace هنا
   };
-  
 
   const handleNewPost = () => {
     onNewPost?.();
-    console.log("New Post button clicked");
-  };
-
-  const handleLogout = (event: React.MouseEvent) => {
-    event.preventDefault();
-    fetch("/api/logout", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-      .then((res) => {
-        if (res.status != 200 && res.status != 401 && res.status != 201) {
-          // Handle unexpected status codes
-        }
-        if (!res.ok) throw new Error("logout failed");
-        return res.text();
-      })
-      .then(() => {
-        localStorage.setItem("logout", Date.now().toString());
-        window.location.reload();
-      })
-      .catch((err) => console.error(err));
   };
 
   return (
     <div className="w-64 h-screen bg-card border-r border-border flex flex-col">
-      {/* Header */}
       <div className="p-6 border-b border-border">
-        <h1 className="text-xl font-bold text-foreground pb-2">
-          {" "}
-          Social Network
-        </h1>
+        <h1 className="text-xl font-bold text-foreground pb-2">Social Network</h1>
       </div>
 
-      {/* Navigation Items */}
       <nav className="flex-1 p-4">
         <ul className="space-y-2">
           {navigationItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentActive === item.id;
 
+            // special case for profile (بما أنو عندك url خاص بالمستخدم)
+            if (item.id === "profile") {
+              return (
+                <li key={item.id}>
+                  <button
+                    onClick={async () => {
+                      const user = await authUtils.CurrentUser();
+                      window.location.href = `/profile/${user.url}`;
+                    }}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors relative ${
+                      isActive
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
+                    }`}
+                  >
+                    <Icon className="h-5 w-5" />
+                    <span>{item.label}</span>
+                  </button>
+                </li>
+              );
+            }
+
             return (
               <li key={item.id}>
-                <button
-                  onClick={() => handleItemClick(item.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors relative ${
+                <Link
+                  href={item.href || "/"}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors relative ${
                     isActive
                       ? "bg-primary/10 text-primary font-medium"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
                   }`}
                 >
                   <Icon className="h-5 w-5" />
@@ -117,13 +110,13 @@ function SidebarNavigation({
                       {notificationCount > 99 ? "99+" : notificationCount}
                     </span>
                   )}
-                </button>
+                </Link>
               </li>
             );
           })}
         </ul>
       </nav>
-      {/* logout Button */}
+
       <div className="p-4">
         <Button
           onClick={handleLogout}
@@ -135,7 +128,6 @@ function SidebarNavigation({
         </Button>
       </div>
 
-      {/* New Post Button */}
       <div className="p-4 border-t border-border">
         <Button
           onClick={handleNewPost}
