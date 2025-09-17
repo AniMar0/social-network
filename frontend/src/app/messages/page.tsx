@@ -1,35 +1,40 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { HomeFeed } from "@/components/home";
+import MessagesPage from "@/components/messages";
 import { NewPostModal } from "@/components/newpost";
 import { authUtils } from "@/lib/navigation";
-import { initWebSocket, closeWebSocket } from "@/lib/websocket";
 
-export default function HomePage() {
+export default function Messages() {
   const [isNewPostModalOpen, setIsNewPostModalOpen] = useState(false);
   const [userLoggedIn, setUserLoggedIn] = useState(false);
-  const [userId, setUserId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  // Check authentication
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const { loggedIn, user } = await authUtils.checkAuth();
+        const res = await fetch("http://localhost:8080/api/logged", {
+          method: "POST",
+          credentials: "include",
+        });
 
-        if (loggedIn) {
-          setUserId(user.id);
-          setUserLoggedIn(true);
-          initWebSocket(user.id); // init WS once when user is logged in
-        } else {
-          router.push("/auth");
+        if (!res.ok) {
+          router.push("/");
+          return;
         }
+
+        const data = await res.json();
+        if (!data.loggedIn) {
+          router.push("/");
+          return;
+        }
+
+        setUserLoggedIn(true);
       } catch (err) {
         console.error("Error checking auth:", err);
-        router.push("/auth");
+        router.push("/");
       } finally {
         setLoading(false);
       }
@@ -38,12 +43,14 @@ export default function HomePage() {
     checkAuth();
   }, [router]);
 
-  const handleNewPost = () => setIsNewPostModalOpen(true);
+  const handleNewPost = () => {
+    setIsNewPostModalOpen(true);
+  };
 
   const handleNavigate = async (itemId: string) => {
     switch (itemId) {
       case "home":
-        router.push("/");
+        router.push("/home");
         break;
       case "notifications":
         router.push("/notifications");
@@ -56,17 +63,16 @@ export default function HomePage() {
         router.push(`/profile/${user.url}`);
         break;
       case "auth":
-        // close WS on logout
-        closeWebSocket();
-        router.push("/auth");
+        router.push("/");
         break;
       default:
-        router.push("/");
+        router.push("/home");
     }
   };
 
   const handlePostSubmit = (postData: any) => {
     console.log("New post submitted:", postData);
+    // TODO: Send the post to the backend
     setIsNewPostModalOpen(false);
   };
 
@@ -78,11 +84,16 @@ export default function HomePage() {
     );
   }
 
-  if (!userLoggedIn) return null; // will redirect
+  if (!userLoggedIn) {
+    return null; // Will redirect
+  }
 
   return (
     <div className="min-h-screen bg-background">
-      <HomeFeed onNewPost={handleNewPost} onNavigate={handleNavigate} />
+      <MessagesPage 
+        onNewPost={handleNewPost} 
+        onNavigate={handleNavigate}
+      />
 
       <NewPostModal
         isOpen={isNewPostModalOpen}

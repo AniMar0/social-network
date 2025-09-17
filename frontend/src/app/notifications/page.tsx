@@ -56,6 +56,9 @@ export default function Notifications() {
       case "notifications":
         router.push("/notifications");
         break;
+      case "messages":
+        router.push("/messages");
+        break;
       case "profile":
         const user = await authUtils.CurrentUser();
         router.push(`/profile/${user.url}`);
