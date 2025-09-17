@@ -43,7 +43,7 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
           credentials: "include",
         });
         const data = await res.json();
-        setPostsState(data.posts);
+        setPostsState(data.posts || []);
       } catch (err) {
         console.error("Failed to fetch posts", err);
       }

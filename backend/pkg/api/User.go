@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/twinj/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -27,7 +26,7 @@ func (S *Server) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		tools.SendJSONError(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
-
+	user.Email = tools.ToLower(user.Email)
 	err, found := S.UserFound(user)
 	if err != nil {
 		fmt.Println(err)
@@ -44,9 +43,7 @@ func (S *Server) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	user.Age = tools.GetAge(user.DateOfBirth)
 
 	if user.Nickname == "" {
-		user.Url = uuid.NewV4().String()
-	} else {
-		user.Url = user.Nickname
+		user.Url = tools.ToUsername(user.Email)
 	}
 
 	if err := S.AddUser(user); err != nil {
@@ -61,9 +58,6 @@ func (S *Server) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"message": "User registered successfully"})
 }
 func (S *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
-	w.Header().Set("Access-Control-Allow-Credentials", "true")
-
 	if r.Method != http.MethodPost {
 		tools.SendJSONError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -75,11 +69,13 @@ func (S *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		tools.SendJSONError(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
+	fmt.Println("LoginHandler for: " + tools.ToLower(user.Identifier))
+
 	if user.Identifier == "" || user.Password == "" {
 		tools.SendJSONError(w, "Email and password are required", http.StatusBadRequest)
 		return
 	}
-	url, hashedPassword, id, err := S.GetHashedPasswordFromDB(user.Identifier)
+	url, hashedPassword, id, err := S.GetHashedPasswordFromDB(tools.ToLower(user.Identifier))
 	if err != nil {
 		tools.SendJSONError(w, "Invalid email or password", http.StatusUnauthorized)
 		return
@@ -88,7 +84,6 @@ func (S *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		tools.SendJSONError(w, "Invalid email or password", http.StatusUnauthorized)
 		return
 	}
-
 	S.MakeToken(w, id)
 
 	userData, err := S.GetUserData(url, id)

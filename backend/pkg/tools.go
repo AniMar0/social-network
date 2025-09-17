@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -57,5 +58,17 @@ func StringToInt(s string) int {
 
 func IntToString(i int) string {
 	s := strconv.Itoa(i)
+	return s
+}
+
+// convert email to lowercase
+func ToLower(s string) string {
+	s = strings.ToLower(s)
+	return s
+}
+
+// convert email to username without domain
+func ToUsername(s string) string {
+	s = s[:strings.Index(s, "@")]
 	return s
 }
