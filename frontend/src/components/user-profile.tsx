@@ -233,6 +233,19 @@ function UserProfile({
     return "default" as const;
   };
 
+  const handleMessage = async () => {
+    console.log("Sending message to:", profileData.id);
+    try {
+      await fetch(`/api/messages/${profileData.id}`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (err) {
+      console.error("Error sending message:", err);
+    }
+    window.location.href = `/messages/${profileData.id}`;
+  };
+
   const handleNavigation = (itemId: string) => {
     // If parent provides navigation handler, use it
     if (onNavigate) {
@@ -349,9 +362,7 @@ function UserProfile({
                       <Button
                         variant="default"
                         className="flex items-center gap-2 cursor-pointer"
-                        onClick={() =>
-                          router.push(`/messages/${profileData.id}`)
-                        }
+                        onClick={handleMessage}
                       >
                         <MessageSquare className="h-4 w-4" />
                         Message

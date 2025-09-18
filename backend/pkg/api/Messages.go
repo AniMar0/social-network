@@ -99,13 +99,9 @@ func (S *Server) GetUserProfileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, _, err := S.CheckSession(r)
-	if err != nil {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
+	id := r.URL.Path[len("/api/get-users/profile/"):]
 
-	userData, err := S.GetUserData("", id)
+	userData, err := S.GetUserData("", tools.StringToInt(id))
 	if err != nil {
 		fmt.Println(err)
 		tools.RenderErrorPage(w, r, "User Not Found", http.StatusBadRequest)
@@ -114,4 +110,50 @@ func (S *Server) GetUserProfileHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(userData)
+}
+
+// MakeMassageConnectionHandler
+
+func (S *Server) MakeChatHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/404", http.StatusSeeOther)
+		return
+	}
+	currentUserID, _, err := S.CheckSession(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	otherUserID := r.URL.Path[len("/api/messages/"):]
+
+	fmt.Println("Making chat between user", currentUserID, "and user", otherUserID)
+	// if there is no chat between the two users, create a new chat
+	if !S.FoundChat(currentUserID, tools.StringToInt(otherUserID)) {
+		S.MakeChat(currentUserID, tools.StringToInt(otherUserID))
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(true)
+}
+
+func (S *Server) MakeChat(currentUserID, otherUserID int) {
+	query := `INSERT INTO chats (user1_id, user2_id) VALUES (?, ?)`
+	_, err := S.db.Exec(query, currentUserID, otherUserID)
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+func (S *Server) FoundChat(currentUserID, otherUserID int) bool {
+	query := `SELECT id FROM chats WHERE (user1_id = ? AND user2_id = ?) OR (user1_id = ? AND user2_id = ?)`
+	var id int
+	err := S.db.QueryRow(query, currentUserID, otherUserID, otherUserID, currentUserID).Scan(&id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false
+		}
+		fmt.Println(err)
+		return false
+	}
+	return true
 }

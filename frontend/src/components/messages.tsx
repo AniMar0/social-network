@@ -111,6 +111,7 @@ export function MessagesPage({ onNavigate, onNewPost }: MessagesPageProps) {
   const notificationCount = useNotificationCount();
 
   const [chats, setChats] = useState<Chat[]>([]);
+
   // Fetch user profile data when chat is selected
   useEffect(() => {
     const fetchChats = async () => {
@@ -183,7 +184,7 @@ export function MessagesPage({ onNavigate, onNewPost }: MessagesPageProps) {
     }
   };
 
-  const filteredChats = chats.filter(
+  const filteredChats = (chats ?? []).filter(
     (chat) =>
       chat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       chat.username.toLowerCase().includes(searchQuery.toLowerCase())
@@ -491,7 +492,7 @@ export function MessagesPage({ onNavigate, onNewPost }: MessagesPageProps) {
             <div className="text-xs text-muted-foreground space-y-1">
               <p>
                 Joined {new Date(userProfile.joinedDate).toLocaleDateString()} ·{" "}
-                {userProfile.followersCount } followers
+                {userProfile.followersCount} followers
               </p>
             </div>
           </div>

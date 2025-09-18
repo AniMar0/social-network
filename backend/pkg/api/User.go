@@ -266,7 +266,7 @@ func (S *Server) GetUserData(url string, id int) (UserData, error) {
 	if err != nil {
 		return UserData{}, err
 	}
-
+	
 	user.FollowersCount, _ = S.GetFollowersCount(user.Url)
 
 	user.FollowingCount, _ = S.GetFollowingCount(user.Url)
