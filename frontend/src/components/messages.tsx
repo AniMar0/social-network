@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { SidebarNavigation } from "./sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Search, ImagePlay, ImageIcon, Smile, Send } from "lucide-react";
 import { useNotificationCount } from "@/lib/notifications";
@@ -106,6 +107,8 @@ export function MessagesPage({
     joinedDate: "",
     followersCount: "",
   });
+
+  const router = useRouter();
 
   const [userOnlineStatus, setUserOnlineStatus] = useState<boolean>(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -398,7 +401,10 @@ export function MessagesPage({
             {filteredChats.map((chat) => (
               <div
                 key={chat.id}
-                onClick={() => setSelectedChat(chat)}
+                onClick={() => {
+                  router.push(`/messages/${chat.id}`);
+                  setSelectedChat(chat);
+                }}
                 className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
                   selectedChat?.id === chat.id
                     ? "bg-accent text-accent-foreground"
