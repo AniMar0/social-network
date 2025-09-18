@@ -132,7 +132,6 @@ function NotificationsPage({ onNewPost, onNavigate }: NotificationsPageProps) {
     <div className="flex h-screen bg-background">
       <SidebarNavigation
         activeItem="notifications"
-        onNavigate={onNavigate}
         onNewPost={handleNewPost}
         notificationCount={notificationCount}
       />

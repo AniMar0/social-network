@@ -248,7 +248,6 @@ function UserProfile({
       <aside className="fixed top-0 left-0 h-screen w-64 z-30 border-r border-border bg-card">
         <SidebarNavigation
           activeItem={isOwnProfile ? "profile" : ""}
-          onNavigate={handleNavigation}
           onNewPost={handleNewPost}
           notificationCount={notificationCount}
         />
