@@ -16,8 +16,6 @@ import (
 func (S *Server) ProfileHandler(w http.ResponseWriter, r *http.Request) {
 	url := strings.TrimPrefix(r.URL.Path, "/api/profile/")
 
-	fmt.Println("Profile URL:", url)
-
 	if url == "" {
 		http.Error(w, "url required", http.StatusBadRequest)
 		return

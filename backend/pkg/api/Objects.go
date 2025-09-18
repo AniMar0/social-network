@@ -73,3 +73,14 @@ type Author = struct {
 	Avatar    string `json:"avatar"`
 	IsPrivate bool   `json:"isPrivate"`
 }
+
+type Message struct {
+	ID        int       `json:"id"`
+	ChatID    int       `json:"chat_id"`
+	SenderID  int       `json:"sender_id"`
+	Content   string    `json:"content"`
+	Type      string    `json:"type"`
+	ReplyTo   *int      `json:"reply_to,omitempty"`
+	IsRead    bool      `json:"is_read"`
+	CreatedAt time.Time `json:"created_at"`
+}

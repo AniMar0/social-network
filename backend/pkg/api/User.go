@@ -44,6 +44,8 @@ func (S *Server) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 	if user.Nickname == "" {
 		user.Url = tools.ToUsername(user.Email)
+	} else {
+		user.Url = user.Nickname
 	}
 
 	if err := S.AddUser(user); err != nil {
@@ -69,7 +71,6 @@ func (S *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		tools.SendJSONError(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
-	fmt.Println("LoginHandler for: " + tools.ToLower(user.Identifier))
 
 	if user.Identifier == "" || user.Password == "" {
 		tools.SendJSONError(w, "Email and password are required", http.StatusBadRequest)

@@ -1,9 +1,12 @@
-CREATE TABLE IF NOT EXISTS messages (
+CREATE TABLE messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    chat_id INTEGER NOT NULL,
     sender_id INTEGER NOT NULL,
-    receiver_id INTEGER NOT NULL,
-    content TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(sender_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY(receiver_id) REFERENCES users(id) ON DELETE CASCADE
+    content TEXT,
+    type TEXT CHECK(type IN ('text', 'emoji', 'gif', 'image')),
+    reply_to INTEGER,
+    is_read BOOLEAN DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(chat_id) REFERENCES chats(id),
+    FOREIGN KEY(reply_to) REFERENCES messages(id)
 );

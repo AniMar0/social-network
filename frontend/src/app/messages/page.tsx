@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import MessagesPage from "@/components/messages";
 import { NewPostModal } from "@/components/newpost";
-import { authUtils } from "@/lib/navigation";
 
 export default function Messages() {
   const [isNewPostModalOpen, setIsNewPostModalOpen] = useState(false);
@@ -47,29 +46,6 @@ export default function Messages() {
     setIsNewPostModalOpen(true);
   };
 
-  const handleNavigate = async (itemId: string) => {
-    switch (itemId) {
-      case "home":
-        router.push("/home");
-        break;
-      case "notifications":
-        router.push("/notifications");
-        break;
-      case "messages":
-        router.push("/messages");
-        break;
-      case "profile":
-        const user = await authUtils.CurrentUser();
-        router.push(`/profile/${user.url}`);
-        break;
-      case "auth":
-        router.push("/");
-        break;
-      default:
-        router.push("/home");
-    }
-  };
-
   const handlePostSubmit = (postData: any) => {
     console.log("New post submitted:", postData);
     // TODO: Send the post to the backend
@@ -91,8 +67,7 @@ export default function Messages() {
   return (
     <div className="min-h-screen bg-background">
       <MessagesPage 
-        onNewPost={handleNewPost} 
-        onNavigate={handleNavigate}
+        onNewPost={handleNewPost}
       />
 
       <NewPostModal
