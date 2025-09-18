@@ -53,6 +53,7 @@ interface UserProfile {
 interface MessagesPageProps {
   onNavigate?: (page: string) => void;
   onNewPost?: () => void;
+  onUserProfileClick?: string;
 }
 
 const sampleMessages: Message[] = [
@@ -88,7 +89,11 @@ const sampleMessages: Message[] = [
   },
 ];
 
-export function MessagesPage({ onNavigate, onNewPost }: MessagesPageProps) {
+export function MessagesPage({
+  onNavigate,
+  onNewPost,
+  onUserProfileClick,
+}: MessagesPageProps) {
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [newMessage, setNewMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -120,12 +125,18 @@ export function MessagesPage({ onNavigate, onNewPost }: MessagesPageProps) {
         if (!res.ok) throw new Error("Failed to fetch chats");
         const data: Chat[] = await res.json();
         setChats(data);
+        if (onUserProfileClick && selectedChat === null) {
+          data.map((chat) => {
+            if (onUserProfileClick === chat.id) {
+              setSelectedChat(chat);
+            }
+          });
+        }
       } catch (err) {
         console.error(err);
       }
     };
     fetchChats();
-
     if (selectedChat) {
       fetchUserProfile(selectedChat.id);
       fetchUserOnlineStatus(selectedChat.id);

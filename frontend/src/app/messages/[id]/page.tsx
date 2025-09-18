@@ -13,7 +13,7 @@ function Messages() {
   const router = useRouter();
   const params = useParams();
 
-  const resiverID = params.url as string;
+  const resiverID = params.id as string;
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -70,7 +70,7 @@ function Messages() {
 
   return (
     <div className="min-h-screen bg-background">
-      <MessagesPage onNewPost={handleNewPost} />
+      <MessagesPage onUserProfileClick={resiverID} onNewPost={handleNewPost} />
 
       <NewPostModal
         isOpen={isNewPostModalOpen}
