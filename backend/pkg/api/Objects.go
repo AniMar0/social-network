@@ -26,6 +26,7 @@ type UserData struct {
 	DateOfBirth         string  `json:"dateOfBirth"`
 	Avatar              *string `json:"avatar,omitempty"`
 	AboutMe             *string `json:"aboutMe,omitempty"`
+	Age                 int     `json:"age"`
 	IsPrivate           bool    `json:"isPrivate"`
 	FollowersCount      int     `json:"followersCount"`
 	FollowingCount      int     `json:"followingCount"`
@@ -83,4 +84,16 @@ type Message struct {
 	ReplyTo   *int      `json:"reply_to,omitempty"`
 	IsRead    bool      `json:"is_read"`
 	CreatedAt time.Time `json:"created_at"`
+}
+
+type Chat struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Username    string `json:"username"`
+	Avatar      string `json:"avatar"`
+	LastMessage string `json:"lastMessage"`
+	Timestamp   string `json:"timestamp"`
+	UnreadCount int    `json:"unreadCount"`
+	IsVerified  *bool  `json:"isVerified,omitempty"`
+	IsOnline    *bool  `json:"isOnline,omitempty"`
 }

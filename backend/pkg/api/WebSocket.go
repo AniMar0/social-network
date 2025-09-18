@@ -46,7 +46,7 @@ func (S *Server) WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	S.Users[userID] = append(S.Users[userID], client)
 	S.Unlock()
-
+	
 	// start writer
 	go S.StartWriter(client)
 
@@ -123,4 +123,13 @@ func (S *Server) PushMessage(userID int, msg interface{}) {
 			"payload": msg,
 		}
 	}
+}
+
+// GetConnections returns a list of connections for a given user ID
+func (S *Server) GetConnections(userID int) []*Client {
+	S.RLock()
+	defer S.RUnlock()
+	// fmt.Println("Getting connections for user", userID)
+	// fmt.Println("Connections:", S.Users[userID])
+	return S.Users[userID]
 }

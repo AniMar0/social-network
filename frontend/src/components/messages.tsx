@@ -45,50 +45,15 @@ interface Chat {
 
 interface UserProfile {
   age: string;
-  profession: string;
-  bio: string;
-  joinDate: string;
-  followers: string;
-  followedBy: string;
+  aboutMe: string;
+  joinedDate: string;
+  followersCount: string;
 }
 
 interface MessagesPageProps {
   onNavigate?: (page: string) => void;
   onNewPost?: () => void;
 }
-
-const sampleChats: Chat[] = [
-  {
-    id: "1",
-    name: "meclawd",
-    username: "@MecLawd01",
-    avatar: "https://i.imgur.com/aSlIJks.png",
-    lastMessage: "😰",
-    timestamp: "Jul 26",
-    unreadCount: 1,
-    isOnline: true,
-  },
-  {
-    id: "2",
-    name: "Twitch Support",
-    username: "@TwitchSupport",
-    avatar: "https://i.imgur.com/aSlIJks.png",
-    lastMessage: "Oh What's happening?",
-    timestamp: "Jul 3",
-    unreadCount: 0,
-    isVerified: true,
-  },
-  {
-    id: "3",
-    name: "Kick Support",
-    username: "@KickSupport",
-    avatar: "https://i.imgur.com/aSlIJks.png",
-    lastMessage: "All verification enquiries are processed by that em...",
-    timestamp: "Apr 30",
-    unreadCount: 0,
-    isVerified: true,
-  },
-];
 
 const sampleMessages: Message[] = [
   {
@@ -124,20 +89,19 @@ const sampleMessages: Message[] = [
 ];
 
 export function MessagesPage({ onNavigate, onNewPost }: MessagesPageProps) {
-  const [selectedChat, setSelectedChat] = useState<Chat | null>(sampleChats[0]);
+  const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [newMessage, setNewMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [showGifPicker, setShowGifPicker] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [messages, setMessages] = useState<Message[]>(sampleMessages);
   const [userProfile, setUserProfile] = useState<UserProfile>({
-    age: "24",
-    profession: "Pro-Basketball Player",
-    bio: "Just passing through for fun, responsibilities left at the door !",
-    joinDate: "March 2024",
-    followers: "1 Follower",
-    followedBy: "Not followed by anyone you're following",
+    age: "",
+    aboutMe: "",
+    joinedDate: "",
+    followersCount: "",
   });
+
   const [userOnlineStatus, setUserOnlineStatus] = useState<boolean>(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
@@ -146,8 +110,21 @@ export function MessagesPage({ onNavigate, onNewPost }: MessagesPageProps) {
   // Get notification count for sidebar
   const notificationCount = useNotificationCount();
 
+  const [chats, setChats] = useState<Chat[]>([]);
   // Fetch user profile data when chat is selected
   useEffect(() => {
+    const fetchChats = async () => {
+      try {
+        const res = await fetch("/api/get-users"); // backend route ديالك
+        if (!res.ok) throw new Error("Failed to fetch chats");
+        const data: Chat[] = await res.json();
+        setChats(data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchChats();
+
     if (selectedChat) {
       fetchUserProfile(selectedChat.id);
       fetchUserOnlineStatus(selectedChat.id);
@@ -177,9 +154,10 @@ export function MessagesPage({ onNavigate, onNewPost }: MessagesPageProps) {
     try {
       console.log("Fetching profile for user:", userId);
       // TODO: Replace with actual API call
-      // const response = await fetch(`/api/users/${userId}/profile`);
-      // const profileData = await response.json();
-      // setUserProfile(profileData);
+      const response = await fetch(`/api/get-users/profile/${userId}`);
+      const profileData = await response.json();
+      console.log("Fetched profile data:", profileData);
+      setUserProfile(profileData);
 
       // For now, using mock data
     } catch (error) {
@@ -196,7 +174,7 @@ export function MessagesPage({ onNavigate, onNewPost }: MessagesPageProps) {
       // setUserOnlineStatus(statusData.isOnline);
 
       // For now, using mock data based on chat data
-      const chat = sampleChats.find((c) => c.id === userId);
+      const chat = chats.find((c) => c.id === userId);
       if (chat) {
         setUserOnlineStatus(chat.isOnline || false);
       }
@@ -205,7 +183,7 @@ export function MessagesPage({ onNavigate, onNewPost }: MessagesPageProps) {
     }
   };
 
-  const filteredChats = sampleChats.filter(
+  const filteredChats = chats.filter(
     (chat) =>
       chat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       chat.username.toLowerCase().includes(searchQuery.toLowerCase())
@@ -445,7 +423,8 @@ export function MessagesPage({ onNavigate, onNewPost }: MessagesPageProps) {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground truncate">
-                      {chat.username} · {chat.timestamp}
+                      {chat.username} ·{" "}
+                      {new Date(chat.timestamp).toLocaleDateString()}
                     </span>
                   </div>
                   <p className="text-sm text-muted-foreground truncate">
@@ -507,11 +486,12 @@ export function MessagesPage({ onNavigate, onNewPost }: MessagesPageProps) {
               {userProfile.age} years old
             </p>
             <p className="text-sm text-muted-foreground mb-3">
-              {userProfile.bio}
+              {userProfile.aboutMe}
             </p>
             <div className="text-xs text-muted-foreground space-y-1">
               <p>
-                Joined {userProfile.joinDate} · {userProfile.followers}
+                Joined {new Date(userProfile.joinedDate).toLocaleDateString()} ·{" "}
+                {userProfile.followersCount } followers
               </p>
             </div>
           </div>

@@ -3,6 +3,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -53,7 +54,7 @@ function UserProfile({
 }: UserProfileProps) {
   // Get notification count for sidebar
   const notificationCount = useNotificationCount();
-
+  const router = useRouter();
   // State for profile data (can be updated by settings dialog)
   const [profileData, setProfileData] = useState(userData);
   // State for following/unfollowing this user
@@ -61,12 +62,16 @@ function UserProfile({
     userData.isfollowing || isFollowing
   );
   // State for follow request status
-  console.log("Follow request status:", userData);
   const [followRequestStatus, setFollowRequestStatus] = useState<
     "none" | "pending" | "accepted" | "declined"
   >(userData.followRequestStatus || "none");
   // State for liked posts (IDs)
   const [postsState, setPostsState] = useState(posts);
+
+  // State for message dialog
+  const [messageDialogOpen, setMessageDialogOpen] = useState(
+    userData.isfollowing || isFollowing
+  );
 
   // Called when profile settings are saved
   const handleProfileUpdate = (updatedData: UserData) => {
@@ -104,8 +109,11 @@ function UserProfile({
         }));
         setFollowingState(false);
         setFollowRequestStatus("none");
+        setMessageDialogOpen(false);
       } else if (followRequestStatus === "pending") {
         // Cancel pending follow request
+
+        console.log("sending cancel request", body);
         await fetch("http://localhost:8080/api/cancel-follow-request", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -114,6 +122,7 @@ function UserProfile({
         });
 
         setFollowRequestStatus("none");
+        setMessageDialogOpen(false);
       } else {
         // Check if profile is private
         if (profileData.isPrivate) {
@@ -126,6 +135,7 @@ function UserProfile({
           });
 
           setFollowRequestStatus("pending");
+          setMessageDialogOpen(false);
         } else {
           // Follow public profile instantly
           await fetch("http://localhost:8080/api/follow", {
@@ -141,6 +151,7 @@ function UserProfile({
           }));
           setFollowingState(true);
           setFollowRequestStatus("accepted");
+          setMessageDialogOpen(true);
         }
       }
     } catch (err) {
@@ -334,14 +345,18 @@ function UserProfile({
                 {/* Action Buttons (follow/message); settings moved to top-right */}
                 {!isOwnProfile && (
                   <div className="flex gap-3">
-                    <Button
-                      variant="default"
-                      className="flex items-center gap-2 cursor-pointer"
-                      onClick={() => console.log(" Message button clicked")}
-                    >
-                      <MessageSquare className="h-4 w-4" />
-                      Message
-                    </Button>
+                    {messageDialogOpen && (
+                      <Button
+                        variant="default"
+                        className="flex items-center gap-2 cursor-pointer"
+                        onClick={() =>
+                          router.push(`/messages/${profileData.id}`)
+                        }
+                      >
+                        <MessageSquare className="h-4 w-4" />
+                        Message
+                      </Button>
+                    )}
                     <Button
                       onClick={handleFollowToggle}
                       variant={getFollowButtonVariant()}

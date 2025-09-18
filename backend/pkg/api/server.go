@@ -12,10 +12,10 @@ import (
 )
 
 type Server struct {
-	db        *sql.DB
-	mux       *http.ServeMux
-	upgrader  websocket.Upgrader
-	Users   map[int][]*Client
+	db       *sql.DB
+	mux      *http.ServeMux
+	upgrader websocket.Upgrader
+	Users    map[int][]*Client
 	sync.RWMutex
 }
 
@@ -70,7 +70,7 @@ func (S *Server) initRoutes() {
 	//follow handlers
 	S.mux.HandleFunc("/api/follow", S.FollowHandler)
 	S.mux.HandleFunc("/api/unfollow", S.UnfollowHandler)
-	S.mux.HandleFunc("/api/cancel-follow-request/", S.CancelFollowRequestHandler)
+	S.mux.HandleFunc("/api/cancel-follow-request", S.CancelFollowRequestHandler)
 	S.mux.HandleFunc("/api/accept-follow-request/", S.AcceptFollowRequestHandler)
 	S.mux.HandleFunc("/api/decline-follow-request/", S.DeclineFollowRequestHandler)
 	S.mux.HandleFunc("/api/send-follow-request", S.SendFollowRequestHandler)
@@ -83,6 +83,18 @@ func (S *Server) initRoutes() {
 	S.mux.HandleFunc("/api/like/", S.LikeHandler)
 	S.mux.Handle("/api/create-post", S.SessionMiddleware(http.HandlerFunc(S.CreatePostHandler)))
 	S.mux.HandleFunc("/api/get-posts", S.GetPostsHandler)
+
+	//comment handlers
+	// S.mux.HandleFunc("/api/create-comment/", S.CreateCommentHandler)
+	// S.mux.HandleFunc("/api/get-comments/", S.GetCommentsHandler)
+	// S.mux.HandleFunc("/api/delete-comment/", S.DeleteCommentHandler)
+
+	//message handlers
+	S.mux.HandleFunc("/api/get-users", S.GetUsersHandler)
+	S.mux.HandleFunc("/api/get-users/profile/", S.GetUserProfileHandler)
+	// S.mux.HandleFunc("/api/send-message/", S.SendMessageHandler)
+	// S.mux.HandleFunc("/api/get-messages/", S.GetMessagesHandler)
+	// S.mux.HandleFunc("/api/delete-message/", S.DeleteMessageHandler)
 }
 
 func (S *Server) initWebSocket() {

@@ -246,7 +246,7 @@ func (S *Server) GetUserData(url string, id int) (UserData, error) {
 	var user UserData
 
 	err := S.db.QueryRow(`
-		SELECT id, first_name, last_name, nickname, email, birthdate, avatar, about_me, is_private, created_at, url
+		SELECT id, first_name, last_name, nickname, email, birthdate, avatar, about_me, is_private, created_at, url, age
 		FROM users 
 		WHERE url = ? OR id = ?
 	`, url, id).Scan(
@@ -261,14 +261,15 @@ func (S *Server) GetUserData(url string, id int) (UserData, error) {
 		&user.IsPrivate,
 		&user.JoinedDate,
 		&user.Url,
+		&user.Age,
 	)
 	if err != nil {
 		return UserData{}, err
 	}
 
-	user.FollowersCount, _ = S.GetFollowersCount(url)
+	user.FollowersCount, _ = S.GetFollowersCount(user.Url)
 
-	user.FollowingCount, _ = S.GetFollowingCount(url)
+	user.FollowingCount, _ = S.GetFollowingCount(user.Url)
 
 	// row := S.db.QueryRow(`SELECT COUNT(*) FROM posts WHERE author_id = ?`, user.ID)
 	// row.Scan(&user.PostsCount)

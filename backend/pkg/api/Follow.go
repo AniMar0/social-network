@@ -13,7 +13,6 @@ func (S *Server) CancelFollowRequestHandler(w http.ResponseWriter, r *http.Reque
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-
 	var body struct {
 		FollowerID  string `json:"follower"`
 		FollowingID string `json:"following"`

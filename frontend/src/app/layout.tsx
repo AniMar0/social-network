@@ -1,6 +1,8 @@
+// src/app/layout.tsx
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import ClientRoot from "./ClientRoot"; // <--- استورد ClientRoot
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,10 +26,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <ClientRoot>{children}</ClientRoot> {/* ClientRoot */}
       </body>
     </html>
   );
