@@ -7,6 +7,7 @@ CREATE TABLE messages (
     reply_to INTEGER,
     is_read BOOLEAN DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(chat_id) REFERENCES chats(id),
+    FOREIGN KEY(chat_id) REFERENCES users(id),
+    FOREIGN KEY(sender_id) REFERENCES users(id),
     FOREIGN KEY(reply_to) REFERENCES messages(id)
 );

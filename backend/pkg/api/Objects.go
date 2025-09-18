@@ -76,14 +76,15 @@ type Author = struct {
 }
 
 type Message struct {
-	ID        int       `json:"id"`
-	ChatID    int       `json:"chat_id"`
-	SenderID  int       `json:"sender_id"`
-	Content   string    `json:"content"`
-	Type      string    `json:"type"`
-	ReplyTo   *int      `json:"reply_to,omitempty"`
-	IsRead    bool      `json:"is_read"`
-	CreatedAt time.Time `json:"created_at"`
+	ID       string     `json:"id"`
+	ChatID   int        `json:"chat_id"`
+	SenderID int        `json:"sender_id"`
+	Content  string     `json:"content"`
+	Type     string     `json:"type"`
+	ReplyTo  *ReplyInfo `json:"replyTo,omitempty"`
+	IsRead   bool       `json:"isRead"`
+	IsOwn    bool       `json:"isOwn"`
+	Timestamp string `json:"timestamp"`
 }
 
 type Chat struct {
@@ -96,4 +97,11 @@ type Chat struct {
 	UnreadCount int    `json:"unreadCount"`
 	IsVerified  *bool  `json:"isVerified,omitempty"`
 	IsOnline    *bool  `json:"isOnline,omitempty"`
+}
+
+type ReplyInfo struct {
+	ID         string `json:"id"`
+	Content    string `json:"content"`
+	Type       string `json:"type"`
+	SenderName string `json:"senderName"`
 }

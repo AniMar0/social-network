@@ -152,12 +152,10 @@ export function MessagesPage({
       setMessagesLoading(true);
       console.log("Fetching messages for user:", userId);
       // TODO: Replace with actual API call
-      // const response = await fetch(`/api/messages/${userId}`);
-      // const messagesData = await response.json();
-      // setMessages(messagesData);
+      const response = await fetch(`/api/messages/${userId}`);
+      const messagesData = await response.json();
+      setMessages(messagesData);
 
-      // For now, using mock data - you can remove this when implementing backend
-      setMessages(sampleMessages);
     } catch (error) {
       console.error("Error fetching messages:", error);
     } finally {
@@ -236,29 +234,22 @@ export function MessagesPage({
       setMessages((prev) => [...prev, message]);
 
       try {
-        console.log(
-          "Sending message to user:",
-          selectedChat.id,
-          "Message:",
-          newMessage
-        );
         // TODO: Replace with actual API call
-        // const response = await fetch('/api/messages/send', {
-        //     method: 'POST',
-        //     headers: {
-        //         'Content-Type': 'application/json',
-        //     },
-        //     body: JSON.stringify({
-        //         recipientId: selectedChat.id,
-        //         content: newMessage.trim(),
-        //         type: isOnlyEmojis ? "emoji" : "text",
-        //         replyToId: replyingTo?.id || null
-        //     })
-        // });
-        //
-        // if (!response.ok) {
-        //     throw new Error('Failed to send message');
-        // }
+        const response = await fetch(
+          `/api/send-message/${onUserProfileClick}`,
+          {
+            method: "POST",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(message),
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to send message");
+        }
 
         if (replyingTo) {
           console.log("Reply to message:", replyingTo.id);

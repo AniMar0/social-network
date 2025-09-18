@@ -157,3 +157,45 @@ func (S *Server) FoundChat(currentUserID, otherUserID int) bool {
 	}
 	return true
 }
+
+func (S *Server) SendMessageHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/404", http.StatusSeeOther)
+		return
+	}
+
+	currentUserID, _, err := S.CheckSession(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	var message Message
+	err = json.NewDecoder(r.Body).Decode(&message)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+	message.ChatID = tools.StringToInt(r.URL.Path[len("/api/send-message/"):])
+
+	fmt.Printf("Inserting message: chat_id=%d, sender_id=%d, content=%s\n",
+		message.ChatID, currentUserID, message.Content)
+
+	S.SendMessage(currentUserID, message)
+	S.PushMessage(message.ChatID, message)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(true)
+}
+
+// insert message into database and send it to all connections
+func (S *Server) SendMessage(currentUserID int, message Message) error {
+	query := `INSERT INTO messages (sender_id, chat_id, content, is_read, type) VALUES (?, ?, ? , ?, ?)`
+	_, err := S.db.Exec(query, currentUserID, message.ChatID, message.Content, message.IsRead, message.Type)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	return nil
+}
