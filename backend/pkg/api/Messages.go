@@ -8,7 +8,6 @@ import (
 	"net/http"
 )
 
-// get all users from chats table who are chatting withe the current user
 func (S *Server) GetUsersHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Redirect(w, r, "/404", http.StatusSeeOther)
@@ -92,7 +91,6 @@ func (S *Server) GetUsersHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(chats)
 }
 
-// GetUserProfileHandler get user profile
 func (S *Server) GetUserProfileHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Redirect(w, r, "/404", http.StatusSeeOther)
@@ -111,8 +109,6 @@ func (S *Server) GetUserProfileHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(userData)
 }
-
-// MakeMassageConnectionHandler
 
 func (S *Server) MakeChatHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -198,4 +194,45 @@ func (S *Server) SendMessage(currentUserID int, message Message) error {
 		return err
 	}
 	return nil
+}
+
+// Get all messages from a chat
+func (S *Server) GetMessagesHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Redirect(w, r, "/404", http.StatusSeeOther)
+		return
+	}
+
+	chatID := r.URL.Path[len("/api/get-messages/"):]
+
+	messages, err := S.GetMessages(chatID)
+	if err != nil {
+		fmt.Println(err)
+		tools.RenderErrorPage(w, r, "Messages Not Found", http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(messages)
+}
+
+func (S *Server) GetMessages(chatID string) ([]Message, error) {
+	var messages []Message
+	query := `SELECT id, sender_id, content, is_read, type FROM messages WHERE chat_id = ?`
+	rows, err := S.db.Query(query, chatID)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var message Message
+		err = rows.Scan(&message.ID, &message.SenderID, &message.Content, &message.IsRead, &message.Type)
+		if err != nil {
+			fmt.Println(err)
+			return nil, err
+		}
+		messages = append(messages, message)
+	}
+	return messages, nil
 }

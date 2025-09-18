@@ -152,7 +152,7 @@ export function MessagesPage({
       setMessagesLoading(true);
       console.log("Fetching messages for user:", userId);
       // TODO: Replace with actual API call
-      const response = await fetch(`/api/messages/${userId}`);
+      const response = await fetch(`/api/get-messages/${userId}`);
       const messagesData = await response.json();
       setMessages(messagesData);
 

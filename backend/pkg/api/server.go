@@ -94,7 +94,7 @@ func (S *Server) initRoutes() {
 	S.mux.HandleFunc("/api/get-users/profile/", S.GetUserProfileHandler)
 	S.mux.HandleFunc("/api/messages/", S.MakeChatHandler)
 	S.mux.HandleFunc("/api/send-message/", S.SendMessageHandler)
-	// S.mux.HandleFunc("/api/get-messages/", S.GetMessagesHandler)
+	S.mux.HandleFunc("/api/get-messages/", S.GetMessagesHandler)
 	// S.mux.HandleFunc("/api/delete-message/", S.DeleteMessageHandler)
 }
 
