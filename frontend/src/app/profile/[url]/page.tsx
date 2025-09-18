@@ -87,8 +87,14 @@ export default function UserProfilePage() {
       case "home":
         router.push("/");
         break;
+      case "explore":
+        router.push("/explore");
+        break;
       case "notifications":
         router.push("/notifications");
+        break;
+      case "messages":
+        router.push("/messages");
         break;
       case "profile":
         // Navigate to current user's profile

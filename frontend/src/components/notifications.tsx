@@ -39,6 +39,7 @@ function NotificationsPage({ onNewPost, onNavigate }: NotificationsPageProps) {
   // Use shared notification utilities
   const notificationCount = useNotificationCount();
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Load notifications when component mounts
   useEffect(() => {
@@ -128,19 +129,26 @@ function NotificationsPage({ onNewPost, onNavigate }: NotificationsPageProps) {
     console.log("New post clicked");
   };
 
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex min-h-screen bg-background">
       <SidebarNavigation
         activeItem="notifications"
         onNewPost={handleNewPost}
         notificationCount={notificationCount}
+        isMobileMenuOpen={isMobileMenuOpen}
+        onMobileMenuToggle={toggleMobileMenu}
       />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <div className="border-b border-border p-6 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-foreground">Notifications</h1>
+      <div className="flex-1 lg:ml-64 min-w-0">
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
+          <div className="border-b border-border p-6 flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-foreground lg:ml-0 ml-12">Notifications</h1>
 
           <Button
             variant="ghost"
@@ -280,6 +288,7 @@ function NotificationsPage({ onNewPost, onNavigate }: NotificationsPageProps) {
               ))}
             </div>
           )}
+        </div>
         </div>
       </div>
     </div>

@@ -14,7 +14,6 @@ interface Post {
     name: string;
     username: string;
     avatar: string;
-    isVerified?: boolean;
   };
   content: string;
   image?: string;
@@ -35,6 +34,7 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
   // Get notification count for sidebar
   const notificationCount = useNotificationCount();
   const [postsState, setPostsState] = useState<Post[]>([]);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -90,23 +90,28 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
     console.log("Navigating from HomeFeed to:", itemId);
   };
 
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
   return (
     <div className="flex min-h-screen bg-background">
       {/* Sidebar Navigation */}
-      <aside className="fixed top-0 left-0 h-screen w-64 z-30 border-r border-border bg-card">
-        <SidebarNavigation
-          activeItem="home"
-          onNewPost={handleNewPost}
-          notificationCount={notificationCount}
-        />
-      </aside>
+      <SidebarNavigation
+        activeItem="home"
+        onNewPost={handleNewPost}
+        notificationCount={notificationCount}
+        isMobileMenuOpen={isMobileMenuOpen}
+        onMobileMenuToggle={toggleMobileMenu}
+      />
 
       {/* Main Content */}
-      <div className="flex-1 max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="sticky top-0 bg-background/80 backdrop-blur-sm border-b border-border p-4 z-10">
-          <h2 className="text-xl font-bold text-foreground">Home</h2>
-        </div>
+      <div className="flex-1 lg:ml-64 min-w-0">
+        <div className="max-w-2xl mx-auto">
+          {/* Header */}
+          <div className="sticky top-0 bg-background/80 backdrop-blur-sm border-b border-border p-4 z-10">
+            <h2 className="text-xl font-bold text-foreground lg:ml-0 ml-12">Home</h2>
+          </div>
 
         {/* Posts Feed */}
         <div className="p-4 space-y-4">
@@ -162,7 +167,7 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
                             : `http://localhost:8080/${post.image}` // internal URL
                         }
                         alt="Post content"
-                        className="w-full h-auto object-cover"
+                        className="w-full h-full object-cover"
                       />
                     </div>
                   )}
@@ -199,6 +204,7 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
               </CardContent>
             </Card>
           ))}
+        </div>
         </div>
       </div>
     </div>

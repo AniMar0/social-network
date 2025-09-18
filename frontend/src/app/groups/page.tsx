@@ -2,40 +2,34 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import NotificationsPage from "@/components/notifications";
+import { GroupsPage } from "@/components/groups";
 import { NewPostModal } from "@/components/newpost";
 import { authUtils } from "@/lib/navigation";
 import { initWebSocket, closeWebSocket } from "@/lib/websocket";
 
-export default function Notifications() {
+export default function Groups() {
   const [isNewPostModalOpen, setIsNewPostModalOpen] = useState(false);
   const [userLoggedIn, setUserLoggedIn] = useState(false);
+  const [userId, setUserId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+  // Check authentication
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const res = await fetch("http://localhost:8080/api/logged", {
-          method: "POST",
-          credentials: "include",
-        });
+        const { loggedIn, user } = await authUtils.checkAuth();
 
-        if (!res.ok) {
-          router.push("/");
-          return;
+        if (loggedIn) {
+          setUserId(user.id);
+          setUserLoggedIn(true);
+          initWebSocket(user.id);
+        } else {
+          router.push("/auth");
         }
-
-        const data = await res.json();
-        if (!data.loggedIn) {
-          router.push("/");
-          return;
-        }
-        initWebSocket(data.user.id);
-        setUserLoggedIn(true);
       } catch (err) {
         console.error("Error checking auth:", err);
-        router.push("/");
+        router.push("/auth");
       } finally {
         setLoading(false);
       }
@@ -44,9 +38,7 @@ export default function Notifications() {
     checkAuth();
   }, [router]);
 
-  const handleNewPost = () => {
-    setIsNewPostModalOpen(true);
-  };
+  const handleNewPost = () => setIsNewPostModalOpen(true);
 
   const handleNavigate = async (itemId: string) => {
     switch (itemId) {
@@ -62,12 +54,16 @@ export default function Notifications() {
       case "messages":
         router.push("/messages");
         break;
+      case "groups":
+        router.push("/groups");
+        break;
       case "profile":
         const user = await authUtils.CurrentUser();
         router.push(`/profile/${user.url}`);
         break;
       case "auth":
-        router.push("/");
+        closeWebSocket();
+        router.push("/auth");
         break;
       default:
         router.push("/");
@@ -76,7 +72,6 @@ export default function Notifications() {
 
   const handlePostSubmit = (postData: any) => {
     console.log("New post submitted:", postData);
-    // TODO: Send the post to the backend
     setIsNewPostModalOpen(false);
   };
 
@@ -88,16 +83,11 @@ export default function Notifications() {
     );
   }
 
-  if (!userLoggedIn) {
-    return null; // Will redirect
-  }
+  if (!userLoggedIn) return null;
 
   return (
     <div className="min-h-screen bg-background">
-      <NotificationsPage
-        onNewPost={handleNewPost}
-        onNavigate={handleNavigate}
-      />
+      <GroupsPage onNewPost={handleNewPost} onNavigate={handleNavigate} />
 
       <NewPostModal
         isOpen={isNewPostModalOpen}

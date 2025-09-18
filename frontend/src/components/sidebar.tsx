@@ -16,6 +16,8 @@ import {
   User,
   Plus,
   LogOut,
+  Menu,
+  X,
 } from "lucide-react";
 
 interface NavigationItem {
@@ -29,12 +31,16 @@ interface SidebarNavigationProps {
   activeItem?: string;
   onNewPost?: () => void;
   notificationCount?: number;
+  isMobileMenuOpen?: boolean;
+  onMobileMenuToggle?: () => void;
 }
 
 function SidebarNavigation({
   activeItem,
   onNewPost,
   notificationCount = 0,
+  isMobileMenuOpen = false,
+  onMobileMenuToggle,
 }: SidebarNavigationProps) {
   const [currentActive] = useState(activeItem);
 
@@ -57,10 +63,50 @@ function SidebarNavigation({
 
   const handleNewPost = () => {
     onNewPost?.();
+    // Close mobile menu after action
+    if (onMobileMenuToggle && isMobileMenuOpen) {
+      onMobileMenuToggle();
+    }
+  };
+
+  const handleNavItemClick = () => {
+    // Close mobile menu when navigating
+    if (onMobileMenuToggle && isMobileMenuOpen) {
+      onMobileMenuToggle();
+    }
   };
 
   return (
-    <div className="w-64 h-screen bg-card border-r border-border flex flex-col">
+    <>
+      {/* Mobile Menu Toggle Button */}
+      <button
+        onClick={onMobileMenuToggle}
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-card border border-border rounded-lg shadow-lg"
+        aria-label="Toggle menu"
+      >
+        {isMobileMenuOpen ? (
+          <X className="h-5 w-5 text-foreground" />
+        ) : (
+          <Menu className="h-5 w-5 text-foreground" />
+        )}
+      </button>
+
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/50 z-40"
+          onClick={onMobileMenuToggle}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div
+        className={`
+          fixed top-0 left-0 h-screen bg-card border-r border-border flex flex-col z-40 transition-transform duration-300 ease-in-out
+          lg:translate-x-0 lg:w-64 lg:z-30
+          ${isMobileMenuOpen ? 'translate-x-0 w-64' : '-translate-x-full w-64'}
+        `}
+      >
       <div className="p-6 border-b border-border">
         <h1 className="text-xl font-bold text-foreground pb-2">Social Network</h1>
       </div>
@@ -79,6 +125,7 @@ function SidebarNavigation({
                     onClick={async () => {
                       const user = await authUtils.CurrentUser();
                       window.location.href = `/profile/${user.url}`;
+                      handleNavItemClick();
                     }}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors relative ${
                       isActive
@@ -97,6 +144,7 @@ function SidebarNavigation({
               <li key={item.id}>
                 <Link
                   href={item.href || "/"}
+                  onClick={handleNavItemClick}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors relative ${
                     isActive
                       ? "bg-primary/10 text-primary font-medium"
@@ -138,7 +186,8 @@ function SidebarNavigation({
           New Post
         </Button>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
 

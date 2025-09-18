@@ -67,6 +67,8 @@ function UserProfile({
   >(userData.followRequestStatus || "none");
   // State for liked posts (IDs)
   const [postsState, setPostsState] = useState(posts);
+  // Mobile menu state
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // State for message dialog
   const [messageDialogOpen, setMessageDialogOpen] = useState(
@@ -265,20 +267,24 @@ function UserProfile({
     console.log("Opening new post dialog");
   };
 
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
   // Main render
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Sidebar Navigation - fixed and full height */}
-      <aside className="fixed top-0 left-0 h-screen w-64 z-30 border-r border-border bg-card">
-        <SidebarNavigation
-          activeItem={isOwnProfile ? "profile" : ""}
-          onNewPost={handleNewPost}
-          notificationCount={notificationCount}
-        />
-      </aside>
+      {/* Sidebar Navigation */}
+      <SidebarNavigation
+        activeItem={isOwnProfile ? "profile" : ""}
+        onNewPost={handleNewPost}
+        notificationCount={notificationCount}
+        isMobileMenuOpen={isMobileMenuOpen}
+        onMobileMenuToggle={toggleMobileMenu}
+      />
 
       {/* Main content with left margin for sidebar */}
-      <main className="flex-1 ml-64">
+      <main className="flex-1 lg:ml-64">
         {/* Profile Header */}
         <div className="bg-card border-b border-border">
           <div className="max-w-4xl mx-auto p-6 relative">

@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import NotificationsPage from "@/components/notifications";
+import ExplorePage from "@/components/explore";
 import { NewPostModal } from "@/components/newpost";
 import { authUtils } from "@/lib/navigation";
 import { initWebSocket, closeWebSocket } from "@/lib/websocket";
 
-export default function Notifications() {
+export default function Explore() {
   const [isNewPostModalOpen, setIsNewPostModalOpen] = useState(false);
   const [userLoggedIn, setUserLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -53,21 +53,23 @@ export default function Notifications() {
       case "home":
         router.push("/");
         break;
-      case "explore":
-        router.push("/explore");
-        break;
       case "notifications":
         router.push("/notifications");
         break;
       case "messages":
         router.push("/messages");
         break;
+      case "explore":
+        router.push("/explore");
+        break;
       case "profile":
         const user = await authUtils.CurrentUser();
         router.push(`/profile/${user.url}`);
         break;
       case "auth":
-        router.push("/");
+        // close WS on logout
+        closeWebSocket();
+        router.push("/auth");
         break;
       default:
         router.push("/");
@@ -94,7 +96,7 @@ export default function Notifications() {
 
   return (
     <div className="min-h-screen bg-background">
-      <NotificationsPage
+      <ExplorePage
         onNewPost={handleNewPost}
         onNavigate={handleNavigate}
       />
