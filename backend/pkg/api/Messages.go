@@ -111,7 +111,7 @@ func (S *Server) SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ChatID := r.URL.Path[len("/api/send-message/"):]
-	currentUserID, _, err := S.CheckSession(r)
+	currentUserID, SessionID, err := S.CheckSession(r)
 	if err != nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
@@ -129,9 +129,14 @@ func (S *Server) SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 	S.SendMessage(currentUserID, message)
 
 	resiverID := S.GetOtherUserID(currentUserID, message.ChatID)
-	
+
+	if len(S.Users[currentUserID]) > 1 {
+		message.IsOwn = true
+		S.PushMessage(SessionID, currentUserID, message)
+	}
+
 	message.IsOwn = false
-	S.PushMessage(resiverID, message)
+	S.PushMessage("", resiverID, message)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(true)
@@ -335,7 +340,7 @@ func (S *Server) UploadFileHandler(w http.ResponseWriter, r *http.Request) {
 
 	file, header, err := r.FormFile("image")
 	if err != nil {
-		fmt.Println("Failed to read post",err)
+		fmt.Println("Failed to read post", err)
 		http.Error(w, "Cannot read post", http.StatusBadRequest)
 		return
 	}
@@ -344,7 +349,7 @@ func (S *Server) UploadFileHandler(w http.ResponseWriter, r *http.Request) {
 
 	out, err := os.Create(messagePath)
 	if err != nil {
-		fmt.Println("Failed to save post 1",err)
+		fmt.Println("Failed to save post 1", err)
 		http.Error(w, "Cannot save post", http.StatusInternalServerError)
 		return
 	}
@@ -352,7 +357,7 @@ func (S *Server) UploadFileHandler(w http.ResponseWriter, r *http.Request) {
 
 	_, err = io.Copy(out, file)
 	if err != nil {
-		fmt.Println("Failed to save post 2",err)
+		fmt.Println("Failed to save post 2", err)
 		http.Error(w, "Failed to save post", http.StatusInternalServerError)
 		return
 	}
