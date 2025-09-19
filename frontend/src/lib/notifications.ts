@@ -54,6 +54,14 @@ export const useNotificationCount = () => {
       if (data.channel === "notifications-read") {
         setCount((prev) => Math.max(prev - 1, 0));
       }
+
+      if (data.channel === "notifications-delete") {
+        setCount((prev) => Math.max(prev - 1, 0));
+      }
+
+      if (data.channel === "notifications-all-read") {
+        setCount(0);
+      }
     };
   }, []);
 
@@ -89,7 +97,7 @@ export const markNotificationAsRead = async (
   if (AllNotifications) {
     try {
       // TODO: Replace with actual API call
-      await fetch(`/api/mark-All-notification-as-read`, {
+      await fetch(`/api/mark-all-notification-as-read`, {
         method: "POST",
         credentials: "include",
       });

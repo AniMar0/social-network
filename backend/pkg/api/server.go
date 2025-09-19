@@ -56,7 +56,7 @@ func (S *Server) initRoutes() {
 	//notification handlers
 	S.mux.HandleFunc("/api/notifications", S.GetNotificationsHandler)
 	S.mux.HandleFunc("/api/mark-notification-as-read/", S.MarkNotificationAsReadHandler)
-	S.mux.HandleFunc("/api/mark-All-notification-as-read", S.MarkAllNotificationAsReadHandler)
+	S.mux.HandleFunc("/api/mark-all-notification-as-read", S.MarkAllNotificationAsReadHandler)
 	S.mux.HandleFunc("/api/delete-notification/", S.DeleteNotificationHandler)
 
 	//Websocket handlers

@@ -101,7 +101,7 @@ func (S *Server) DeleteNotificationHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	S.PushNotification("-read", tools.StringToInt(receiverID), Notification{})
+	S.PushNotification("-delete", tools.StringToInt(receiverID), Notification{})
 }
 
 func (S *Server) DeleteNotification(senderID, resiverID, notificationType string) error {
@@ -109,6 +109,7 @@ func (S *Server) DeleteNotification(senderID, resiverID, notificationType string
 		DELETE FROM notifications
 		WHERE actor_id = ? AND user_id = ? AND type = ?
 	`, senderID, resiverID, notificationType)
+
 	return err
 }
 
@@ -126,6 +127,7 @@ func (S *Server) GetSenderAndReceiverIDs(notificationID string) (string, string,
 }
 
 func (S *Server) MarkAllNotificationAsReadHandler(w http.ResponseWriter, r *http.Request) {
+
 	currentUserID, _, err := S.CheckSession(r)
 	if err != nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
@@ -140,4 +142,7 @@ func (S *Server) MarkAllNotificationAsReadHandler(w http.ResponseWriter, r *http
 		http.Error(w, "DB error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	S.PushNotification("-all-read", currentUserID, Notification{})
+
 }
