@@ -90,14 +90,22 @@ export function MessagesPage({
 
   const [chats, setChats] = useState<Chat[]>([]);
 
-  let ws = getWebSocket();
+  useEffect(() => {
+    const ws = getWebSocket();
+    if (!ws) return;
 
-  if (ws) {
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      console.log("ws message", data);
-
-      if (data.channel === "chat") {
+      if (data.channel === "status") {
+        setChats((prevChats) =>
+          prevChats.map((c) =>
+            c.id == data.user ? { ...c, isOnline: data.status } : c
+          )
+        );
+        if (selectedChat?.id == data.user) {
+          setUserOnlineStatus(data.status);
+        }
+      } else if (data.channel === "chat") {
         if (onUserProfileClick && onUserProfileClick == data.payload.chat_id) {
           setMessages((prev) => {
             if (prev) {
@@ -109,15 +117,13 @@ export function MessagesPage({
         }
       }
     };
-  } else {
-    console.log("WebSocket is not initialized yet.");
-  }
+  }, [selectedChat]);
 
   // Fetch user profile data when chat is selected
   useEffect(() => {
     const fetchChats = async () => {
       try {
-        const res = await fetch("/api/get-users");
+        const res = await fetch(`/api/get-users`, { credentials: "include" });
         if (!res.ok) throw new Error("Failed to fetch chats");
         const data: Chat[] = await res.json();
         setChats(data);
@@ -142,7 +148,9 @@ export function MessagesPage({
       setMessagesLoading(true);
       console.log("Fetching messages for user:", userId);
       // TODO: Replace with actual API call
-      const response = await fetch(`/api/get-messages/${userId}`);
+      const response = await fetch(`/api/get-messages/${userId}`, {
+        credentials: "include",
+      });
       const messagesData = await response.json();
       setMessages(messagesData);
     } catch (error) {
@@ -156,7 +164,9 @@ export function MessagesPage({
     try {
       console.log("Fetching profile for user:", userId);
       // TODO: Replace with actual API call
-      const response = await fetch(`/api/get-users/profile/${userId}`);
+      const response = await fetch(`/api/get-users/profile/${userId}`, {
+        credentials: "include",
+      });
       const profileData = await response.json();
       console.log("Fetched profile data:", profileData);
       setUserProfile(profileData);
@@ -168,7 +178,7 @@ export function MessagesPage({
   };
 
   const fetchUserOnlineStatus = (userId: string) => {
-    const chat = chats.find((c) => c.id === userId);
+    const chat = chats.find((c) => c.id == userId);
     if (chat) {
       setUserOnlineStatus(chat.isOnline || false);
     }
@@ -456,7 +466,7 @@ export function MessagesPage({
               <div
                 key={chat.id}
                 onClick={() => {
-                  window.location.href = `/messages/${chat.id}`;
+                  router.replace(`/messages/${chat.id}`);
                   setSelectedChat(chat);
                 }}
                 className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${

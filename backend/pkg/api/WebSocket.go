@@ -46,7 +46,11 @@ func (S *Server) WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	S.Users[userID] = append(S.Users[userID], client)
 	S.Unlock()
-	
+
+	if len(S.Users[userID]) == 1 {
+		S.BroadcastOnlineStatus(userID, "online")
+	}
+
 	// start writer
 	go S.StartWriter(client)
 
@@ -66,6 +70,10 @@ func (S *Server) StartReader(client *Client) {
 			}
 		}
 		S.Unlock()
+
+		if len(S.Users[client.UserID]) == 0 {
+			S.BroadcastOnlineStatus(client.UserID, "offline")
+		}
 	}()
 
 	for {
@@ -131,4 +139,39 @@ func (S *Server) GetConnections(userID int) []*Client {
 	// fmt.Println("Getting connections for user", userID)
 	// fmt.Println("Connections:", S.Users[userID])
 	return S.Users[userID]
+}
+
+func (S *Server) BroadcastOnlineStatus(userID int, status string) {
+	S.RLock()
+	defer S.RUnlock()
+	UsersOnline := S.GetUsersStatus()
+
+	for _, ID := range UsersOnline["online"] {
+		if ID == userID {
+			continue
+		}
+		chatID := S.GetChatID(userID, ID)
+		for _, Session := range S.Users[ID] {
+			Session.Send <- map[string]interface{}{
+				"channel": "status",
+				"user":    chatID,
+				"status":  status == "online",
+			}
+		}
+	}
+}
+
+func (S *Server) GetUsersStatus() map[string][]int {
+	S.RLock()
+	defer S.RUnlock()
+
+	usersOnlineStatus := make(map[string][]int)
+	for userID, connections := range S.Users {
+		if len(connections) > 0 {
+			usersOnlineStatus["online"] = append(usersOnlineStatus["online"], userID)
+		} else {
+			usersOnlineStatus["offline"] = append(usersOnlineStatus["offline"], userID)
+		}
+	}
+	return usersOnlineStatus
 }
