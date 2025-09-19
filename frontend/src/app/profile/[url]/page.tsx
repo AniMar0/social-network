@@ -62,6 +62,7 @@ export default function UserProfilePage() {
           setIsOwnProfile(isOwn);
         } else {
           data.user.isfollowing = data.isfollowing;
+          data.user.isfollower = data.isfollower;
           setUserData(data.user);
           setPosts(data.posts || []);
         }

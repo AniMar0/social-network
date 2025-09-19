@@ -22,7 +22,7 @@ func (S *Server) GetUsersHandler(w http.ResponseWriter, r *http.Request) {
 
 	rows, err := S.db.Query(`
         SELECT 
-            u.id, u.first_name || ' ' || u.last_name AS name,
+            u.id,u.first_name || ' ' || u.last_name AS name,
             u.nickname, u.avatar,
             m.content AS last_message,
             m.created_at AS timestamp,
@@ -60,6 +60,14 @@ func (S *Server) GetUsersHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
+		connections := S.GetConnections(tools.StringToInt(c.ID))
+
+		if len(connections) > 0 {
+			online := true
+			c.IsOnline = &online
+		}
+
+		c.ID = tools.IntToString(S.GetChatID(currentUserID, tools.StringToInt(c.ID)))
 
 		if nickname.Valid {
 			c.Username = nickname.String
@@ -78,12 +86,7 @@ func (S *Server) GetUsersHandler(w http.ResponseWriter, r *http.Request) {
 		} else {
 			c.Timestamp = ""
 		}
-		connections := S.GetConnections(tools.StringToInt(c.ID))
 
-		if len(connections) > 0 {
-			online := true
-			c.IsOnline = &online
-		}
 		chats = append(chats, c)
 	}
 
@@ -97,9 +100,15 @@ func (S *Server) GetUserProfileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id := r.URL.Path[len("/api/get-users/profile/"):]
+	currentUserID, _, err := S.CheckSession(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
-	userData, err := S.GetUserData("", tools.StringToInt(id))
+	chatid := r.URL.Path[len("/api/get-users/profile/"):]
+
+	userData, err := S.GetUserData("", S.GetOtherUserID(currentUserID, tools.StringToInt(chatid)))
 	if err != nil {
 		fmt.Println(err)
 		tools.RenderErrorPage(w, r, "User Not Found", http.StatusBadRequest)
@@ -120,16 +129,16 @@ func (S *Server) MakeChatHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	otherUserID := r.URL.Path[len("/api/messages/"):]
+	otherUserID := r.URL.Path[len("/api/make-message/"):]
 
 	fmt.Println("Making chat between user", currentUserID, "and user", otherUserID)
 	// if there is no chat between the two users, create a new chat
 	if !S.FoundChat(currentUserID, tools.StringToInt(otherUserID)) {
 		S.MakeChat(currentUserID, tools.StringToInt(otherUserID))
 	}
-
+	chatId := S.GetChatID(currentUserID, tools.StringToInt(otherUserID))
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(true)
+	json.NewEncoder(w).Encode(chatId)
 }
 
 func (S *Server) MakeChat(currentUserID, otherUserID int) {
@@ -148,7 +157,7 @@ func (S *Server) FoundChat(currentUserID, otherUserID int) bool {
 		if err == sql.ErrNoRows {
 			return false
 		}
-		fmt.Println(err)
+		fmt.Println("FoundChat", err)
 		return false
 	}
 	return true
@@ -160,6 +169,7 @@ func (S *Server) SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	resiverUserID := r.URL.Path[len("/api/send-message/"):]
 	currentUserID, _, err := S.CheckSession(r)
 	if err != nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
@@ -173,10 +183,7 @@ func (S *Server) SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
-	message.ChatID = tools.StringToInt(r.URL.Path[len("/api/send-message/"):])
-
-	fmt.Printf("Inserting message: chat_id=%d, sender_id=%d, content=%s\n",
-		message.ChatID, currentUserID, message.Content)
+	message.ChatID = S.GetChatID(currentUserID, tools.StringToInt(resiverUserID))
 
 	S.SendMessage(currentUserID, message)
 	S.PushMessage(message.ChatID, message)
@@ -185,7 +192,6 @@ func (S *Server) SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(true)
 }
 
-// insert message into database and send it to all connections
 func (S *Server) SendMessage(currentUserID int, message Message) error {
 	query := `INSERT INTO messages (sender_id, chat_id, content, is_read, type) VALUES (?, ?, ? , ?, ?)`
 	_, err := S.db.Exec(query, currentUserID, message.ChatID, message.Content, message.IsRead, message.Type)
@@ -196,7 +202,6 @@ func (S *Server) SendMessage(currentUserID int, message Message) error {
 	return nil
 }
 
-// Get all messages from a chat
 func (S *Server) GetMessagesHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Redirect(w, r, "/404", http.StatusSeeOther)
@@ -207,7 +212,7 @@ func (S *Server) GetMessagesHandler(w http.ResponseWriter, r *http.Request) {
 
 	messages, err := S.GetMessages(chatID)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Get Messages", err)
 		tools.RenderErrorPage(w, r, "Messages Not Found", http.StatusBadRequest)
 		return
 	}
@@ -235,4 +240,30 @@ func (S *Server) GetMessages(chatID string) ([]Message, error) {
 		messages = append(messages, message)
 	}
 	return messages, nil
+}
+
+func (S *Server) GetChatID(currentUserID, otherUserID int) int {
+	query := `SELECT id FROM chats WHERE (user1_id = ? AND user2_id = ?) OR (user1_id = ? AND user2_id = ?)`
+	var id int
+	err := S.db.QueryRow(query, currentUserID, otherUserID, otherUserID, currentUserID).Scan(&id)
+	if err != nil {
+		fmt.Println(err)
+		return 0
+	}
+	return id
+}
+
+// get othere user id from chat table by chat id
+func (S *Server) GetOtherUserID(currentUserID, chatID int) int {
+	query := `SELECT user1_id, user2_id FROM chats WHERE id = ?`
+	var user1_id, user2_id int
+	err := S.db.QueryRow(query, chatID).Scan(&user1_id, &user2_id)
+	if err != nil {
+		fmt.Println(err)
+		return 0
+	}
+	if user1_id == currentUserID {
+		return user2_id
+	}
+	return user1_id
 }

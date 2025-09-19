@@ -39,6 +39,7 @@ export interface UserData {
   joinedDate: string;
   url?: string;
   isfollowing?: boolean;
+  isfollower?: boolean;
   followRequestStatus?: "none" | "pending" | "accepted" | "declined";
 }
 

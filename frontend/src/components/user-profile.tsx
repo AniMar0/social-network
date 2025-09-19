@@ -38,6 +38,7 @@ export interface Post {
 interface UserProfileProps {
   isOwnProfile?: boolean; // Is this the current user's profile?
   isFollowing?: boolean; // Is the current user following this profile?
+  isFollower?: boolean;
   userData: UserData; // User profile data
   posts: Post[]; // List of user posts
   onNewPost?: () => void; // Callback to open new post dialog
@@ -47,6 +48,7 @@ interface UserProfileProps {
 function UserProfile({
   isOwnProfile = false,
   isFollowing = false,
+  isFollower = false,
   userData,
   posts = [],
   onNewPost,
@@ -72,7 +74,7 @@ function UserProfile({
 
   // State for message dialog
   const [messageDialogOpen, setMessageDialogOpen] = useState(
-    userData.isfollowing || isFollowing
+    userData.isfollowing || isFollowing || userData.isfollower || isFollower
   );
 
   // Called when profile settings are saved
@@ -238,14 +240,18 @@ function UserProfile({
   const handleMessage = async () => {
     console.log("Sending message to:", profileData.id);
     try {
-      await fetch(`/api/messages/${profileData.id}`, {
+      const res = await fetch(`/api/make-message/${profileData.id}`, {
         method: "POST",
         credentials: "include",
       });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+
+      console.log("Message sent successfully:", data);
+      window.location.href = `/messages/${data}`;
     } catch (err) {
       console.error("Error sending message:", err);
     }
-    window.location.href = `/messages/${profileData.id}`;
   };
 
   const handleNavigation = (itemId: string) => {

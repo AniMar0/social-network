@@ -341,3 +341,20 @@ func (S *Server) IsFollowing(r *http.Request, followingURL, followingID string) 
 
 	return isFollowing, nil
 }
+
+func (S *Server) IsFollower(r *http.Request, followingURL, followingID string) (bool, error) {
+	followerID, _, _ := S.CheckSession(r)
+	if followingID == "" {
+		err := S.db.QueryRow(`SELECT id FROM users WHERE url = ?`, followingURL).Scan(&followingID)
+		if err != nil {
+			return false, err
+		}
+	}
+	var isFollowing bool
+	err := S.db.QueryRow(`SELECT EXISTS(SELECT 1 FROM follows WHERE follower_id = ? AND following_id = ?)`, followingID, followerID).Scan(&isFollowing)
+	if err != nil {
+		return false, err
+	}
+
+	return isFollowing, nil
+}

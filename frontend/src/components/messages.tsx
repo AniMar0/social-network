@@ -129,7 +129,7 @@ export function MessagesPage({
         if (!res.ok) throw new Error("Failed to fetch chats");
         const data: Chat[] = await res.json();
         setChats(data);
-        if (onUserProfileClick && selectedChat === null) {
+        if (onUserProfileClick && selectedChat === null && data) {
           data.map((chat) => {
             if (onUserProfileClick === chat.id) {
               setSelectedChat(chat);
@@ -156,7 +156,6 @@ export function MessagesPage({
       const response = await fetch(`/api/get-messages/${userId}`);
       const messagesData = await response.json();
       setMessages(messagesData);
-
     } catch (error) {
       console.error("Error fetching messages:", error);
     } finally {
@@ -232,7 +231,13 @@ export function MessagesPage({
       };
 
       // Add message to the list immediately for instant feedback
-      setMessages((prev) => [...prev, message]);
+      setMessages((prev) => {
+        if (prev) {
+          return [...prev, message];
+        } else {
+          return [message];
+        }
+      });
 
       try {
         // TODO: Replace with actual API call
@@ -525,137 +530,138 @@ export function MessagesPage({
               </div>
             ) : (
               <div className="space-y-4">
-                {messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${
-                      message.isOwn ? "justify-end" : "justify-start"
-                    }`}
-                  >
+                {messages &&
+                  messages.map((message) => (
                     <div
-                      className={`max-w-xs lg:max-w-md ${
-                        message.isOwn ? "order-2" : "order-1"
+                      key={message.id}
+                      className={`flex ${
+                        message.isOwn ? "justify-end" : "justify-start"
                       }`}
                     >
-                      <ContextMenu>
-                        <ContextMenuTrigger>
-                          <div
-                            className={`${
-                              message.isOwn ? "ml-auto" : "mr-auto"
-                            } max-w-xs lg:max-w-md`}
-                          >
-                            {/* Reply indicator */}
-                            {message.replyTo && (
-                              <div
-                                className={`mb-1 px-3 py-1 rounded-t-sm text-xs border-l-2 ${
-                                  message.isOwn
-                                    ? "bg-blue-400 text-white border-blue-200"
-                                    : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-400"
-                                }`}
-                              >
-                                <div className="opacity-80 font-medium">
-                                  You replied to {message.replyTo.senderName}
-                                </div>
-                                <div className="opacity-70 truncate">
-                                  {renderReplyContent(message.replyTo)}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Main message content */}
-                            {message.type === "emoji" ? (
-                              <div
-                                className={`text-6xl cursor-pointer ${
-                                  message.replyTo
-                                    ? "rounded-b-sm"
-                                    : "rounded-sm"
-                                }`}
-                              >
-                                {message.content}
-                              </div>
-                            ) : message.type === "gif" ? (
-                              <div
-                                className={`overflow-hidden max-w-xs cursor-pointer ${
-                                  message.replyTo
-                                    ? "rounded-b-sm"
-                                    : "rounded-sm"
-                                }`}
-                              >
-                                <img
-                                  src={message.content}
-                                  alt="GIF"
-                                  className="w-full h-auto"
-                                />
-                              </div>
-                            ) : message.type === "image" ? (
-                              <div
-                                className={`overflow-hidden max-w-xs cursor-pointer ${
-                                  message.replyTo
-                                    ? "rounded-b-sm"
-                                    : "rounded-sm"
-                                }`}
-                              >
-                                <img
-                                  src={message.content}
-                                  alt="Uploaded image"
-                                  className="w-full h-auto hover:opacity-90 transition-opacity"
-                                  onClick={() =>
-                                    window.open(message.content, "_blank")
-                                  }
-                                />
-                              </div>
-                            ) : (
-                              <div
-                                className={`px-4 py-2 cursor-pointer ${
-                                  message.replyTo
-                                    ? "rounded-b-sm"
-                                    : "rounded-sm"
-                                } ${
-                                  message.isOwn
-                                    ? "bg-blue-500 text-white"
-                                    : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                                }`}
-                              >
-                                {message.content}
-                              </div>
-                            )}
-                          </div>
-                        </ContextMenuTrigger>
-                        <ContextMenuContent>
-                          {message.isOwn ? (
-                            <ContextMenuItem
-                              onClick={() => handleUnsendMessage(message.id)}
-                              className="text-red-600 focus:text-red-600"
-                            >
-                              Unsend Message
-                            </ContextMenuItem>
-                          ) : (
-                            <ContextMenuItem
-                              onClick={() => handleReplyToMessage(message)}
-                              className="text-blue-600 focus:text-blue-600"
-                            >
-                              Reply to Message
-                            </ContextMenuItem>
-                          )}
-                        </ContextMenuContent>
-                      </ContextMenu>
                       <div
-                        className={`flex items-center gap-2 mt-1 ${
-                          message.isOwn ? "justify-end" : "justify-start"
+                        className={`max-w-xs lg:max-w-md ${
+                          message.isOwn ? "order-2" : "order-1"
                         }`}
                       >
-                        <span className="text-xs text-muted-foreground">
-                          {message.timestamp}
-                        </span>
-                        {message.isRead && (
+                        <ContextMenu>
+                          <ContextMenuTrigger>
+                            <div
+                              className={`${
+                                message.isOwn ? "ml-auto" : "mr-auto"
+                              } max-w-xs lg:max-w-md`}
+                            >
+                              {/* Reply indicator */}
+                              {message.replyTo && (
+                                <div
+                                  className={`mb-1 px-3 py-1 rounded-t-sm text-xs border-l-2 ${
+                                    message.isOwn
+                                      ? "bg-blue-400 text-white border-blue-200"
+                                      : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-400"
+                                  }`}
+                                >
+                                  <div className="opacity-80 font-medium">
+                                    You replied to {message.replyTo.senderName}
+                                  </div>
+                                  <div className="opacity-70 truncate">
+                                    {renderReplyContent(message.replyTo)}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Main message content */}
+                              {message.type === "emoji" ? (
+                                <div
+                                  className={`text-6xl cursor-pointer ${
+                                    message.replyTo
+                                      ? "rounded-b-sm"
+                                      : "rounded-sm"
+                                  }`}
+                                >
+                                  {message.content}
+                                </div>
+                              ) : message.type === "gif" ? (
+                                <div
+                                  className={`overflow-hidden max-w-xs cursor-pointer ${
+                                    message.replyTo
+                                      ? "rounded-b-sm"
+                                      : "rounded-sm"
+                                  }`}
+                                >
+                                  <img
+                                    src={message.content}
+                                    alt="GIF"
+                                    className="w-full h-auto"
+                                  />
+                                </div>
+                              ) : message.type === "image" ? (
+                                <div
+                                  className={`overflow-hidden max-w-xs cursor-pointer ${
+                                    message.replyTo
+                                      ? "rounded-b-sm"
+                                      : "rounded-sm"
+                                  }`}
+                                >
+                                  <img
+                                    src={message.content}
+                                    alt="Uploaded image"
+                                    className="w-full h-auto hover:opacity-90 transition-opacity"
+                                    onClick={() =>
+                                      window.open(message.content, "_blank")
+                                    }
+                                  />
+                                </div>
+                              ) : (
+                                <div
+                                  className={`px-4 py-2 cursor-pointer ${
+                                    message.replyTo
+                                      ? "rounded-b-sm"
+                                      : "rounded-sm"
+                                  } ${
+                                    message.isOwn
+                                      ? "bg-blue-500 text-white"
+                                      : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                                  }`}
+                                >
+                                  {message.content}
+                                </div>
+                              )}
+                            </div>
+                          </ContextMenuTrigger>
+                          <ContextMenuContent>
+                            {message.isOwn ? (
+                              <ContextMenuItem
+                                onClick={() => handleUnsendMessage(message.id)}
+                                className="text-red-600 focus:text-red-600"
+                              >
+                                Unsend Message
+                              </ContextMenuItem>
+                            ) : (
+                              <ContextMenuItem
+                                onClick={() => handleReplyToMessage(message)}
+                                className="text-blue-600 focus:text-blue-600"
+                              >
+                                Reply to Message
+                              </ContextMenuItem>
+                            )}
+                          </ContextMenuContent>
+                        </ContextMenu>
+                        <div
+                          className={`flex items-center gap-2 mt-1 ${
+                            message.isOwn ? "justify-end" : "justify-start"
+                          }`}
+                        >
                           <span className="text-xs text-muted-foreground">
-                            · Seen
+                            {message.timestamp}
                           </span>
-                        )}
+                          {message.isRead && (
+                            <span className="text-xs text-muted-foreground">
+                              · Seen
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
               </div>
             )}
           </div>
@@ -779,7 +785,9 @@ export function MessagesPage({
           <div className="lg:hidden">
             <div className="p-4 border-b border-border bg-card">
               <div className="flex items-center justify-between mb-4">
-                <h1 className="text-xl font-bold text-foreground ml-12">Messages</h1>
+                <h1 className="text-xl font-bold text-foreground ml-12">
+                  Messages
+                </h1>
                 <div className="flex items-center gap-2"></div>
               </div>
 

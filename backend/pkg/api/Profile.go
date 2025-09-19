@@ -58,6 +58,14 @@ func (S *Server) ProfileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var IsFollower bool
+	IsFollower, err = S.IsFollower(r, user.Url, "")
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Failed to check follower status", http.StatusInternalServerError)
+		return
+	}
+
 	if !isFollowing && user.IsPrivate {
 		user.FollowRequestStatus, err = S.GetFollowRequestStatus(r, user.Url)
 		if err != nil {
@@ -77,6 +85,7 @@ func (S *Server) ProfileHandler(w http.ResponseWriter, r *http.Request) {
 		"followers":   followers,
 		"following":   following,
 		"isfollowing": isFollowing,
+		"isfollower":  IsFollower,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
