@@ -244,7 +244,7 @@ function NotificationsPage({ onNewPost, onNavigate }: NotificationsPageProps) {
                             <span className="text-xs text-muted-foreground whitespace-nowrap">
                               {new Date(
                                 notification.timestamp
-                              ).toLocaleDateString()}
+                              ).toLocaleString()}
                             </span>
 
                             {!notification.isRead && (

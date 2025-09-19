@@ -506,7 +506,7 @@ export function MessagesPage({
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground truncate">
                       {chat.username} ·{" "}
-                      {new Date(chat.timestamp).toLocaleDateString()}
+                      {new Date(chat.timestamp).toLocaleString()}
                     </span>
                   </div>
                   <p className="text-sm text-muted-foreground truncate">
@@ -909,7 +909,7 @@ export function MessagesPage({
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground truncate">
                           {chat.username} ·{" "}
-                          {new Date(chat.timestamp).toLocaleDateString()}
+                          {new Date(chat.timestamp).toLocaleString()}
                         </span>
                       </div>
                       <p className="text-sm text-muted-foreground truncate">

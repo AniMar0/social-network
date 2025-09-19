@@ -110,101 +110,105 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
         <div className="max-w-2xl mx-auto">
           {/* Header */}
           <div className="sticky top-0 bg-background/80 backdrop-blur-sm border-b border-border p-4 z-10">
-            <h2 className="text-xl font-bold text-foreground lg:ml-0 ml-12">Home</h2>
+            <h2 className="text-xl font-bold text-foreground lg:ml-0 ml-12">
+              Home
+            </h2>
           </div>
 
-        {/* Posts Feed */}
-        <div className="p-4 space-y-4">
-          {postsState.map((post) => (
-            <Card
-              key={post.id}
-              className="border border-border w-full max-w-3xl mx-auto"
-            >
-              <CardContent className="p-6">
-                {/* Post Header */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage
-                        src={
-                          `http://localhost:8080/${post.author.avatar}` ||
-                          "http://localhost:8080/uploads/default.jpg"
-                        }
-                        alt={post.author.name}
-                      />
-                      <AvatarFallback className="bg-muted text-foreground">
-                        {post.author.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-foreground">
-                          {post.author.name}
-                        </h3>
+          {/* Posts Feed */}
+          <div className="p-4 space-y-4">
+            {postsState.map((post) => (
+              <Card
+                key={post.id}
+                className="border border-border w-full max-w-3xl mx-auto"
+              >
+                <CardContent className="p-6">
+                  {/* Post Header */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-12 w-12">
+                        <AvatarImage
+                          src={
+                            `http://localhost:8080/${post.author.avatar}` ||
+                            "http://localhost:8080/uploads/default.jpg"
+                          }
+                          alt={post.author.name}
+                        />
+                        <AvatarFallback className="bg-muted text-foreground">
+                          {post.author.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-foreground">
+                            {post.author.name}
+                          </h3>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {post.author.username} •{" "}
+                          {new Date(post.createdAt).toLocaleString()}
+                        </p>
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {post.author.username} •{" "}
-                        {new Date(post.createdAt).toLocaleDateString()}
-                      </p>
                     </div>
                   </div>
-                </div>
 
-                {/* Post Content */}
-                <div className="mb-4">
-                  <p className="text-foreground leading-relaxed">
-                    {post.content}
-                  </p>
-                  {post.image && (
-                    <div className="mt-3 rounded-lg overflow-hidden">
-                      <img
-                        src={
-                          post.image.startsWith("http")
-                            ? post.image // external URL
-                            : `http://localhost:8080/${post.image}` // internal URL
-                        }
-                        alt="Post content"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  )}
-                </div>
+                  {/* Post Content */}
+                  <div className="mb-4">
+                    <p className="text-foreground leading-relaxed">
+                      {post.content}
+                    </p>
+                    {post.image && (
+                      <div className="mt-3 rounded-lg overflow-hidden">
+                        <img
+                          src={
+                            post.image.startsWith("http")
+                              ? post.image // external URL
+                              : `http://localhost:8080/${post.image}` // internal URL
+                          }
+                          alt="Post content"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                  </div>
 
-                {/* Post Actions */}
-                <div className="flex items-center justify-between pt-4 border-t border-border">
-                  <div className="flex items-center gap-6">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleLike(post.id)}
-                      className={`flex items-center gap-2 ${
-                        post.isLiked ? "text-red-500" : "text-muted-foreground"
-                      }`}
-                    >
-                      <Heart
-                        className={`h-4 w-4 ${
-                          post.isLiked ? "fill-current" : ""
+                  {/* Post Actions */}
+                  <div className="flex items-center justify-between pt-4 border-t border-border">
+                    <div className="flex items-center gap-6">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleLike(post.id)}
+                        className={`flex items-center gap-2 ${
+                          post.isLiked
+                            ? "text-red-500"
+                            : "text-muted-foreground"
                         }`}
-                      />
-                      <span>{post.likes}</span>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="flex items-center gap-2 text-muted-foreground"
-                    >
-                      <MessageCircle className="h-4 w-4" />
-                      <span>{post.comments}</span>
-                    </Button>
+                      >
+                        <Heart
+                          className={`h-4 w-4 ${
+                            post.isLiked ? "fill-current" : ""
+                          }`}
+                        />
+                        <span>{post.likes}</span>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="flex items-center gap-2 text-muted-foreground"
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                        <span>{post.comments}</span>
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       </div>
     </div>

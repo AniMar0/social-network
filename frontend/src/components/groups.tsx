@@ -9,11 +9,27 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Users,
   Plus,
@@ -97,7 +113,8 @@ const sampleGroups: Group[] = [
   {
     id: "1",
     title: "Tech Enthusiasts",
-    description: "A community for technology lovers to share ideas and discuss latest trends.",
+    description:
+      "A community for technology lovers to share ideas and discuss latest trends.",
     creatorId: "user1",
     creatorName: "John Doe",
     memberCount: 245,
@@ -111,7 +128,8 @@ const sampleGroups: Group[] = [
   {
     id: "2",
     title: "Photography Club",
-    description: "Share your best shots and learn photography techniques from fellow photographers.",
+    description:
+      "Share your best shots and learn photography techniques from fellow photographers.",
     creatorId: "user2",
     creatorName: "Jane Smith",
     memberCount: 189,
@@ -144,7 +162,8 @@ const sampleGroupPosts: GroupPost[] = [
     authorId: "user1",
     authorName: "John Doe",
     authorAvatar: "https://i.imgur.com/aSlIJks.png",
-    content: "What do you think about the latest AI developments? Excited to hear your thoughts!",
+    content:
+      "What do you think about the latest AI developments? Excited to hear your thoughts!",
     createdAt: "2024-03-15T10:30:00Z",
     likes: 15,
     comments: 8,
@@ -155,7 +174,8 @@ const sampleGroupPosts: GroupPost[] = [
     authorId: "user2",
     authorName: "Jane Smith",
     authorAvatar: "https://i.imgur.com/aSlIJks.png",
-    content: "Just finished reading 'The Design of Everyday Things'. Highly recommend it for UX designers!",
+    content:
+      "Just finished reading 'The Design of Everyday Things'. Highly recommend it for UX designers!",
     image: "https://i.imgur.com/aSlIJks.png",
     createdAt: "2024-03-14T15:45:00Z",
     likes: 23,
@@ -168,7 +188,8 @@ const sampleGroupEvents: GroupEvent[] = [
   {
     id: "1",
     title: "Tech Meetup 2024",
-    description: "Monthly meetup to discuss latest technology trends and network with fellow developers.",
+    description:
+      "Monthly meetup to discuss latest technology trends and network with fellow developers.",
     creatorId: "user1",
     creatorName: "John Doe",
     date: "2024-04-15",
@@ -182,7 +203,8 @@ const sampleGroupEvents: GroupEvent[] = [
   {
     id: "2",
     title: "Photography Workshop",
-    description: "Learn advanced photography techniques with professional photographers.",
+    description:
+      "Learn advanced photography techniques with professional photographers.",
     creatorId: "user2",
     creatorName: "Jane Smith",
     date: "2024-04-20",
@@ -203,18 +225,19 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [groups, setGroups] = useState<Group[]>(sampleGroups);
   const [groupPosts, setGroupPosts] = useState<GroupPost[]>(sampleGroupPosts);
-  const [groupEvents, setGroupEvents] = useState<GroupEvent[]>(sampleGroupEvents);
-  
+  const [groupEvents, setGroupEvents] =
+    useState<GroupEvent[]>(sampleGroupEvents);
+
   // Create group dialog state
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
   const [newGroupTitle, setNewGroupTitle] = useState("");
   const [newGroupDescription, setNewGroupDescription] = useState("");
   const [newGroupPrivacy, setNewGroupPrivacy] = useState("public");
-  
+
   // Create post dialog state
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [newPostContent, setNewPostContent] = useState("");
-  
+
   // Create event dialog state
   const [isCreateEventOpen, setIsCreateEventOpen] = useState(false);
   const [newEventTitle, setNewEventTitle] = useState("");
@@ -223,7 +246,7 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
   const [newEventTime, setNewEventTime] = useState("");
   const [newEventLocation, setNewEventLocation] = useState("");
   const [datePickerOpen, setDatePickerOpen] = useState(false);
-  
+
   // Group chat state
   const [isGroupChatOpen, setIsGroupChatOpen] = useState(false);
 
@@ -236,9 +259,10 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
-  const filteredGroups = groups.filter(group =>
-    group.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    group.description.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredGroups = groups.filter(
+    (group) =>
+      group.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      group.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleCreateGroup = () => {
@@ -257,7 +281,7 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
         isMember: true,
         hasPendingRequest: false,
       };
-      
+
       setGroups([newGroup, ...groups]);
       setNewGroupTitle("");
       setNewGroupDescription("");
@@ -268,11 +292,11 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
   };
 
   const handleJoinGroup = (groupId: string) => {
-    setGroups(groups.map(group => 
-      group.id === groupId 
-        ? { ...group, hasPendingRequest: true }
-        : group
-    ));
+    setGroups(
+      groups.map((group) =>
+        group.id === groupId ? { ...group, hasPendingRequest: true } : group
+      )
+    );
     console.log("Requested to join group:", groupId);
   };
 
@@ -289,7 +313,7 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
         comments: 0,
         isLiked: false,
       };
-      
+
       setGroupPosts([newPost, ...groupPosts]);
       setNewPostContent("");
       setIsCreatePostOpen(false);
@@ -298,14 +322,20 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
   };
 
   const handleCreateEvent = () => {
-    if (newEventTitle.trim() && newEventDescription.trim() && newEventDate && newEventTime && selectedGroup) {
+    if (
+      newEventTitle.trim() &&
+      newEventDescription.trim() &&
+      newEventDate &&
+      newEventTime &&
+      selectedGroup
+    ) {
       const newEvent: GroupEvent = {
         id: Date.now().toString(),
         title: newEventTitle,
         description: newEventDescription,
         creatorId: "currentUser",
         creatorName: "Current User",
-        date: newEventDate.toISOString().split('T')[0], // Convert Date to YYYY-MM-DD string
+        date: newEventDate.toISOString().split("T")[0], // Convert Date to YYYY-MM-DD string
         time: newEventTime,
         location: newEventLocation,
         goingCount: 0,
@@ -313,7 +343,7 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
         userResponse: null,
         createdAt: new Date().toISOString(),
       };
-      
+
       setGroupEvents([newEvent, ...groupEvents]);
       setNewEventTitle("");
       setNewEventDescription("");
@@ -325,23 +355,28 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
     }
   };
 
-  const handleEventResponse = (eventId: string, response: "going" | "not-going") => {
-    setGroupEvents(groupEvents.map(event => {
-      if (event.id === eventId) {
-        const oldResponse = event.userResponse;
-        const newEvent = { ...event, userResponse: response };
-        
-        // Update counts
-        if (oldResponse === "going") newEvent.goingCount--;
-        else if (oldResponse === "not-going") newEvent.notGoingCount--;
-        
-        if (response === "going") newEvent.goingCount++;
-        else if (response === "not-going") newEvent.notGoingCount++;
-        
-        return newEvent;
-      }
-      return event;
-    }));
+  const handleEventResponse = (
+    eventId: string,
+    response: "going" | "not-going"
+  ) => {
+    setGroupEvents(
+      groupEvents.map((event) => {
+        if (event.id === eventId) {
+          const oldResponse = event.userResponse;
+          const newEvent = { ...event, userResponse: response };
+
+          // Update counts
+          if (oldResponse === "going") newEvent.goingCount--;
+          else if (oldResponse === "not-going") newEvent.notGoingCount--;
+
+          if (response === "going") newEvent.goingCount++;
+          else if (response === "not-going") newEvent.notGoingCount++;
+
+          return newEvent;
+        }
+        return event;
+      })
+    );
     console.log("Updated event response:", eventId, response);
   };
 
@@ -360,9 +395,14 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
           {/* Header */}
           <div className="p-6 border-b border-border bg-card">
             <div className="flex items-center justify-between mb-4">
-              <h1 className="text-2xl font-bold text-foreground lg:ml-0 ml-12">Groups</h1>
-              
-              <Dialog open={isCreateGroupOpen} onOpenChange={setIsCreateGroupOpen}>
+              <h1 className="text-2xl font-bold text-foreground lg:ml-0 ml-12">
+                Groups
+              </h1>
+
+              <Dialog
+                open={isCreateGroupOpen}
+                onOpenChange={setIsCreateGroupOpen}
+              >
                 <DialogTrigger asChild>
                   <Button className="bg-primary hover:bg-primary/90 cursor-pointer">
                     <Plus className="h-4 w-4 mr-2" />
@@ -375,7 +415,9 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                   </DialogHeader>
                   <div className="space-y-4">
                     <div>
-                      <Label htmlFor="title" className="p-2">Group Title</Label>
+                      <Label htmlFor="title" className="p-2">
+                        Group Title
+                      </Label>
                       <Input
                         id="title"
                         value={newGroupTitle}
@@ -384,7 +426,9 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="description" className="p-2">Description</Label>
+                      <Label htmlFor="description" className="p-2">
+                        Description
+                      </Label>
                       <Textarea
                         id="description"
                         value={newGroupDescription}
@@ -394,8 +438,13 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="privacy" className="p-2">Privacy</Label>
-                      <Select value={newGroupPrivacy} onValueChange={setNewGroupPrivacy}>
+                      <Label htmlFor="privacy" className="p-2">
+                        Privacy
+                      </Label>
+                      <Select
+                        value={newGroupPrivacy}
+                        onValueChange={setNewGroupPrivacy}
+                      >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
@@ -406,10 +455,17 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                       </Select>
                     </div>
                     <div className="flex gap-2">
-                      <Button onClick={handleCreateGroup} className="flex-1 cursor-pointer">
+                      <Button
+                        onClick={handleCreateGroup}
+                        className="flex-1 cursor-pointer"
+                      >
                         Create Group
                       </Button>
-                      <Button variant="outline" onClick={() => setIsCreateGroupOpen(false)} className="flex-1 cursor-pointer hover:bg-destructive/10">
+                      <Button
+                        variant="outline"
+                        onClick={() => setIsCreateGroupOpen(false)}
+                        className="flex-1 cursor-pointer hover:bg-destructive/10"
+                      >
                         Cancel
                       </Button>
                     </div>
@@ -434,15 +490,22 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
           <div className="p-6">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="grid w-full grid-cols-2 ">
-                <TabsTrigger value="browse" className="cursor-pointer">Browse Groups</TabsTrigger>
-                <TabsTrigger value="my-groups" className="cursor-pointer">My Groups</TabsTrigger>
+                <TabsTrigger value="browse" className="cursor-pointer">
+                  Browse Groups
+                </TabsTrigger>
+                <TabsTrigger value="my-groups" className="cursor-pointer">
+                  My Groups
+                </TabsTrigger>
               </TabsList>
 
               {/* Browse Groups Tab */}
               <TabsContent value="browse" className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredGroups.map((group) => (
-                    <Card key={group.id} className="hover:shadow-md transition-shadow">
+                    <Card
+                      key={group.id}
+                      className="hover:shadow-md transition-shadow"
+                    >
                       <CardHeader className="pb-2">
                         <div className="flex items-start gap-3">
                           <Avatar className="h-12 w-12">
@@ -452,9 +515,15 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex-1 min-w-0">
-                            <CardTitle className="text-lg truncate">{group.title}</CardTitle>
+                            <CardTitle className="text-lg truncate">
+                              {group.title}
+                            </CardTitle>
                             <div className="flex items-center gap-2 mt-1">
-                              <Badge variant={group.isPrivate ? "secondary" : "outline"}>
+                              <Badge
+                                variant={
+                                  group.isPrivate ? "secondary" : "outline"
+                                }
+                              >
                                 {group.isPrivate ? "Private" : "Public"}
                               </Badge>
                               <span className="text-sm text-muted-foreground">
@@ -470,7 +539,7 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                         </p>
                         <div className="flex gap-2">
                           {group.isMember ? (
-                            <Button 
+                            <Button
                               onClick={() => {
                                 setSelectedGroup(group);
                                 setActiveTab("group-view");
@@ -480,17 +549,23 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                               View Group
                             </Button>
                           ) : group.hasPendingRequest ? (
-                            <Button variant="outline" disabled className="flex-1">
+                            <Button
+                              variant="outline"
+                              disabled
+                              className="flex-1"
+                            >
                               Request Pending
                             </Button>
                           ) : (
-                            <Button 
+                            <Button
                               onClick={() => handleJoinGroup(group.id)}
-                              variant="outline" 
+                              variant="outline"
                               className="flex-1"
                             >
                               <UserPlus className="h-4 w-4 mr-2" />
-                              {group.isPrivate ? "Request to Join" : "Join Group"}
+                              {group.isPrivate
+                                ? "Request to Join"
+                                : "Join Group"}
                             </Button>
                           )}
                         </div>
@@ -503,45 +578,59 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
               {/* My Groups Tab */}
               <TabsContent value="my-groups" className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {groups.filter(group => group.isMember).map((group) => (
-                    <Card key={group.id} className="hover:shadow-md transition-shadow">
-                      <CardHeader className="pb-2">
-                        <div className="flex items-start gap-3">
-                          <Avatar className="h-12 w-12">
-                            <AvatarImage src={group.avatar} alt={group.title} />
-                            <AvatarFallback>
-                              {group.title.slice(0, 2).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <CardTitle className="text-lg truncate">{group.title}</CardTitle>
-                            <div className="flex items-center gap-2 mt-1">
-                              {group.isOwner && (
-                                <Badge variant="default">Owner</Badge>
-                              )}
-                              <Badge variant={group.isPrivate ? "secondary" : "outline"}>
-                                {group.isPrivate ? "Private" : "Public"}
-                              </Badge>
+                  {groups
+                    .filter((group) => group.isMember)
+                    .map((group) => (
+                      <Card
+                        key={group.id}
+                        className="hover:shadow-md transition-shadow"
+                      >
+                        <CardHeader className="pb-2">
+                          <div className="flex items-start gap-3">
+                            <Avatar className="h-12 w-12">
+                              <AvatarImage
+                                src={group.avatar}
+                                alt={group.title}
+                              />
+                              <AvatarFallback>
+                                {group.title.slice(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <CardTitle className="text-lg truncate">
+                                {group.title}
+                              </CardTitle>
+                              <div className="flex items-center gap-2 mt-1">
+                                {group.isOwner && (
+                                  <Badge variant="default">Owner</Badge>
+                                )}
+                                <Badge
+                                  variant={
+                                    group.isPrivate ? "secondary" : "outline"
+                                  }
+                                >
+                                  {group.isPrivate ? "Private" : "Public"}
+                                </Badge>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                          {group.description}
-                        </p>
-                        <Button 
-                          onClick={() => {
-                            setSelectedGroup(group);
-                            setActiveTab("group-view");
-                          }}
-                          className="w-full cursor-pointer"
-                        >
-                          Open Group
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                            {group.description}
+                          </p>
+                          <Button
+                            onClick={() => {
+                              setSelectedGroup(group);
+                              setActiveTab("group-view");
+                            }}
+                            className="w-full cursor-pointer"
+                          >
+                            Open Group
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    ))}
                 </div>
               </TabsContent>
 
@@ -553,26 +642,38 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                     <CardHeader>
                       <div className="flex items-start gap-4">
                         <Avatar className="h-16 w-16">
-                          <AvatarImage src={selectedGroup.avatar} alt={selectedGroup.title} />
+                          <AvatarImage
+                            src={selectedGroup.avatar}
+                            alt={selectedGroup.title}
+                          />
                           <AvatarFallback className="text-lg">
                             {selectedGroup.title.slice(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
-                            <h2 className="text-2xl font-bold">{selectedGroup.title}</h2>
+                            <h2 className="text-2xl font-bold">
+                              {selectedGroup.title}
+                            </h2>
                             {selectedGroup.isOwner && (
                               <Badge variant="default">Owner</Badge>
                             )}
                           </div>
-                          <p className="text-muted-foreground mb-3">{selectedGroup.description}</p>
+                          <p className="text-muted-foreground mb-3">
+                            {selectedGroup.description}
+                          </p>
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
                             <span>{selectedGroup.memberCount} members</span>
-                            <span>Created {new Date(selectedGroup.createdAt).toLocaleDateString()}</span>
+                            <span>
+                              Created{" "}
+                              {new Date(
+                                selectedGroup.createdAt
+                              ).toLocaleString()}
+                            </span>
                           </div>
                         </div>
                         <div className="flex gap-2">
-                          <Button 
+                          <Button
                             variant="outline"
                             onClick={() => setIsGroupChatOpen(true)}
                             className="flex-1 cursor-pointer"
@@ -581,7 +682,10 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                             Group Chat
                           </Button>
                           {selectedGroup.isOwner && (
-                            <Button variant="outline" className="flex-1 cursor-pointer">
+                            <Button
+                              variant="outline"
+                              className="flex-1 cursor-pointer"
+                            >
                               <Settings className="h-4 w-4 mr-2" />
                               Settings
                             </Button>
@@ -594,16 +698,25 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                   {/* Group Content Tabs */}
                   <Tabs defaultValue="posts" className="w-full">
                     <TabsList>
-                      <TabsTrigger value="posts" className="cursor-pointer">Posts</TabsTrigger>
-                      <TabsTrigger value="events" className="cursor-pointer">Events</TabsTrigger>
-                      <TabsTrigger value="members" className="cursor-pointer">Members</TabsTrigger>
+                      <TabsTrigger value="posts" className="cursor-pointer">
+                        Posts
+                      </TabsTrigger>
+                      <TabsTrigger value="events" className="cursor-pointer">
+                        Events
+                      </TabsTrigger>
+                      <TabsTrigger value="members" className="cursor-pointer">
+                        Members
+                      </TabsTrigger>
                     </TabsList>
 
                     {/* Posts Tab */}
                     <TabsContent value="posts" className="space-y-4">
                       <div className="flex justify-between items-center">
                         <h3 className="text-lg font-semibold">Group Posts</h3>
-                        <Dialog open={isCreatePostOpen} onOpenChange={setIsCreatePostOpen}>
+                        <Dialog
+                          open={isCreatePostOpen}
+                          onOpenChange={setIsCreatePostOpen}
+                        >
                           <DialogTrigger asChild>
                             <Button className="cursor-pointer">
                               <Plus className="h-4 w-4 mr-2" />
@@ -618,15 +731,24 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                             <div className="space-y-4">
                               <Textarea
                                 value={newPostContent}
-                                onChange={(e) => setNewPostContent(e.target.value)}
+                                onChange={(e) =>
+                                  setNewPostContent(e.target.value)
+                                }
                                 placeholder="What's on your mind?"
                                 rows={4}
                               />
                               <div className="flex gap-2">
-                                <Button onClick={handleCreatePost} className="flex-1 cursor-pointer">
+                                <Button
+                                  onClick={handleCreatePost}
+                                  className="flex-1 cursor-pointer"
+                                >
                                   Post
                                 </Button>
-                                <Button variant="outline" onClick={() => setIsCreatePostOpen(false)} className="cursor-pointer hover:bg-destructive/10">
+                                <Button
+                                  variant="outline"
+                                  onClick={() => setIsCreatePostOpen(false)}
+                                  className="cursor-pointer hover:bg-destructive/10"
+                                >
                                   Cancel
                                 </Button>
                               </div>
@@ -641,29 +763,44 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                             <CardContent className="pt-6">
                               <div className="flex items-start gap-3">
                                 <Avatar className="h-10 w-10">
-                                  <AvatarImage src={post.authorAvatar} alt={post.authorName} />
+                                  <AvatarImage
+                                    src={post.authorAvatar}
+                                    alt={post.authorName}
+                                  />
                                   <AvatarFallback>
                                     {post.authorName.slice(0, 2).toUpperCase()}
                                   </AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2 mb-2">
-                                    <span className="font-semibold">{post.authorName}</span>
+                                    <span className="font-semibold">
+                                      {post.authorName}
+                                    </span>
                                     <span className="text-sm text-muted-foreground">
-                                      {new Date(post.createdAt).toLocaleDateString()}
+                                      {new Date(
+                                        post.createdAt
+                                      ).toLocaleString()}
                                     </span>
                                   </div>
-                                  <p className="text-foreground mb-3">{post.content}</p>
+                                  <p className="text-foreground mb-3">
+                                    {post.content}
+                                  </p>
                                   {post.image && (
-                                    <img 
-                                      src={post.image} 
-                                      alt="Post image" 
+                                    <img
+                                      src={post.image}
+                                      alt="Post image"
                                       className="rounded-lg max-w-full h-auto mb-3"
                                     />
                                   )}
                                   <div className="flex items-center gap-4">
                                     <Button variant="ghost" size="sm">
-                                      <Heart className={`h-4 w-4 mr-1 ${post.isLiked ? 'fill-current text-red-500' : ''}`} />
+                                      <Heart
+                                        className={`h-4 w-4 mr-1 ${
+                                          post.isLiked
+                                            ? "fill-current text-red-500"
+                                            : ""
+                                        }`}
+                                      />
                                       {post.likes}
                                     </Button>
                                     <Button variant="ghost" size="sm">
@@ -687,7 +824,10 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                     <TabsContent value="events" className="space-y-4">
                       <div className="flex justify-between items-center">
                         <h3 className="text-lg font-semibold">Group Events</h3>
-                        <Dialog open={isCreateEventOpen} onOpenChange={setIsCreateEventOpen}>
+                        <Dialog
+                          open={isCreateEventOpen}
+                          onOpenChange={setIsCreateEventOpen}
+                        >
                           <DialogTrigger asChild>
                             <Button className="cursor-pointer">
                               <Plus className="h-4 w-4 mr-2" />
@@ -700,21 +840,31 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                             </DialogHeader>
                             <div className="space-y-4">
                               <div>
-                                <Label htmlFor="event-title" className="p-2">Event Title</Label>
+                                <Label htmlFor="event-title" className="p-2">
+                                  Event Title
+                                </Label>
                                 <Input
                                   id="event-title"
                                   value={newEventTitle}
-                                  onChange={(e) => setNewEventTitle(e.target.value)}
+                                  onChange={(e) =>
+                                    setNewEventTitle(e.target.value)
+                                  }
                                   placeholder="Enter event title"
-                                  
                                 />
                               </div>
                               <div>
-                                <Label htmlFor="event-description" className="p-2">Description</Label>
+                                <Label
+                                  htmlFor="event-description"
+                                  className="p-2"
+                                >
+                                  Description
+                                </Label>
                                 <Textarea
                                   id="event-description"
                                   value={newEventDescription}
-                                  onChange={(e) => setNewEventDescription(e.target.value)}
+                                  onChange={(e) =>
+                                    setNewEventDescription(e.target.value)
+                                  }
                                   placeholder="Describe your event"
                                   rows={3}
                                 />
@@ -724,25 +874,33 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                                   <Label htmlFor="date-picker" className="px-1">
                                     Date
                                   </Label>
-                                  <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+                                  <Popover
+                                    open={datePickerOpen}
+                                    onOpenChange={setDatePickerOpen}
+                                  >
                                     <PopoverTrigger asChild>
                                       <Button
                                         variant="outline"
                                         id="date-picker"
                                         className="w-32 justify-between font-normal"
                                       >
-                                        {newEventDate ? newEventDate.toLocaleDateString() : "Select date"}
+                                        {newEventDate
+                                          ? newEventDate.toLocaleString()
+                                          : "Select date"}
                                         <ChevronDownIcon />
                                       </Button>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-auto overflow-hidden p-0" align="start">
+                                    <PopoverContent
+                                      className="w-auto overflow-hidden p-0"
+                                      align="start"
+                                    >
                                       <Calendar
                                         mode="single"
                                         selected={newEventDate}
                                         captionLayout="dropdown"
                                         onSelect={(date) => {
-                                          setNewEventDate(date)
-                                          setDatePickerOpen(false)
+                                          setNewEventDate(date);
+                                          setDatePickerOpen(false);
                                         }}
                                       />
                                     </PopoverContent>
@@ -757,25 +915,38 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                                     id="time-picker"
                                     step="1"
                                     value={newEventTime}
-                                    onChange={(e) => setNewEventTime(e.target.value)}
+                                    onChange={(e) =>
+                                      setNewEventTime(e.target.value)
+                                    }
                                     className="bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
                                   />
                                 </div>
                               </div>
                               <div>
-                                <Label htmlFor="event-location" className="p-2">Location (Optional)</Label>
+                                <Label htmlFor="event-location" className="p-2">
+                                  Location (Optional)
+                                </Label>
                                 <Input
                                   id="event-location"
                                   value={newEventLocation}
-                                  onChange={(e) => setNewEventLocation(e.target.value)}
+                                  onChange={(e) =>
+                                    setNewEventLocation(e.target.value)
+                                  }
                                   placeholder="Enter event location"
                                 />
                               </div>
                               <div className="flex gap-2">
-                                <Button onClick={handleCreateEvent} className="flex-1 cursor-pointer">
+                                <Button
+                                  onClick={handleCreateEvent}
+                                  className="flex-1 cursor-pointer"
+                                >
                                   Create Event
                                 </Button>
-                                <Button variant="outline" onClick={() => setIsCreateEventOpen(false)} className="cursor-pointer hover:bg-destructive/10">
+                                <Button
+                                  variant="outline"
+                                  onClick={() => setIsCreateEventOpen(false)}
+                                  className="cursor-pointer hover:bg-destructive/10"
+                                >
                                   Cancel
                                 </Button>
                               </div>
@@ -790,12 +961,16 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                             <CardContent className="pt-6">
                               <div className="flex justify-between items-start mb-4">
                                 <div className="flex-1">
-                                  <h4 className="font-semibold text-lg mb-2">{event.title}</h4>
-                                  <p className="text-muted-foreground mb-3">{event.description}</p>
+                                  <h4 className="font-semibold text-lg mb-2">
+                                    {event.title}
+                                  </h4>
+                                  <p className="text-muted-foreground mb-3">
+                                    {event.description}
+                                  </p>
                                   <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
                                     <div className="flex items-center gap-1">
                                       <CalendarIcon className="h-4 w-4" />
-                                      {new Date(event.date).toLocaleDateString()}
+                                      {new Date(event.date).toLocaleString()}
                                     </div>
                                     <div className="flex items-center gap-1">
                                       <Clock className="h-4 w-4" />
@@ -809,25 +984,41 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                                     )}
                                   </div>
                                   <div className="flex items-center gap-4 text-sm">
-                                    <span className="text-green-600">{event.goingCount} going</span>
-                                    <span className="text-red-600">{event.notGoingCount} not going</span>
+                                    <span className="text-green-600">
+                                      {event.goingCount} going
+                                    </span>
+                                    <span className="text-red-600">
+                                      {event.notGoingCount} not going
+                                    </span>
                                   </div>
                                 </div>
                                 <div className="flex flex-col gap-2">
                                   <Button
-                                    variant={event.userResponse === "going" ? "default" : "outline"}
+                                    variant={
+                                      event.userResponse === "going"
+                                        ? "default"
+                                        : "outline"
+                                    }
                                     size="sm"
-                                                onClick={() => handleEventResponse(event.id, "going")}
-                                                className="cursor-pointer"
+                                    onClick={() =>
+                                      handleEventResponse(event.id, "going")
+                                    }
+                                    className="cursor-pointer"
                                   >
                                     <Check className="h-4 w-4 mr-1" />
                                     Going
                                   </Button>
                                   <Button
-                                    variant={event.userResponse === "not-going" ? "destructive" : "outline"}
+                                    variant={
+                                      event.userResponse === "not-going"
+                                        ? "destructive"
+                                        : "outline"
+                                    }
                                     size="sm"
-                                                onClick={() => handleEventResponse(event.id, "not-going")}
-                                                className="cursor-pointer"
+                                    onClick={() =>
+                                      handleEventResponse(event.id, "not-going")
+                                    }
+                                    className="cursor-pointer"
                                   >
                                     <X className="h-4 w-4 mr-1" />
                                     Not Going
@@ -851,7 +1042,7 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                           </Button>
                         )}
                       </div>
-                      
+
                       {/* Members would be loaded from API */}
                       <div className="text-center text-muted-foreground py-8">
                         <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
