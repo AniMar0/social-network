@@ -20,75 +20,14 @@ func (S *Server) GetUsersHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := S.db.Query(`
-        SELECT 
-            u.id,u.first_name || ' ' || u.last_name AS name,
-            u.nickname, u.avatar,
-            m.content AS last_message,
-            m.created_at AS timestamp,
-            SUM(CASE WHEN m.is_read = 0 AND m.sender_id != ? THEN 1 ELSE 0 END) AS unread_count
-        FROM chats c
-        JOIN users u ON (u.id = c.user1_id OR u.id = c.user2_id) AND u.id != ?
-        LEFT JOIN messages m ON m.chat_id = c.id
-        WHERE c.user1_id = ? OR c.user2_id = ?
-        GROUP BY u.id, m.content, m.created_at
-        ORDER BY m.created_at DESC;
-    `, currentUserID, currentUserID, currentUserID, currentUserID)
+	chats, err := S.GetUsers(w, currentUserID)
 	if err != nil {
-		fmt.Println("db.Query", err)
+		fmt.Println("Get Users Error", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
-	defer rows.Close()
 
-	var chats []Chat
-	for rows.Next() {
-		var c Chat
-		var lastMessage sql.NullString
-		var timestamp sql.NullString
-		var nickname sql.NullString
-
-		if err := rows.Scan(
-			&c.ID,
-			&c.Name,
-			&nickname,
-			&c.Avatar,
-			&lastMessage,
-			&timestamp,
-			&c.UnreadCount,
-		); err != nil {
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			return
-		}
-		connections := S.GetConnections(tools.StringToInt(c.ID))
-
-		if len(connections) > 0 {
-			online := true
-			c.IsOnline = &online
-		}
-
-		c.ID = tools.IntToString(S.GetChatID(currentUserID, tools.StringToInt(c.ID)))
-
-		if nickname.Valid {
-			c.Username = nickname.String
-		} else {
-			c.Username = ""
-		}
-
-		if lastMessage.Valid {
-			c.LastMessage = lastMessage.String
-		} else {
-			c.LastMessage = ""
-		}
-
-		if timestamp.Valid {
-			c.Timestamp = timestamp.String
-		} else {
-			c.Timestamp = ""
-		}
-
-		chats = append(chats, c)
-	}
+	fmt.Println(len(chats))
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(chats)
@@ -169,7 +108,7 @@ func (S *Server) SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resiverUserID := r.URL.Path[len("/api/send-message/"):]
+	ChatID := r.URL.Path[len("/api/send-message/"):]
 	currentUserID, _, err := S.CheckSession(r)
 	if err != nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
@@ -183,7 +122,7 @@ func (S *Server) SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
-	message.ChatID = S.GetChatID(currentUserID, tools.StringToInt(resiverUserID))
+	message.ChatID = tools.StringToInt(ChatID)
 
 	S.SendMessage(currentUserID, message)
 	S.PushMessage(message.ChatID, message)
@@ -209,8 +148,13 @@ func (S *Server) GetMessagesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	chatID := r.URL.Path[len("/api/get-messages/"):]
+	currentUserID, _, err := S.CheckSession(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
-	messages, err := S.GetMessages(chatID)
+	messages, err := S.GetMessages(currentUserID, chatID)
 	if err != nil {
 		fmt.Println("Get Messages", err)
 		tools.RenderErrorPage(w, r, "Messages Not Found", http.StatusBadRequest)
@@ -221,7 +165,7 @@ func (S *Server) GetMessagesHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(messages)
 }
 
-func (S *Server) GetMessages(chatID string) ([]Message, error) {
+func (S *Server) GetMessages(currentUserID int, chatID string) ([]Message, error) {
 	var messages []Message
 	query := `SELECT id, sender_id, content, is_read, type FROM messages WHERE chat_id = ?`
 	rows, err := S.db.Query(query, chatID)
@@ -237,6 +181,7 @@ func (S *Server) GetMessages(chatID string) ([]Message, error) {
 			fmt.Println(err)
 			return nil, err
 		}
+		message.IsOwn = message.SenderID == currentUserID
 		messages = append(messages, message)
 	}
 	return messages, nil
@@ -253,6 +198,25 @@ func (S *Server) GetChatID(currentUserID, otherUserID int) int {
 	return id
 }
 
+func (S *Server) GetAllChatIDs(currentUserID int) ([]int, error) {
+	query := `SELECT id FROM chats WHERE user1_id = ? OR user2_id = ?`
+	rows, err := S.db.Query(query, currentUserID, currentUserID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var ids []int
+	for rows.Next() {
+		var id int
+		err := rows.Scan(&id)
+		if err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, nil
+}
+
 // get othere user id from chat table by chat id
 func (S *Server) GetOtherUserID(currentUserID, chatID int) int {
 	query := `SELECT user1_id, user2_id FROM chats WHERE id = ?`
@@ -266,4 +230,93 @@ func (S *Server) GetOtherUserID(currentUserID, chatID int) int {
 		return user2_id
 	}
 	return user1_id
+}
+
+func (S *Server) GetUsers(w http.ResponseWriter, currentUserID int) ([]Chat, error) {
+	chatIDs, err := S.GetAllChatIDs(currentUserID)
+	if err != nil {
+		return nil, err
+	}
+	var chats []Chat
+	for _, chatID := range chatIDs {
+		//otherUserID := S.GetOtherUserID(currentUserID, chatID)
+		rows, err := S.db.Query(`
+        SELECT 
+			u.id,
+    		u.first_name || ' ' || u.last_name AS name,
+    		u.nickname,
+    		u.avatar,
+    		m.content AS last_message,
+    		m.created_at AS timestamp,
+    	(
+        SELECT COUNT(*) 
+		FROM messages 
+		WHERE chat_id = c.id 
+			AND is_read = 0 
+			AND sender_id != ?
+    	) AS unread_count
+		FROM chats c
+		JOIN users u ON (u.id = c.user1_id OR u.id = c.user2_id) AND u.id != ?
+		LEFT JOIN messages m ON m.id = (
+		SELECT id 
+    	FROM messages 
+		WHERE chat_id = c.id 
+    	ORDER BY created_at DESC 
+    	LIMIT 1
+		)
+		WHERE c.id = ?;
+
+    `, currentUserID, currentUserID, chatID, chatID)
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var c Chat
+			var lastMessage sql.NullString
+			var timestamp sql.NullString
+			var nickname sql.NullString
+
+			if err := rows.Scan(
+				&c.ID,
+				&c.Name,
+				&nickname,
+				&c.Avatar,
+				&lastMessage,
+				&timestamp,
+				&c.UnreadCount,
+			); err != nil {
+				return nil, err
+			}
+			connections := S.GetConnections(tools.StringToInt(c.ID))
+
+			if len(connections) > 0 {
+				online := true
+				c.IsOnline = &online
+			}
+
+			c.ID = tools.IntToString(chatID)
+
+			if nickname.Valid {
+				c.Username = nickname.String
+			} else {
+				c.Username = ""
+			}
+
+			if lastMessage.Valid {
+				c.LastMessage = lastMessage.String
+			} else {
+				c.LastMessage = ""
+			}
+
+			if timestamp.Valid {
+				c.Timestamp = timestamp.String
+			} else {
+				c.Timestamp = ""
+			}
+
+			chats = append(chats, c)
+		}
+	}
+	return chats, nil
 }

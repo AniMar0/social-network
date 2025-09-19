@@ -178,21 +178,10 @@ export function MessagesPage({
     }
   };
 
-  const fetchUserOnlineStatus = async (userId: string) => {
-    try {
-      console.log("Fetching online status for user:", userId);
-      // TODO: Replace with actual API call
-      // const response = await fetch(`/api/users/${userId}/status`);
-      // const statusData = await response.json();
-      // setUserOnlineStatus(statusData.isOnline);
-
-      // For now, using mock data based on chat data
-      const chat = chats.find((c) => c.id === userId);
-      if (chat) {
-        setUserOnlineStatus(chat.isOnline || false);
-      }
-    } catch (error) {
-      console.error("Error fetching user online status:", error);
+  const fetchUserOnlineStatus = (userId: string) => {
+    const chat = chats.find((c) => c.id === userId);
+    if (chat) {
+      setUserOnlineStatus(chat.isOnline || false);
     }
   };
 
@@ -405,7 +394,7 @@ export function MessagesPage({
               <div
                 key={chat.id}
                 onClick={() => {
-                  router.push(`/messages/${chat.id}`);
+                  window.location.href = `/messages/${chat.id}`;
                   setSelectedChat(chat);
                 }}
                 className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
