@@ -31,8 +31,6 @@ func (S *Server) GetUsersHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println(len(chats))
-
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(chats)
 }
@@ -74,12 +72,12 @@ func (S *Server) MakeChatHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	otherUserID := r.URL.Path[len("/api/make-message/"):]
 
-	fmt.Println("Making chat between user", currentUserID, "and user", otherUserID)
-	// if there is no chat between the two users, create a new chat
 	if !S.FoundChat(currentUserID, tools.StringToInt(otherUserID)) {
 		S.MakeChat(currentUserID, tools.StringToInt(otherUserID))
 	}
+
 	chatId := S.GetChatID(currentUserID, tools.StringToInt(otherUserID))
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(chatId)
 }
@@ -129,7 +127,11 @@ func (S *Server) SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 	message.ChatID = tools.StringToInt(ChatID)
 
 	S.SendMessage(currentUserID, message)
-	S.PushMessage(message.ChatID, message)
+
+	resiverID := S.GetOtherUserID(currentUserID, message.ChatID)
+	
+	message.IsOwn = false
+	S.PushMessage(resiverID, message)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(true)

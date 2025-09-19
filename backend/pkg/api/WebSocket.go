@@ -125,7 +125,6 @@ func (S *Server) PushMessage(userID int, msg interface{}) {
 	}
 }
 
-// GetConnections returns a list of connections for a given user ID
 func (S *Server) GetConnections(userID int) []*Client {
 	S.RLock()
 	defer S.RUnlock()

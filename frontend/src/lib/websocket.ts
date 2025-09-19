@@ -12,8 +12,6 @@ export function initWebSocket(userId: number) {
 
   ws.onmessage = (event) => {
     const data = JSON.parse(event.data);
-    console.log("ws message", data);
-
     if (data.channel === "notifications") {
       triggerNotificationUpdate();
     }

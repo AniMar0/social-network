@@ -17,6 +17,8 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 
+import { getWebSocket } from "@/lib/websocket";
+
 interface Message {
   id: string;
   content: string;
@@ -57,39 +59,6 @@ interface MessagesPageProps {
   onUserProfileClick?: string;
 }
 
-const sampleMessages: Message[] = [
-  {
-    id: "1",
-    content: "😰",
-    timestamp: "Jul 26, 2025, 8:14 PM",
-    isOwn: false,
-    isRead: true,
-    type: "emoji",
-  },
-  {
-    id: "2",
-    content: "Hey! How are you doing?",
-    timestamp: "Jul 26, 2025, 8:15 PM",
-    isOwn: false,
-    isRead: true,
-    type: "text",
-  },
-  {
-    id: "3",
-    content: "I'm doing great, thanks for asking!",
-    timestamp: "Jul 26, 2025, 8:16 PM",
-    isOwn: true,
-    isRead: true,
-    type: "text",
-    replyTo: {
-      id: "2",
-      content: "Hey! How are you doing?",
-      type: "text",
-      senderName: "meclawd",
-    },
-  },
-];
-
 export function MessagesPage({
   onNavigate,
   onNewPost,
@@ -100,7 +69,7 @@ export function MessagesPage({
   const [searchQuery, setSearchQuery] = useState("");
   const [showGifPicker, setShowGifPicker] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [messages, setMessages] = useState<Message[]>(sampleMessages);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile>({
     age: "",
     aboutMe: "",
@@ -121,20 +90,40 @@ export function MessagesPage({
 
   const [chats, setChats] = useState<Chat[]>([]);
 
+  let ws = getWebSocket();
+
+  if (ws) {
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log("ws message", data);
+
+      if (data.channel === "chat") {
+        if (onUserProfileClick && onUserProfileClick == data.payload.chat_id) {
+          setMessages((prev) => {
+            if (prev) {
+              return [...prev, data.payload];
+            } else {
+              return [data.payload];
+            }
+          });
+        }
+      }
+    };
+  } else {
+    console.log("WebSocket is not initialized yet.");
+  }
+
   // Fetch user profile data when chat is selected
   useEffect(() => {
     const fetchChats = async () => {
       try {
-        const res = await fetch("/api/get-users"); // backend route ديالك
+        const res = await fetch("/api/get-users");
         if (!res.ok) throw new Error("Failed to fetch chats");
         const data: Chat[] = await res.json();
         setChats(data);
-        if (onUserProfileClick && selectedChat === null && data) {
-          data.map((chat) => {
-            if (onUserProfileClick === chat.id) {
-              setSelectedChat(chat);
-            }
-          });
+        if (onUserProfileClick && !selectedChat && data) {
+          const chat = data.find((c) => c.id === onUserProfileClick);
+          if (chat) setSelectedChat(chat);
         }
       } catch (err) {
         console.error(err);
