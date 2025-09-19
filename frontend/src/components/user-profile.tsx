@@ -80,8 +80,6 @@ function UserProfile({
   // Called when profile settings are saved
   const handleProfileUpdate = (updatedData: UserData) => {
     setProfileData(updatedData);
-    // TODO: Send updated profile data to backend
-    console.log("Profile updated:", updatedData);
   };
 
   // Toggle follow/unfollow state or send follow request for private profiles

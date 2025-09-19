@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { getWebSocket } from "@/lib/websocket";
 
 export interface Notification {
   id: number;
@@ -21,29 +22,42 @@ export interface Notification {
   };
 }
 
-// Global state for notification updates
-export let notificationUpdateListeners: (() => void)[] = [];
-
-export const triggerNotificationUpdate = () => {
-  notificationUpdateListeners.forEach((listener) => listener());
-};
 // Hook to get unread notification count
 export const useNotificationCount = () => {
-  const [notificationCount, setNotificationCount] = useState(0);
-
-  const updateCount = useCallback(async () => {
-    const notifications = await fetchNotifications();
-    const unreadCount = notifications.filter((n) => !n.isRead).length;
-    setNotificationCount(unreadCount);
-  }, []);
+  const [count, setCount] = useState(0);
 
   useEffect(() => {
-    // Register for updates
-    notificationUpdateListeners.push(updateCount);
-    
-  }, [updateCount]);
+    const init = async () => {
+      try {
+        const res = await fetch("http://localhost:8080/api/notifications", {
+          credentials: "include",
+        });
+        const data = await res.json();
+        const unread = data.filter((n: any) => !n.isRead).length;
+        setCount(unread);
+      } catch (err) {
+        console.error("Failed to fetch initial notifications", err);
+      }
+    };
+    init();
 
-  return notificationCount;
+    const ws = getWebSocket();
+    if (!ws) return;
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+
+      if (data.channel === "notifications-new") {
+        setCount((prev) => prev + 1);
+      }
+
+      if (data.channel === "notifications-read") {
+        setCount((prev) => Math.max(prev - 1, 0));
+      }
+    };
+  }, []);
+
+  return count;
 };
 // Function to fetch notifications from API (placeholder)
 export const fetchNotifications = async (): Promise<Notification[]> => {
@@ -69,21 +83,29 @@ export const fetchNotifications = async (): Promise<Notification[]> => {
 
 // Function to mark notification as read
 export const markNotificationAsRead = async (
-  notificationId: number
+  notificationId?: number,
+  AllNotifications?: boolean
 ): Promise<void> => {
-  try {
-    // TODO: Replace with actual API call
-    await fetch(`/api/mark-notification-as-read/${notificationId}`, {
-      method: "POST",
-      credentials: "include",
-    });
-
-    // Update mock data
-    triggerNotificationUpdate();
-
-    console.log(`Marking notification ${notificationId} as read`);
-  } catch (error) {
-    console.error("Error marking notification as read:", error);
+  if (AllNotifications) {
+    try {
+      // TODO: Replace with actual API call
+      await fetch(`/api/mark-All-notification-as-read`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+    }
+  } else if (notificationId) {
+    try {
+      // TODO: Replace with actual API call
+      await fetch(`/api/mark-notification-as-read/${notificationId}`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+    }
   }
 };
 
@@ -97,11 +119,6 @@ export const deleteNotification = async (
       method: "POST",
       credentials: "include",
     });
-
-    // Update mock data
-    triggerNotificationUpdate();
-
-    console.log(`Deleting notification ${notificationId}`);
   } catch (error) {
     console.error("Error deleting notification:", error);
   }

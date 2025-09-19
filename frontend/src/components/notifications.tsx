@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getWebSocket } from "@/lib/websocket";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,6 +30,7 @@ import {
   deleteNotification,
   type Notification,
 } from "@/lib/notifications";
+import { count } from "console";
 
 interface NotificationsPageProps {
   onNavigate?: (page: string) => void;
@@ -104,21 +106,17 @@ function NotificationsPage({ onNewPost, onNavigate }: NotificationsPageProps) {
       method: "POST",
       credentials: "include",
     });
-    // Remove the notification after handling
+
     handleDelete(notificationId);
   };
 
   const handleMarkAllAsRead = async () => {
     try {
-      const unreadNotifications = notifications.filter(
-        (notif) => !notif.isRead
-      );
-      await Promise.all(
-        unreadNotifications.map((notif) => markNotificationAsRead(notif.id))
-      );
+      await markNotificationAsRead(0, true);
       setNotifications((prev) =>
         prev.map((notif) => ({ ...notif, isRead: true }))
       );
+      //ubdate notification count
     } catch (error) {
       console.error("Error marking all notifications as read:", error);
     }
@@ -148,147 +146,154 @@ function NotificationsPage({ onNewPost, onNavigate }: NotificationsPageProps) {
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="border-b border-border p-6 flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-foreground lg:ml-0 ml-12">Notifications</h1>
+            <h1 className="text-2xl font-bold text-foreground lg:ml-0 ml-12">
+              Notifications
+            </h1>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleMarkAllAsRead}
-            className="bg-muted hover:bg-primary/70 cursor-pointer"
-          >
-            <MailOpen className="h-5 w-5" /> Mark all as read
-          </Button>
-        </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleMarkAllAsRead}
+              className="bg-muted hover:bg-primary/70 cursor-pointer"
+            >
+              <MailOpen className="h-5 w-5" /> Mark all as read
+            </Button>
+          </div>
 
-        {/* Notifications List */}
-        <div className="flex-1 overflow-y-auto">
-          {notifications.length === 0 ? (
-            <div className="flex items-center justify-center h-64 text-muted-foreground">
-              <p>No notifications yet</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-border">
-              {notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  className={`p-4 hover:bg-muted/50 transition-colors ${
-                    !notification.isRead ? "bg-muted/20" : ""
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    {/* Notification Icon */}
-                    <div className="flex-shrink-0 mt-1 bg-accent p-3 rounded-sm">
-                      {getNotificationIcon(notification.type)}
-                    </div>
+          {/* Notifications List */}
+          <div className="flex-1 overflow-y-auto">
+            {notifications.length === 0 ? (
+              <div className="flex items-center justify-center h-64 text-muted-foreground">
+                <p>No notifications yet</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-border">
+                {notifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    className={`p-4 hover:bg-muted/50 transition-colors ${
+                      !notification.isRead ? "bg-muted/20" : ""
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      {/* Notification Icon */}
+                      <div className="flex-shrink-0 mt-1 bg-accent p-3 rounded-sm">
+                        {getNotificationIcon(notification.type)}
+                      </div>
 
-                    {/* User Avatar */}
-                    <Avatar className="h-10 w-10 flex-shrink-0">
-                      <AvatarImage
-                        src={
-                          `http://localhost:8080/${notification.user.avatar}` ||
-                          "http://localhost:8080/uploads/default.jpg"
-                        }
-                      />
-                      <AvatarFallback className="bg-muted text-foreground">
-                        {notification.user.name.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
+                      {/* User Avatar */}
+                      <Avatar className="h-10 w-10 flex-shrink-0">
+                        <AvatarImage
+                          src={
+                            `http://localhost:8080/${notification.user.avatar}` ||
+                            "http://localhost:8080/uploads/default.jpg"
+                          }
+                        />
+                        <AvatarFallback className="bg-muted text-foreground">
+                          {notification.user.name.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
 
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <p className="text-sm">
-                            <span className="font-semibold text-foreground">
-                              {notification.user.name}
-                            </span>{" "}
-                            <br />
-                            <span className="text-muted-foreground">
-                              {notification.content}
-                            </span>
-                          </p>
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <p className="text-sm">
+                              <span className="font-semibold text-foreground">
+                                {notification.user.name}
+                              </span>{" "}
+                              <br />
+                              <span className="text-muted-foreground">
+                                {notification.content}
+                              </span>
+                            </p>
 
-                          {/* Follow Request Actions */}
-                          {notification.type === "follow_request" && (
-                            <div className="flex gap-2 mt-2">
-                              <Button
-                                size="sm"
-                                onClick={() =>
-                                  handleFollowRequest(notification.id, "accept")
-                                }
-                                className="bg-primary hover:bg-primary/90 cursor-pointer"
-                              >
-                                Accept
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() =>
-                                  handleFollowRequest(
-                                    notification.id,
-                                    "decline"
-                                  )
-                                }
-                                className="bg-muted hover:bg-destructive cursor-pointer"
-                              >
-                                Decline
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="flex items-center gap-2 ml-4">
-                          <span className="text-xs text-muted-foreground whitespace-nowrap">
-                            {notification.timestamp}
-                          </span>
-
-                          {!notification.isRead && (
-                            <Badge
-                              variant="secondary"
-                              className="h-2 w-2 p-0 bg-blue-500"
-                            />
-                          )}
-
-                          {/* Options Menu */}
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                              >
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              {!notification.isRead && (
-                                <DropdownMenuItem
+                            {/* Follow Request Actions */}
+                            {notification.type === "follow_request" && (
+                              <div className="flex gap-2 mt-2">
+                                <Button
+                                  size="sm"
                                   onClick={() =>
-                                    handleMarkAsRead(notification.id)
+                                    handleFollowRequest(
+                                      notification.id,
+                                      "accept"
+                                    )
                                   }
+                                  className="bg-primary hover:bg-primary/90 cursor-pointer"
                                 >
-                                  <Check className="h-4 w-4 mr-2" />
-                                  Mark as read
+                                  Accept
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() =>
+                                    handleFollowRequest(
+                                      notification.id,
+                                      "decline"
+                                    )
+                                  }
+                                  className="bg-muted hover:bg-destructive cursor-pointer"
+                                >
+                                  Decline
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2 ml-4">
+                            <span className="text-xs text-muted-foreground whitespace-nowrap">
+                              {new Date(
+                                notification.timestamp
+                              ).toLocaleDateString()}
+                            </span>
+
+                            {!notification.isRead && (
+                              <Badge
+                                variant="secondary"
+                                className="h-2 w-2 p-0 bg-blue-500"
+                              />
+                            )}
+
+                            {/* Options Menu */}
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                >
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                {!notification.isRead && (
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleMarkAsRead(notification.id)
+                                    }
+                                  >
+                                    <Check className="h-4 w-4 mr-2" />
+                                    Mark as read
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuItem
+                                  onClick={() => handleDelete(notification.id)}
+                                  className="text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete
                                 </DropdownMenuItem>
-                              )}
-                              <DropdownMenuItem
-                                onClick={() => handleDelete(notification.id)}
-                                className="text-destructive"
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

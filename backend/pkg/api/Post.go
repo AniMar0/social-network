@@ -125,6 +125,11 @@ func (S *Server) LikeHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "DB Error", http.StatusInternalServerError)
 		return
 	}
+	userIDs, err := S.GetUserIdFromPostID(PostID)
+	if err != nil {
+		http.Error(w, "DB Error", http.StatusInternalServerError)
+		return
+	}
 
 	if exists {
 		// remove like
@@ -134,6 +139,9 @@ func (S *Server) LikeHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		_, _ = S.db.Exec("UPDATE posts SET likes = likes - 1 WHERE id=?", PostID)
+		S.DeleteNotification(tools.IntToString(userID), tools.IntToString(userIDs), "like")
+
+		S.PushNotification("-read", userIDs, Notification{})
 		json.NewEncoder(w).Encode(map[string]interface{}{"liked": false})
 	} else {
 		// add like
@@ -144,16 +152,11 @@ func (S *Server) LikeHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		_, _ = S.db.Exec("UPDATE posts SET likes = likes + 1 WHERE id=?", PostID)
 
-		userIDs, err := S.GetUserIdFromPostID(PostID)
-
 		if userIDs != userID {
 			notification := Notification{ID: userIDs, ActorID: userID, Type: "like", Content: "Like Your Post", IsRead: false}
-			if err != nil {
-				http.Error(w, "DB Error", http.StatusInternalServerError)
-				return
-			}
+
 			S.IsertNotification(notification)
-			S.PushNotification(userIDs, notification)
+			S.PushNotification("-new", userIDs, notification)
 		}
 
 		json.NewEncoder(w).Encode(map[string]interface{}{"liked": true})

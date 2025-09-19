@@ -31,6 +31,10 @@ func (S *Server) CancelFollowRequestHandler(w http.ResponseWriter, r *http.Reque
 		http.Error(w, "failed to cancel follow request", http.StatusInternalServerError)
 		return
 	}
+	//dellete notification from database
+	S.DeleteNotification(body.FollowerID, body.FollowingID, "follow_request")
+
+	S.PushNotification("-read", tools.StringToInt(body.FollowingID), Notification{})
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"message": "follow request cancelled"})
@@ -98,7 +102,8 @@ func (S *Server) AcceptFollowRequestHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	S.PushNotification(tools.StringToInt(FollowerID), notification)
+	S.PushNotification("-new", tools.StringToInt(FollowerID), notification)
+	S.PushNotification("-read", tools.StringToInt(FollowingID), notification)
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"message": "follow request accepted"})
@@ -128,7 +133,9 @@ func (S *Server) DeclineFollowRequestHandler(w http.ResponseWriter, r *http.Requ
 		http.Error(w, "failed to decline follow request", http.StatusInternalServerError)
 		return
 	}
+	S.DeleteNotification(FollowerID, FollowingID, "follow_request")
 
+	S.PushNotification("-read", tools.StringToInt(FollowingID), Notification{})
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"message": "follow request declined"})
 }
@@ -185,7 +192,7 @@ func (S *Server) SendFollowRequestHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	S.PushNotification(tools.StringToInt(req.Following), notification)
+	S.PushNotification("-new", tools.StringToInt(req.Following), notification)
 
 	json.NewEncoder(w).Encode(map[string]string{
 		"message": "Follow request sent",
@@ -227,7 +234,7 @@ func (S *Server) FollowHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	S.PushNotification(tools.StringToInt(body.Following), notification)
+	S.PushNotification("-new", tools.StringToInt(body.Following), notification)
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{
@@ -254,6 +261,10 @@ func (S *Server) UnfollowHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to unfollow", http.StatusInternalServerError)
 		return
 	}
+
+	S.DeleteNotification(body.Follower, body.Following, "follow")
+
+	S.PushNotification("-read", tools.StringToInt(body.Following), Notification{})
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{

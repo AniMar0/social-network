@@ -73,12 +73,26 @@ func (S *Server) MarkNotificationAsReadHandler(w http.ResponseWriter, r *http.Re
 		http.Error(w, "DB error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	_, receiverID, err := S.GetSenderAndReceiverIDs(notificationID)
+	if err != nil {
+		http.Error(w, "DB error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	S.PushNotification("-read", tools.StringToInt(receiverID), Notification{})
 }
 
 func (S *Server) DeleteNotificationHandler(w http.ResponseWriter, r *http.Request) {
 	notificationID := r.URL.Path[len("/api/delete-notification/"):]
 
-	_, err := S.db.Exec(`
+	_, receiverID, err := S.GetSenderAndReceiverIDs(notificationID)
+	if err != nil {
+		http.Error(w, "DB error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	_, err = S.db.Exec(`
 		DELETE FROM notifications
 		WHERE id = ?
 	`, notificationID)
@@ -86,9 +100,17 @@ func (S *Server) DeleteNotificationHandler(w http.ResponseWriter, r *http.Reques
 		http.Error(w, "DB error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	S.PushNotification("-read", tools.StringToInt(receiverID), Notification{})
 }
 
-// get sender id and resiver id from follow_requests table by notfication id and the ids are string
+func (S *Server) DeleteNotification(senderID, resiverID, notificationType string) error {
+	_, err := S.db.Exec(`
+		DELETE FROM notifications
+		WHERE actor_id = ? AND user_id = ? AND type = ?
+	`, senderID, resiverID, notificationType)
+	return err
+}
 
 func (S *Server) GetSenderAndReceiverIDs(notificationID string) (string, string, error) {
 	var senderID, receiverID int
@@ -101,4 +123,21 @@ func (S *Server) GetSenderAndReceiverIDs(notificationID string) (string, string,
 		return "", "", err
 	}
 	return tools.IntToString(senderID), tools.IntToString(receiverID), nil
+}
+
+func (S *Server) MarkAllNotificationAsReadHandler(w http.ResponseWriter, r *http.Request) {
+	currentUserID, _, err := S.CheckSession(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	_, err = S.db.Exec(`
+		UPDATE notifications
+		SET is_read = 1
+		WHERE user_id = ?
+	`, currentUserID)
+	if err != nil {
+		http.Error(w, "DB error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 }

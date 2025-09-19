@@ -84,13 +84,13 @@ func (S *Server) StartReader(client *Client) {
 		fmt.Println("Received message:", msg)
 		// unified channel switch
 		switch msg["channel"] {
-		case "chat":
+		case "markAllNotificationsAsRead":
 			targetID, _ := strconv.Atoi(msg["to"].(string))
 			S.PushMessage("", targetID, msg)
 		case "notifications":
 			fmt.Println("Received notification:", msg)
 			targetID, _ := strconv.Atoi(msg["to"].(string))
-			S.PushNotification(targetID, msg)
+			S.PushNotification("", targetID, msg)
 		}
 	}
 }
@@ -109,13 +109,15 @@ func (S *Server) StartWriter(c *Client) {
 	}
 }
 
-func (S *Server) PushNotification(userID int, notif interface{}) {
+func (S *Server) PushNotification(notifType string, userID int, notif interface{}) {
 	S.RLock()
 	defer S.RUnlock()
 	for _, Session := range S.Users[userID] {
-		fmt.Println("Sending notification to user", userID)
+		//fmt.Println("Sending notification to user", userID)
+		// fmt.Println("Notification:", notif)
 		Session.Send <- map[string]interface{}{
-			"channel": "notifications",
+			"channel": "notifications" + notifType,
+
 			"to":      userID,
 			"payload": notif,
 		}

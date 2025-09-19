@@ -1,6 +1,5 @@
 "use client";
 
-import { triggerNotificationUpdate } from "@/lib/notifications";
 let ws: WebSocket | null = null;
 
 export function initWebSocket(userId: number) {
@@ -9,13 +8,6 @@ export function initWebSocket(userId: number) {
   ws = new WebSocket("ws://localhost:8080/ws");
 
   ws.onopen = () => console.log("WebSocket connected for user", userId);
-
-  ws.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    if (data.channel === "notifications") {
-      triggerNotificationUpdate();
-    }
-  };
 
   ws.onclose = () => {
     console.log("WebSocket closed for user", userId);
