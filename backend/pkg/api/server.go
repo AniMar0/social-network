@@ -51,7 +51,6 @@ func (S *Server) initRoutes() {
 	//user handlers
 	S.mux.HandleFunc("/api/register", S.RegisterHandler)
 	S.mux.HandleFunc("/api/upload-avatar", S.UploadAvatarHandler)
-	S.mux.HandleFunc("/api/upload-post-file", S.UploadPostHandler)
 	S.mux.HandleFunc("/api/user/update", S.UpdateProfileHandler)
 
 	//notification handlers
@@ -83,6 +82,7 @@ func (S *Server) initRoutes() {
 	S.mux.HandleFunc("/api/like/", S.LikeHandler)
 	S.mux.Handle("/api/create-post", S.SessionMiddleware(http.HandlerFunc(S.CreatePostHandler)))
 	S.mux.HandleFunc("/api/get-posts", S.GetPostsHandler)
+	S.mux.HandleFunc("/api/upload-post-file", S.UploadPostHandler)
 
 	//comment handlers
 	// S.mux.HandleFunc("/api/create-comment/", S.CreateCommentHandler)
@@ -95,6 +95,7 @@ func (S *Server) initRoutes() {
 	S.mux.HandleFunc("/api/make-message/", S.MakeChatHandler)
 	S.mux.HandleFunc("/api/send-message/", S.SendMessageHandler)
 	S.mux.HandleFunc("/api/get-messages/", S.GetMessagesHandler)
+	S.mux.HandleFunc("/api/upoad-file", S.UploadFileHandler)
 	// S.mux.HandleFunc("/api/delete-message/", S.DeleteMessageHandler)
 }
 

@@ -5,7 +5,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
+
+	"github.com/twinj/uuid"
 )
 
 func (S *Server) GetUsersHandler(w http.ResponseWriter, r *http.Request) {
@@ -217,7 +221,6 @@ func (S *Server) GetAllChatIDs(currentUserID int) ([]int, error) {
 	return ids, nil
 }
 
-// get othere user id from chat table by chat id
 func (S *Server) GetOtherUserID(currentUserID, chatID int) int {
 	query := `SELECT user1_id, user2_id FROM chats WHERE id = ?`
 	var user1_id, user2_id int
@@ -319,4 +322,39 @@ func (S *Server) GetUsers(w http.ResponseWriter, currentUserID int) ([]Chat, err
 		}
 	}
 	return chats, nil
+}
+
+func (S *Server) UploadFileHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Upload File Handler")
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	file, header, err := r.FormFile("image")
+	if err != nil {
+		fmt.Println("Failed to read post",err)
+		http.Error(w, "Cannot read post", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+	messagePath := "uploads/Messages/" + uuid.NewV4().String() + tools.GetTheExtension(header.Filename)
+
+	out, err := os.Create(messagePath)
+	if err != nil {
+		fmt.Println("Failed to save post 1",err)
+		http.Error(w, "Cannot save post", http.StatusInternalServerError)
+		return
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, file)
+	if err != nil {
+		fmt.Println("Failed to save post 2",err)
+		http.Error(w, "Failed to save post", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(fmt.Sprintf(`{"messageImageUrl": "/%s"}`, messagePath)))
 }

@@ -275,7 +275,7 @@ export function MessagesPage({
     setShowEmojiPicker(false);
   };
 
-  const handleGifSelect = (gifUrl: string) => {
+  const handleGifSelect = async (gifUrl: string) => {
     // Send GIF as a message
     const message: Message = {
       id: Date.now().toString(),
@@ -291,22 +291,70 @@ export function MessagesPage({
 
     console.log("Sending GIF:", gifUrl);
     // TODO: Add backend logic to send GIF
+    try {
+      // TODO: Replace with actual API call
+      const response = await fetch(`/api/send-message/${onUserProfileClick}`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(message),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to send message");
+      }
+
+      if (replyingTo) {
+        console.log("Reply to message:", replyingTo.id);
+      }
+    } catch (error) {
+      console.error("Error sending message:", error);
+      // Remove the message from UI if sending failed
+      setMessages((prev) => prev.filter((msg) => msg.id !== message.id));
+      // You could also show an error toast here
+    }
   };
 
   const handleImageSelect = () => {
     fileInputRef.current?.click();
   };
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
     if (file) {
       // Create a preview URL for the image
       const imageUrl = URL.createObjectURL(file);
+      console.log("Sending image:", file);
+      const avatarForm = new FormData();
+      let avatarUrl = "";
+
+      avatarForm.append("image", file);
+      await fetch("/api/upoad-file", {
+        method: "POST",
+        body: avatarForm,
+        credentials: "include",
+      })
+        .then(async (res) => {
+          if (!res.ok) {
+            // backend may return plain text error messages for bad requests
+            const text = await res.text();
+            throw new Error(text || "Upload failed");
+          }
+          return res.json();
+        })
+        .then((data) => (avatarUrl = data.messageImageUrl))
+        .catch((err) => {
+          console.error(err);
+        });
 
       // Send image as a message
       const message: Message = {
         id: Date.now().toString(),
-        content: imageUrl,
+        content: avatarUrl || imageUrl,
         timestamp: new Date().toLocaleString(),
         isOwn: true,
         isRead: false,
@@ -315,9 +363,34 @@ export function MessagesPage({
 
       setMessages((prev) => [...prev, message]);
 
-      console.log("Sending image:", file);
       // TODO: Add backend logic to upload and send image
+      try {
+        // TODO: Replace with actual API call
+        const response = await fetch(
+          `/api/send-message/${onUserProfileClick}`,
+          {
+            method: "POST",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(message),
+          }
+        );
 
+        if (!response.ok) {
+          throw new Error("Failed to send message");
+        }
+
+        if (replyingTo) {
+          console.log("Reply to message:", replyingTo.id);
+        }
+      } catch (error) {
+        console.error("Error sending message:", error);
+        // Remove the message from UI if sending failed
+        setMessages((prev) => prev.filter((msg) => msg.id !== message.id));
+        // You could also show an error toast here
+      }
       // Reset the input
       event.target.value = "";
     }
@@ -591,7 +664,7 @@ export function MessagesPage({
                                   }`}
                                 >
                                   <img
-                                    src={message.content}
+                                    src={`http://localhost:8080/${message.content}`}
                                     alt="Uploaded image"
                                     className="w-full h-auto hover:opacity-90 transition-opacity"
                                     onClick={() =>

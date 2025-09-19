@@ -1,6 +1,8 @@
 package backend
 
-import "time"
+import (
+	"time"
+)
 
 type User struct {
 	Email       string `json:"email"`
@@ -76,15 +78,15 @@ type Author = struct {
 }
 
 type Message struct {
-	ID       string     `json:"id"`
-	ChatID   int        `json:"chat_id"`
-	SenderID int        `json:"sender_id"`
-	Content  string     `json:"content"`
-	Type     string     `json:"type"`
-	ReplyTo  *ReplyInfo `json:"replyTo,omitempty"`
-	IsRead   bool       `json:"isRead"`
-	IsOwn    bool       `json:"isOwn"`
-	Timestamp string `json:"timestamp"`
+	ID        string     `json:"id"`
+	ChatID    int        `json:"chat_id"`
+	SenderID  int        `json:"sender_id"`
+	Content   string     `json:"content"`
+	Type      string     `json:"type"`
+	ReplyTo   *ReplyInfo `json:"replyTo,omitempty"`
+	IsRead    bool       `json:"isRead"`
+	IsOwn     bool       `json:"isOwn"`
+	Timestamp string     `json:"timestamp"`
 }
 
 type Chat struct {
