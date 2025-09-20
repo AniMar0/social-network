@@ -64,6 +64,21 @@ function Messages() {
     );
   }
 
+  const setSeenChat = (chatId: string) => {
+    fetch(`/api/set-seen-chat/${chatId}`, {
+      method: "POST",
+      credentials: "include",
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to set seen chat");
+      })
+      .then(() => {
+        console.log("Chat seen");
+      })
+      .catch((err) => console.error(err));
+  };
+  setSeenChat(resiverID);
+
   if (!userLoggedIn) {
     return null; // Will redirect
   }

@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/context-menu";
 
 import { getWebSocket } from "@/lib/websocket";
+import { tr } from "date-fns/locale";
 
 interface Message {
   id: string;
@@ -441,7 +442,7 @@ export function MessagesPage({
       .catch((err) => console.error(err));
   };
 
-  function timeAgo(timestamp: string) {
+  function timeAgo(timestamp: string, naveBar?: boolean) {
     const now = new Date();
     const then = new Date(timestamp);
     const diffMs = now.getTime() - then.getTime();
@@ -450,12 +451,27 @@ export function MessagesPage({
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
 
-    if (diffMins < 60) {
-      return `Seen ${diffMins} min ago`;
-    } else if (diffHours < 24) {
-      return `Seen ${diffHours} h ago`;
-    } else {
-      return `Seen ${diffDays} d ago`;
+    switch (naveBar) {
+      case true:
+        if (diffDays > 0) {
+          return `${diffDays}d`;
+        } else if (diffHours > 0) {
+          return `${diffHours}h`;
+        } else if (diffMins > 0) {
+          return `${diffMins}m`;
+        } else {
+          return "now";
+        }
+      default:
+        if (diffDays > 0) {
+          return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+        } else if (diffHours > 0) {
+          return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+        } else if (diffMins > 0) {
+          return `${diffMins} minute${diffMins > 1 ? "s" : ""} ago`;
+        } else {
+          return "just now";
+        }
     }
   }
 
@@ -477,7 +493,7 @@ export function MessagesPage({
     return (
       <span className="text-sm text-muted-foreground truncate">
         {message}{" "}
-        {!hideTime && chat.timestamp && <>{timeAgo(chat.timestamp)}</>}
+        {!hideTime && chat.timestamp && <>{timeAgo(chat.timestamp, true)}</>}
       </span>
     );
   }
