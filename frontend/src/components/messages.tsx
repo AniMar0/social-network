@@ -478,7 +478,7 @@ export function MessagesPage({
   function formatChatMeta(chat: any) {
     const hideTime = chat.sender_id == chat.userId;
     let message = "";
-
+    let messageType = "";
     switch (chat.lastMessageType) {
       case "image":
         message = "📷 Image";
@@ -488,14 +488,26 @@ export function MessagesPage({
         break;
       default:
         message = chat.lastMessage;
+        messageType = "Message";
         break;
     }
-    return (
-      <span className="text-sm text-muted-foreground truncate">
-        {message}{" "}
-        {!hideTime && chat.timestamp && <>{timeAgo(chat.timestamp, true)}</>}
-      </span>
-    );
+    switch (hideTime) {
+      case true:
+        return (
+          <span className="text-sm text-muted-foreground truncate">
+            {"You sent an " + messageType}
+          </span>
+        );
+      default:
+        return (
+          <span className="text-sm text-muted-foreground truncate">
+            {message}{" "}
+            {!hideTime && chat.timestamp && (
+              <>{timeAgo(chat.timestamp, true)}</>
+            )}
+          </span>
+        );
+    }
   }
 
   return (
