@@ -470,7 +470,7 @@ export function MessagesPage({
         } else if (diffMins > 0) {
           return `${diffMins} minute${diffMins > 1 ? "s" : ""} ago`;
         } else {
-          return "just now";
+          return "seen just now";
         }
     }
   }

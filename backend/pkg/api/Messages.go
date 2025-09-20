@@ -393,7 +393,8 @@ func (S *Server) SeenMessageHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 func (S *Server) SeenMessage(chatID string, userID int) error {
-	_, err := S.db.Exec(`UPDATE messages SET is_read = 1, read_at = CURRENT_TIMESTAMP WHERE chat_id = ? AND sender_id != ?`, chatID, userID)
+	// if last message is seen return
+	_, err := S.db.Exec(`UPDATE messages SET is_read = 1, read_at = CURRENT_TIMESTAMP WHERE chat_id = ? AND sender_id != ? AND is_read = 0`, chatID, userID)
 	if err != nil {
 		fmt.Println("Seen Message", err)
 		return err
