@@ -30,7 +30,7 @@ function Messages() {
 
         const data = await res.json();
         if (!data.loggedIn) {
-          router.push("/");
+          router.push("/auth");
           return;
         }
 

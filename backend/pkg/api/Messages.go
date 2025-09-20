@@ -365,3 +365,33 @@ func (S *Server) UploadFileHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(fmt.Sprintf(`{"messageImageUrl": "/%s"}`, messagePath)))
 }
+
+func (S *Server) SeenMessageHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Seen Message Handler")
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/404", http.StatusSeeOther)
+		return
+	}
+
+	chatID := r.URL.Path[len("/api/set-seen-chat/"):]
+	currentUserID, _, err := S.CheckSession(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	err = S.SeenMessage(chatID, currentUserID)
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	fmt.Println("Seen Message done", chatID)
+	w.WriteHeader(http.StatusOK)
+}
+func (S *Server) SeenMessage(chatID string, userID int) error {
+	_, err := S.db.Exec(`UPDATE messages SET is_read = 1, read_at = CURRENT_TIMESTAMP WHERE chat_id = ? AND sender_id != ?`, chatID, userID)
+	if err != nil {
+		fmt.Println("Seen Message", err)
+		return err
+	}
+	return nil
+}

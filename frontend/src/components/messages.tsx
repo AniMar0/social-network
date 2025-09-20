@@ -427,6 +427,18 @@ export function MessagesPage({
     }
   };
 
+  const setSeenChat = (chatId: string) => {
+    fetch(`/api/set-seen-chat/${chatId}`, {
+      method: "POST",
+      credentials: "include",
+    })
+      .then((res) => res.json())
+      .then(() => {
+        console.log("Chat seen");
+      })
+      .catch((err) => console.error(err));
+  };
+
   return (
     <div className="flex min-h-screen bg-background lg:ml-64">
       <SidebarNavigation
@@ -468,6 +480,7 @@ export function MessagesPage({
                 onClick={() => {
                   router.replace(`/messages/${chat.id}`);
                   setSelectedChat(chat);
+                  setSeenChat(chat.id);
                 }}
                 className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
                   selectedChat?.id === chat.id
@@ -706,20 +719,26 @@ export function MessagesPage({
                             )}
                           </ContextMenuContent>
                         </ContextMenu>
-                        <div
-                          className={`flex items-center gap-2 mt-1 ${
-                            message.isOwn ? "justify-end" : "justify-start"
-                          }`}
-                        >
-                          <span className="text-xs text-muted-foreground">
-                            {message.timestamp}
-                          </span>
-                          {message.isRead && (
-                            <span className="text-xs text-muted-foreground">
-                              · Seen
-                            </span>
+                        {message.isRead &&
+                          message.isOwn &&
+                          message === messages[messages.length - 1] && (
+                            <div
+                              className={`flex items-center gap-2 mt-1 "justify-start"`}
+                            >
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(message.timestamp).toLocaleTimeString(
+                                  [],
+                                  {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  }
+                                )}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                · Seen
+                              </span>
+                            </div>
                           )}
-                        </div>
                       </div>
                     </div>
                   ))}
