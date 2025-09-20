@@ -459,6 +459,29 @@ export function MessagesPage({
     }
   }
 
+  function formatChatMeta(chat: any) {
+    const hideTime = chat.sender_id == chat.userId;
+    let message = "";
+
+    switch (chat.lastMessageType) {
+      case "image":
+        message = "📷 Image";
+        break;
+      case "gif":
+        message = "🎞️ GIF";
+        break;
+      default:
+        message = chat.lastMessage;
+        break;
+    }
+    return (
+      <span className="text-sm text-muted-foreground truncate">
+        {message}{" "}
+        {!hideTime && chat.timestamp && <>{timeAgo(chat.timestamp)}</>}
+      </span>
+    );
+  }
+
   return (
     <div className="flex min-h-screen bg-background lg:ml-64">
       <SidebarNavigation
@@ -537,14 +560,8 @@ export function MessagesPage({
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground truncate">
-                      {chat.username} {"· "}
-                      {timeAgo(chat.timestamp)}
-                    </span>
+                    {formatChatMeta(chat)}
                   </div>
-                  <p className="text-sm text-muted-foreground truncate">
-                    {chat.lastMessage}
-                  </p>
                 </div>
               </div>
             ))}
@@ -936,8 +953,7 @@ export function MessagesPage({
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground truncate">
-                          {chat.username} ·{" "}
-                          {timeAgo(chat.timestamp)}
+                          {chat.username} · {timeAgo(chat.timestamp)}
                         </span>
                       </div>
                       <p className="text-sm text-muted-foreground truncate">

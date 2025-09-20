@@ -256,8 +256,10 @@ func (S *Server) GetUsers(w http.ResponseWriter, currentUserID int) ([]Chat, err
     		u.first_name || ' ' || u.last_name AS name,
     		u.nickname,
     		u.avatar,
-    		m.content AS last_message,
+    		m.sender_id,
     		m.created_at AS timestamp,
+			m.content AS last_message,
+			m.type AS lastMessageType,
     	(
         SELECT COUNT(*) 
 		FROM messages 
@@ -292,8 +294,10 @@ func (S *Server) GetUsers(w http.ResponseWriter, currentUserID int) ([]Chat, err
 				&c.Name,
 				&nickname,
 				&c.Avatar,
-				&lastMessage,
+				&c.SenderID,
 				&timestamp,
+				&lastMessage,
+				&c.LastMessageType,
 				&c.UnreadCount,
 			); err != nil {
 				return nil, err
@@ -305,6 +309,7 @@ func (S *Server) GetUsers(w http.ResponseWriter, currentUserID int) ([]Chat, err
 				c.IsOnline = &online
 			}
 
+			c.UserID = currentUserID
 			c.ID = tools.IntToString(chatID)
 
 			if nickname.Valid {
