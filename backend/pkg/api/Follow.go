@@ -34,7 +34,7 @@ func (S *Server) CancelFollowRequestHandler(w http.ResponseWriter, r *http.Reque
 	//dellete notification from database
 	S.DeleteNotification(body.FollowerID, body.FollowingID, "follow_request")
 
-	S.PushNotification("-read", tools.StringToInt(body.FollowingID), Notification{})
+	S.PushNotification("-delete", tools.StringToInt(body.FollowingID), Notification{})
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"message": "follow request cancelled"})
@@ -264,7 +264,7 @@ func (S *Server) UnfollowHandler(w http.ResponseWriter, r *http.Request) {
 
 	S.DeleteNotification(body.Follower, body.Following, "follow")
 
-	S.PushNotification("-read", tools.StringToInt(body.Following), Notification{})
+	S.PushNotification("-delete", tools.StringToInt(body.Following), Notification{})
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{

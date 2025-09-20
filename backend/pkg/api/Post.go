@@ -141,7 +141,7 @@ func (S *Server) LikeHandler(w http.ResponseWriter, r *http.Request) {
 		_, _ = S.db.Exec("UPDATE posts SET likes = likes - 1 WHERE id=?", PostID)
 		S.DeleteNotification(tools.IntToString(userID), tools.IntToString(userIDs), "like")
 
-		S.PushNotification("-read", userIDs, Notification{})
+		S.PushNotification("-delete", userIDs, Notification{})
 		json.NewEncoder(w).Encode(map[string]interface{}{"liked": false})
 	} else {
 		// add like

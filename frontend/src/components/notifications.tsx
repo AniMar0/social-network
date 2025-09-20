@@ -24,13 +24,11 @@ import {
 } from "lucide-react";
 import { SidebarNavigation } from "./sidebar";
 import {
-  useNotificationCount,
   fetchNotifications,
   markNotificationAsRead,
   deleteNotification,
   type Notification,
 } from "@/lib/notifications";
-import { count } from "console";
 
 interface NotificationsPageProps {
   onNavigate?: (page: string) => void;
@@ -39,9 +37,54 @@ interface NotificationsPageProps {
 
 function NotificationsPage({ onNewPost, onNavigate }: NotificationsPageProps) {
   // Use shared notification utilities
-  const notificationCount = useNotificationCount();
+  const [count, setCount] = useState(0);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const useNotificationCount = () => {
+    useEffect(() => {
+      const init = async () => {
+        try {
+          const res = await fetch("http://localhost:8080/api/notifications", {
+            credentials: "include",
+          });
+          const data = await res.json();
+          const unread = data?.filter((n: any) => !n.isRead).length || 0;
+
+          setNotifications(data || []);
+          setCount(unread);
+        } catch (err) {
+          console.error("Failed to fetch initial notifications", err);
+        }
+      };
+      init();
+
+      const ws = getWebSocket();
+      if (!ws) return;
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+
+        if (data.channel === "notifications-new") {
+          init();
+        }
+
+        if (data.channel === "notifications-read") {
+          setCount((prev) => Math.max(prev - 1, 0));
+        }
+
+        if (data.channel === "notifications-delete") {
+          init();
+        }
+
+        if (data.channel === "notifications-all-read") {
+          setCount(0);
+        }
+      };
+    }, []);
+
+    return count;
+  };
 
   // Load notifications when component mounts
   useEffect(() => {
@@ -136,7 +179,7 @@ function NotificationsPage({ onNewPost, onNavigate }: NotificationsPageProps) {
       <SidebarNavigation
         activeItem="notifications"
         onNewPost={handleNewPost}
-        notificationCount={notificationCount}
+        notificationCount={useNotificationCount()}
         isMobileMenuOpen={isMobileMenuOpen}
         onMobileMenuToggle={toggleMobileMenu}
       />

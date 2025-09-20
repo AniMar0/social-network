@@ -33,7 +33,7 @@ export const useNotificationCount = () => {
           credentials: "include",
         });
         const data = await res.json();
-        const unread = data.filter((n: any) => !n.isRead).length;
+        const unread = data?.filter((n: any) => !n.isRead).length || 0;
         setCount(unread);
       } catch (err) {
         console.error("Failed to fetch initial notifications", err);
@@ -56,7 +56,7 @@ export const useNotificationCount = () => {
       }
 
       if (data.channel === "notifications-delete") {
-        setCount((prev) => Math.max(prev - 1, 0));
+        init();
       }
 
       if (data.channel === "notifications-all-read") {
@@ -80,9 +80,6 @@ export const fetchNotifications = async (): Promise<Notification[]> => {
 
     if (!data) return [];
     return data;
-
-    // For now, return mock data
-    //return getMockNotifications();
   } catch (error) {
     console.error("Error fetching notifications:", error);
     return [];
