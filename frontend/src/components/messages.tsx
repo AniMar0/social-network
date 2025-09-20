@@ -432,12 +432,32 @@ export function MessagesPage({
       method: "POST",
       credentials: "include",
     })
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to set seen chat");
+      })
       .then(() => {
         console.log("Chat seen");
       })
       .catch((err) => console.error(err));
   };
+
+  function timeAgo(timestamp: string) {
+    const now = new Date();
+    const then = new Date(timestamp);
+    const diffMs = now.getTime() - then.getTime();
+
+    const diffMins = Math.floor(diffMs / 1000 / 60);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 60) {
+      return `Seen ${diffMins} min ago`;
+    } else if (diffHours < 24) {
+      return `Seen ${diffHours} h ago`;
+    } else {
+      return `Seen ${diffDays} d ago`;
+    }
+  }
 
   return (
     <div className="flex min-h-screen bg-background lg:ml-64">
@@ -518,8 +538,8 @@ export function MessagesPage({
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground truncate">
-                      {chat.username} ·{" "}
-                      {new Date(chat.timestamp).toLocaleString()}
+                      {chat.username} {"· "}
+                      {timeAgo(chat.timestamp)}
                     </span>
                   </div>
                   <p className="text-sm text-muted-foreground truncate">
@@ -722,20 +742,9 @@ export function MessagesPage({
                         {message.isRead &&
                           message.isOwn &&
                           message === messages[messages.length - 1] && (
-                            <div
-                              className={`flex items-center gap-2 mt-1 "justify-start"`}
-                            >
+                            <div className="flex items-center gap-2 mt-1 justify-start">
                               <span className="text-xs text-muted-foreground">
-                                {new Date(message.timestamp).toLocaleTimeString(
-                                  [],
-                                  {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  }
-                                )}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                · Seen
+                                {timeAgo(message.timestamp)}
                               </span>
                             </div>
                           )}
@@ -928,7 +937,7 @@ export function MessagesPage({
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground truncate">
                           {chat.username} ·{" "}
-                          {new Date(chat.timestamp).toLocaleString()}
+                          {timeAgo(chat.timestamp)}
                         </span>
                       </div>
                       <p className="text-sm text-muted-foreground truncate">

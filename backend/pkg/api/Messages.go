@@ -178,7 +178,7 @@ func (S *Server) GetMessagesHandler(w http.ResponseWriter, r *http.Request) {
 
 func (S *Server) GetMessages(currentUserID int, chatID string) ([]Message, error) {
 	var messages []Message
-	query := `SELECT id, sender_id, content, is_read, type FROM messages WHERE chat_id = ?`
+	query := `SELECT id, sender_id, content, is_read, type, read_at FROM messages WHERE chat_id = ?`
 	rows, err := S.db.Query(query, chatID)
 	if err != nil {
 		fmt.Println(err)
@@ -187,7 +187,7 @@ func (S *Server) GetMessages(currentUserID int, chatID string) ([]Message, error
 	defer rows.Close()
 	for rows.Next() {
 		var message Message
-		err = rows.Scan(&message.ID, &message.SenderID, &message.Content, &message.IsRead, &message.Type)
+		err = rows.Scan(&message.ID, &message.SenderID, &message.Content, &message.IsRead, &message.Type, &message.Timestamp)
 		if err != nil {
 			fmt.Println(err)
 			return nil, err
