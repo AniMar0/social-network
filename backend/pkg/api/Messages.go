@@ -120,7 +120,7 @@ func (S *Server) SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 	var message Message
 	err = json.NewDecoder(r.Body).Decode(&message)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("send encode error : ", err)
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
@@ -129,8 +129,6 @@ func (S *Server) SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 	S.SendMessage(currentUserID, message)
 
 	resiverID := S.GetOtherUserID(currentUserID, message.ChatID)
-	ID, _ := S.GetLastMessageID(ChatID)
-	message.ID = tools.IntToString(ID)
 	message.SenderID = currentUserID
 
 	if len(S.Users[currentUserID]) > 1 {
@@ -148,8 +146,8 @@ func (S *Server) SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (S *Server) SendMessage(currentUserID int, message Message) error {
-	query := `INSERT INTO messages (sender_id, chat_id, content, is_read, type) VALUES (?, ?, ? , ?, ?)`
-	_, err := S.db.Exec(query, currentUserID, message.ChatID, message.Content, message.IsRead, message.Type)
+	query := `INSERT INTO messages (sender_id, id, chat_id, content, is_read, type) VALUES (?,?, ?, ? , ?, ?)`
+	_, err := S.db.Exec(query, currentUserID, message.ID, message.ChatID, message.Content, message.IsRead, message.Type)
 	if err != nil {
 		fmt.Println(err)
 		return err
@@ -186,15 +184,19 @@ func (S *Server) GetMessages(currentUserID int, chatID string) ([]Message, error
 	query := `SELECT id, sender_id, content, is_read, type, read_at FROM messages WHERE chat_id = ?`
 	rows, err := S.db.Query(query, chatID)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Get Messages Query Error : ", err)
 		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var message Message
-		err = rows.Scan(&message.ID, &message.SenderID, &message.Content, &message.IsRead, &message.Type, &message.Timestamp)
+		var readAt sql.NullTime
+		err = rows.Scan(&message.ID, &message.SenderID, &message.Content, &message.IsRead, &message.Type, &readAt)
+		if readAt.Valid {
+			message.Timestamp = readAt.Time.String()
+		}
 		if err != nil {
-			fmt.Println(err)
+			fmt.Println("Get Messages Scan Error : ", err)
 			return nil, err
 		}
 		message.IsOwn = message.SenderID == currentUserID
@@ -427,13 +429,13 @@ func (S *Server) SeenMessage(chatID string, userID int) error {
 	return nil
 }
 
-func (S *Server) GetLastMessageID(chatID string) (int, error) {
-	var message int
+func (S *Server) GetLastMessageID(chatID string) (string, error) {
+	var message string
 	query := `SELECT id FROM messages WHERE chat_id = ? ORDER BY created_at DESC LIMIT 1`
 	err := S.db.QueryRow(query, chatID).Scan(&message)
 	if err != nil {
-		fmt.Println(err)
-		return 0, err
+		fmt.Println("Get Last Message ID Error :", err)
+		return "", err
 	}
 	return message, nil
 }

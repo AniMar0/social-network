@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { v4 as uuidv4 } from "uuid";
 import { SidebarNavigation } from "./sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -87,7 +88,7 @@ export function MessagesPage({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const [messagesLoading, setMessagesLoading] = useState(false);
-
+  const [lastSent, setLastSent] = useState(0);
   // Get notification count for sidebar
   const notificationCount = useNotificationCount();
 
@@ -277,8 +278,10 @@ export function MessagesPage({
         );
 
       // Create new message
+
+      const tempId = uuidv4();
       const message: Message = {
-        id: Date.now().toString(),
+        id: tempId,
         content: newMessage.trim(),
         timestamp: new Date().toLocaleString(),
         isOwn: true,
@@ -295,8 +298,14 @@ export function MessagesPage({
             }
           : undefined,
       };
-
       // Add message to the list immediately for instant feedback
+      setMessages((prev) => {
+        if (prev) {
+          return [...prev, message];
+        } else {
+          return [message];
+        }
+      });
 
       try {
         // TODO: Replace with actual API call
@@ -311,18 +320,8 @@ export function MessagesPage({
             body: JSON.stringify(message),
           }
         );
-
-        const data = await response.json();
         if (!response.ok) {
           throw new Error("Failed to send message");
-        } else {
-          setMessages((prev) => {
-            if (prev) {
-              return [...prev, data];
-            } else {
-              return [data];
-            }
-          });
         }
 
         if (replyingTo) {
@@ -331,6 +330,7 @@ export function MessagesPage({
       } catch (error) {
         console.error("Error sending message:", error);
         // Remove the message from UI if sending failed
+        setMessages((prev) => prev.filter((msg) => msg.id !== tempId));
       }
 
       setNewMessage("");
