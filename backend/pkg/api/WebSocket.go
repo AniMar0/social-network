@@ -85,8 +85,12 @@ func (S *Server) StartReader(client *Client) {
 		switch msg["channel"] {
 		case "chat-seen":
 			targetID := msg["to"].(float64)
-
-			S.PushMessageSeen(int(targetID), msg)
+			chatID := msg["chat_id"].(string)
+			Message, err := S.GetLastMessageContent(chatID)
+			if err != nil {
+				fmt.Println(err)
+			}
+			S.PushMessageSeen(int(targetID), Message)
 		}
 	}
 }

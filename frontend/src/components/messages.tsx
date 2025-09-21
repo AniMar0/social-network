@@ -24,6 +24,7 @@ interface Message {
   id: string;
   content: string;
   timestamp: string;
+  seen?: string;
   isOwn: boolean;
   isRead: boolean;
   type: "text" | "emoji" | "gif" | "image";
@@ -111,7 +112,7 @@ export function MessagesPage({
           ws.send(
             JSON.stringify({
               channel: "chat-seen",
-              chat_id: data.payload.chat_id,
+              chat_id: onUserProfileClick,
               to: data.payload.sender_id,
             })
           );
@@ -134,7 +135,11 @@ export function MessagesPage({
             if (lastMessage.isRead) return prev;
 
             const updated = [...prev];
-            updated[lastIndex] = { ...lastMessage, isRead: true };
+            updated[lastIndex] = {
+              ...lastMessage,
+              isRead: true,
+              timestamp: data.payload.timestamp,
+            };
 
             return updated;
           });
@@ -150,7 +155,7 @@ export function MessagesPage({
         const res = await fetch(`/api/get-users`, { credentials: "include" });
         if (!res.ok) throw new Error("Failed to fetch chats");
         const data: Chat[] = await res.json();
-        setChats(data);
+        setChats(data || []);
         if (onUserProfileClick && !selectedChat && data) {
           const chat = data.find((c) => c.id === onUserProfileClick);
           if (chat) setSelectedChat(chat);
@@ -166,6 +171,29 @@ export function MessagesPage({
       fetchMessages(selectedChat.id);
     }
   }, [selectedChat]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setMessages((prev) => {
+        if (!prev || prev.length === 0) return [];
+
+        const lastIndex = prev.length - 1;
+        const lastMessage = prev[lastIndex];
+
+        if (!lastMessage.isRead) return prev;
+
+        const updated = [...prev];
+        updated[lastIndex] = {
+          ...lastMessage,
+          seen: timeAgo(lastMessage.timestamp),
+        };
+
+        return updated;
+      });
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [messages]);
 
   const fetchMessages = async (userId: string) => {
     try {
@@ -463,7 +491,7 @@ export function MessagesPage({
   };
 
   function formatChatMeta(chat: any) {
-    const hideTime = chat.sender_id == chat.userId;
+    const hideTime = chat.sender_id == chat.userId || !chat.timestamp;
     let message = "";
     let messageType = "";
     switch (chat.lastMessageType) {
@@ -776,7 +804,9 @@ export function MessagesPage({
                           message === messages[messages.length - 1] && (
                             <div className="flex items-center gap-2 mt-1 justify-start">
                               <span className="text-xs text-muted-foreground">
-                                {timeAgo(message.timestamp)}
+                                {message.seen
+                                  ? message.seen
+                                  : timeAgo(message.timestamp)}
                               </span>
                             </div>
                           )}
@@ -933,7 +963,7 @@ export function MessagesPage({
                   <div
                     key={chat.id}
                     onClick={() => {
-                     // window.location.href = `/messages/${chat.id}`;
+                      // window.location.href = `/messages/${chat.id}`;
                       router.push(`/messages/${chat.id}`);
                       setSelectedChat(chat);
                     }}

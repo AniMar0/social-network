@@ -129,7 +129,7 @@ func (S *Server) SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 	S.SendMessage(currentUserID, message)
 
 	resiverID := S.GetOtherUserID(currentUserID, message.ChatID)
-	ID, _ := S.GetLastMessage(ChatID)
+	ID, _ := S.GetLastMessageID(ChatID)
 	message.ID = tools.IntToString(ID)
 	message.SenderID = currentUserID
 
@@ -292,16 +292,17 @@ func (S *Server) GetUsers(w http.ResponseWriter, currentUserID int) ([]Chat, err
 			var lastMessage sql.NullString
 			var timestamp sql.NullString
 			var nickname sql.NullString
-
+			var senderID sql.NullString
+			var lastMessageType sql.NullString
 			if err := rows.Scan(
 				&c.ID,
 				&c.Name,
 				&nickname,
 				&c.Avatar,
-				&c.SenderID,
+				&senderID,
 				&timestamp,
 				&lastMessage,
-				&c.LastMessageType,
+				&lastMessageType,
 				&c.UnreadCount,
 			); err != nil {
 				return nil, err
@@ -322,10 +323,18 @@ func (S *Server) GetUsers(w http.ResponseWriter, currentUserID int) ([]Chat, err
 				c.Username = ""
 			}
 
+			if senderID.Valid {
+				c.SenderID = tools.StringToInt(senderID.String)
+			}
+
 			if lastMessage.Valid {
 				c.LastMessage = lastMessage.String
 			} else {
 				c.LastMessage = ""
+			}
+
+			if lastMessageType.Valid {
+				c.LastMessageType = lastMessageType.String
 			}
 
 			if timestamp.Valid {
@@ -398,7 +407,7 @@ func (S *Server) SeenMessageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userId := S.GetOtherUserID(currentUserID, tools.StringToInt(chatID))
-	GetLastMessage, _ := S.GetLastMessage(chatID)
+	GetLastMessage, _ := S.GetLastMessageID(chatID)
 
 	S.PushMessageSeen(userId, map[string]interface{}{
 		"message_id": GetLastMessage,
@@ -417,13 +426,24 @@ func (S *Server) SeenMessage(chatID string, userID int) error {
 }
 
 // get the last message betwen two users
-func (S *Server) GetLastMessage(chatID string) (int, error) {
+func (S *Server) GetLastMessageID(chatID string) (int, error) {
 	var message int
 	query := `SELECT id FROM messages WHERE chat_id = ? ORDER BY created_at DESC LIMIT 1`
 	err := S.db.QueryRow(query, chatID).Scan(&message)
 	if err != nil {
 		fmt.Println(err)
 		return 0, err
+	}
+	return message, nil
+}
+
+func (S *Server) GetLastMessageContent(chatID string) (Message, error) {
+	var message Message
+	query := `SELECT id, content FROM messages WHERE chat_id = ? ORDER BY created_at DESC LIMIT 1`
+	err := S.db.QueryRow(query, chatID).Scan(&message.ID, &message.Content)
+	if err != nil {
+		fmt.Println(err)
+		return Message{}, err
 	}
 	return message, nil
 }
