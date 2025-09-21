@@ -108,6 +108,13 @@ export function MessagesPage({
         }
       } else if (data.channel === "chat") {
         if (onUserProfileClick && onUserProfileClick == data.payload.chat_id) {
+          ws.send(
+            JSON.stringify({
+              channel: "chat-seen",
+              chat_id: data.payload.chat_id,
+              to: data.payload.sender_id,
+            })
+          );
           setMessages((prev) => {
             if (prev) {
               return [...prev, data.payload];

@@ -3,7 +3,6 @@ package backend
 import (
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/gorilla/websocket"
 	"github.com/twinj/uuid"
@@ -84,13 +83,10 @@ func (S *Server) StartReader(client *Client) {
 		fmt.Println("Received message:", msg)
 		// unified channel switch
 		switch msg["channel"] {
-		case "markAllNotificationsAsRead":
-			targetID, _ := strconv.Atoi(msg["to"].(string))
-			S.PushMessage("", targetID, msg)
-		case "notifications":
-			fmt.Println("Received notification:", msg)
-			targetID, _ := strconv.Atoi(msg["to"].(string))
-			S.PushNotification("", targetID, msg)
+		case "chat-seen":
+			targetID := msg["to"].(float64)
+
+			S.PushMessageSeen(int(targetID), msg)
 		}
 	}
 }

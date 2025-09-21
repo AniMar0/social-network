@@ -78,29 +78,29 @@ type Author = struct {
 }
 
 type Message struct {
-	ID        string     `json:"id"`
-	ChatID    int        `json:"chat_id"`
-	SenderID  int        `json:"sender_id"`
-	Content   string     `json:"content"`
-	Type      string     `json:"type"`
-	ReplyTo   *ReplyInfo `json:"replyTo,omitempty"`
-	IsRead    bool       `json:"isRead"`
-	IsOwn     bool       `json:"isOwn"`
-	Timestamp string     `json:"timestamp"`
+	ID         string     `json:"id"`
+	ChatID     int        `json:"chat_id"`
+	SenderID   int        `json:"sender_id"`
+	Content    string     `json:"content"`
+	Type       string     `json:"type"`
+	ReplyTo    *ReplyInfo `json:"replyTo,omitempty"`
+	IsRead     bool       `json:"isRead"`
+	IsOwn      bool       `json:"isOwn"`
+	Timestamp  string     `json:"timestamp"`
 }
 
 type Chat struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	UserID      int    `json:"userId,omitempty"`
-	SenderID   int    `json:"sender_id"`
-	Username    string `json:"username"`
-	Avatar      string `json:"avatar"`
-	LastMessage string `json:"lastMessage"`
-	Timestamp   string `json:"timestamp"`
-	UnreadCount int    `json:"unreadCount"`
-	IsVerified  *bool  `json:"isVerified,omitempty"`
-	IsOnline    *bool  `json:"isOnline,omitempty"`
+	ID              string `json:"id"`
+	Name            string `json:"name"`
+	UserID          int    `json:"userId,omitempty"`
+	SenderID        int    `json:"sender_id"`
+	Username        string `json:"username"`
+	Avatar          string `json:"avatar"`
+	LastMessage     string `json:"lastMessage"`
+	Timestamp       string `json:"timestamp"`
+	UnreadCount     int    `json:"unreadCount"`
+	IsVerified      *bool  `json:"isVerified,omitempty"`
+	IsOnline        *bool  `json:"isOnline,omitempty"`
 	LastMessageType string `json:"lastMessageType"`
 }
 

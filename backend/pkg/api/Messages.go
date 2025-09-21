@@ -129,6 +129,9 @@ func (S *Server) SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 	S.SendMessage(currentUserID, message)
 
 	resiverID := S.GetOtherUserID(currentUserID, message.ChatID)
+	ID, _ := S.GetLastMessage(ChatID)
+	message.ID = tools.IntToString(ID)
+	message.SenderID = currentUserID
 
 	if len(S.Users[currentUserID]) > 1 {
 		message.IsOwn = true
@@ -136,6 +139,7 @@ func (S *Server) SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	message.IsOwn = false
+
 	S.PushMessage("", resiverID, message)
 
 	w.Header().Set("Content-Type", "application/json")
@@ -378,6 +382,10 @@ func (S *Server) SeenMessageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	chatID := r.URL.Path[len("/api/set-seen-chat/"):]
+	if chatID == "chats" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
 	currentUserID, _, err := S.CheckSession(r)
 	if err != nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
