@@ -144,6 +144,28 @@ export function MessagesPage({
             return updated;
           });
         }
+      } else if (data.channel === "chat-delete") {
+        if (onUserProfileClick && onUserProfileClick == data.payload.chat_id) {
+          setMessages((prev) => {
+            if (prev) {
+              const index = prev.findIndex(
+                (m) => m.id === data.payload.message_id
+              );
+              if (index !== -1) {
+                const updated = [...prev];
+                updated[index] = {
+                  ...prev[index],
+                  isRead: true,
+                  timestamp: data.payload.timestamp,
+                };
+                return updated;
+              }
+              return prev;
+            } else {
+              return [];
+            }
+          });
+        }
       }
     };
   }, [selectedChat]);
@@ -448,6 +470,7 @@ export function MessagesPage({
   };
 
   const handleUnsendMessage = async (messageId: string) => {
+    console.log("Unsending message:", messageId);
     // TODO: Add backend logic to unsend message
     try {
       const response = await fetch(`/api/unsend-message/${messageId}`, {

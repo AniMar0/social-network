@@ -454,18 +454,38 @@ func (S *Server) UnsendMessageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	messageID := r.URL.Path[len("/api/unsend-message/"):]
-	_, _, err := S.CheckSession(r)
+	currentUserID, sessionID, err := S.CheckSession(r)
 
 	if err != nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-
+	chatID, err := S.GetChatIDFromMessageID(messageID)
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
 	err = S.UnsendMessage(messageID)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
+
+	resiverID := S.GetOtherUserID(currentUserID, tools.StringToInt(chatID))
+
+	if len(S.Users[currentUserID]) > 1 {
+		S.PushChatDelete(sessionID, currentUserID, map[string]interface{}{
+			"message_id": messageID,
+			"chat_id":    chatID,
+		})
+
+	}
+
+	S.PushChatDelete("", resiverID, map[string]interface{}{
+		"message_id": messageID,
+		"chat_id":    chatID,
+	})
+
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -476,4 +496,15 @@ func (S *Server) UnsendMessage(messageID string) error {
 		return err
 	}
 	return nil
+}
+
+func (S *Server) GetChatIDFromMessageID(messageID string) (string, error) {
+	var chatID string
+	query := `SELECT chat_id FROM messages WHERE id = ?`
+	err := S.db.QueryRow(query, messageID).Scan(&chatID)
+	if err != nil {
+		fmt.Println(err)
+		return "", err
+	}
+	return chatID, nil
 }
