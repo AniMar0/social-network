@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/context-menu";
 
 import { getWebSocket } from "@/lib/websocket";
-import { tr } from "date-fns/locale";
+import { timeAgo } from "@/lib/tools";
 
 interface Message {
   id: string;
@@ -459,44 +459,8 @@ export function MessagesPage({
       .then((res) => {
         if (!res.ok) throw new Error("Failed to set seen chat");
       })
-      .then(() => {
-        console.log("Chat seen");
-      })
       .catch((err) => console.error(err));
   };
-
-  function timeAgo(timestamp: string, naveBar?: boolean) {
-    const now = new Date();
-    const then = new Date(timestamp);
-    const diffMs = now.getTime() - then.getTime();
-
-    const diffMins = Math.floor(diffMs / 1000 / 60);
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
-
-    switch (naveBar) {
-      case true:
-        if (diffDays > 0) {
-          return `${diffDays}d`;
-        } else if (diffHours > 0) {
-          return `${diffHours}h`;
-        } else if (diffMins > 0) {
-          return `${diffMins}m`;
-        } else {
-          return "now";
-        }
-      default:
-        if (diffDays > 0) {
-          return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
-        } else if (diffHours > 0) {
-          return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
-        } else if (diffMins > 0) {
-          return `${diffMins} minute${diffMins > 1 ? "s" : ""} ago`;
-        } else {
-          return "seen just now";
-        }
-    }
-  }
 
   function formatChatMeta(chat: any) {
     const hideTime = chat.sender_id == chat.userId;
@@ -969,6 +933,7 @@ export function MessagesPage({
                   <div
                     key={chat.id}
                     onClick={() => {
+                     // window.location.href = `/messages/${chat.id}`;
                       router.push(`/messages/${chat.id}`);
                       setSelectedChat(chat);
                     }}
