@@ -149,21 +149,9 @@ export function MessagesPage({
         console.log("Chat deleted", data.payload);
 
         if (onUserProfileClick && onUserProfileClick == data.payload.chat_id) {
-          setMessages((prev) => {
-            if (prev) {
-              const index = prev.findIndex(
-                (m) => m.id === data.payload.message_id
-              );
-              if (index !== -1) {
-                const updated = [...prev];
-                updated.splice(index, 1);
-                return updated;
-              }
-              return prev;
-            } else {
-              return [];
-            }
-          });
+          setMessages((prev) =>
+            prev.filter((msg) => msg.id !== data.payload.message_id)
+          );
         }
       }
     };
@@ -327,17 +315,15 @@ export function MessagesPage({
         const data = await response.json();
         if (!response.ok) {
           throw new Error("Failed to send message");
+        } else {
+          setMessages((prev) => {
+            if (prev) {
+              return [...prev, data];
+            } else {
+              return [data];
+            }
+          });
         }
-
-        console.log("Sent message:", data);
-
-        setMessages((prev) => {
-          if (prev) {
-            return [...prev, data];
-          } else {
-            return [data];
-          }
-        });
 
         if (replyingTo) {
           console.log("Reply to message:", replyingTo.id);
@@ -345,7 +331,6 @@ export function MessagesPage({
       } catch (error) {
         console.error("Error sending message:", error);
         // Remove the message from UI if sending failed
-        //setMessages((prev) => prev.filter((msg) => msg.id !== message.id));
       }
 
       setNewMessage("");
