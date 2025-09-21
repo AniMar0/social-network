@@ -84,6 +84,7 @@ export function MessagesPage({
 
   const [userOnlineStatus, setUserOnlineStatus] = useState<boolean>(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const [messagesLoading, setMessagesLoading] = useState(false);
 
@@ -263,6 +264,23 @@ export function MessagesPage({
       chat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       chat.username.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Function to scroll to bottom of messages
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  // Scroll to bottom when chat is selected
+  useEffect(() => {
+    if (selectedChat) {
+      setTimeout(scrollToBottom, 100); // Small delay to ensure messages are rendered
+    }
+  }, [selectedChat]);
 
   const handleSendMessage = async () => {
     if (newMessage.trim() && selectedChat) {
@@ -846,6 +864,8 @@ export function MessagesPage({
                       </div>
                     </div>
                   ))}
+                {/* Auto-scroll target */}
+                <div ref={messagesEndRef} />
               </div>
             )}
           </div>
@@ -965,88 +985,8 @@ export function MessagesPage({
         </div>
       ) : (
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Mobile Messages List */}
-          <div className="lg:hidden">
-            <div className="p-4 border-b border-border bg-card">
-              <div className="flex items-center justify-between mb-4">
-                <h1 className="text-xl font-bold text-foreground ml-12">
-                  Messages
-                </h1>
-                <div className="flex items-center gap-2"></div>
-              </div>
-
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search Direct Messages"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 bg-muted/50"
-                />
-              </div>
-            </div>
-
-            <div className="p-4">
-              <div className="flex items-center gap-2 mb-4">
-                <span className="font-medium text-foreground">Chat</span>
-              </div>
-
-              <div className="space-y-2">
-                {filteredChats.map((chat) => (
-                  <div
-                    key={chat.id}
-                    onClick={() => {
-                      // window.location.href = `/messages/${chat.id}`;
-                      router.push(`/messages/${chat.id}`);
-                      setSelectedChat(chat);
-                    }}
-                    className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-muted/50`}
-                  >
-                    <div className="relative">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage
-                          src={`http://localhost:8080/${chat.avatar}`}
-                          alt={chat.name}
-                        />
-                        <AvatarFallback className="bg-muted text-foreground">
-                          {chat.name.slice(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      {chat.isOnline && (
-                        <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-background" />
-                      )}
-                      {chat.unreadCount > 0 && (
-                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-sm flex items-center justify-center">
-                          <span className="text-xs text-white font-medium">
-                            {chat.unreadCount}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1">
-                        <span className="font-medium text-foreground truncate">
-                          {chat.name}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground truncate">
-                          {formatChatMeta(chat)}
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted-foreground truncate">
-                        {chat.lastMessage}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
           {/* Desktop Empty State */}
-          <div className="hidden lg:flex flex-1 items-center justify-center bg-muted/20">
+          <div className="flex flex-1 items-center justify-center bg-muted/20">
             <div className="text-center">
               <h3 className="text-lg font-medium text-foreground mb-2">
                 Select a message

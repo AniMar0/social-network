@@ -81,7 +81,7 @@ function SidebarNavigation({
       {/* Mobile Menu Toggle Button */}
       <button
         onClick={onMobileMenuToggle}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-card border border-border rounded-lg shadow-lg"
+        className="lg:hidden fixed top-4 right-4 z-50 p-2 bg-card border border-border rounded-lg shadow-lg"
         aria-label="Toggle menu"
       >
         {isMobileMenuOpen ? (
