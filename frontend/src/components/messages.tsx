@@ -311,13 +311,6 @@ export function MessagesPage({
       };
 
       // Add message to the list immediately for instant feedback
-      setMessages((prev) => {
-        if (prev) {
-          return [...prev, message];
-        } else {
-          return [message];
-        }
-      });
 
       try {
         // TODO: Replace with actual API call
@@ -333,9 +326,20 @@ export function MessagesPage({
           }
         );
 
+        const data = await response.json();
         if (!response.ok) {
           throw new Error("Failed to send message");
         }
+
+        console.log("Sent message:", data);
+
+        setMessages((prev) => {
+          if (prev) {
+            return [...prev, data];
+          } else {
+            return [data];
+          }
+        });
 
         if (replyingTo) {
           console.log("Reply to message:", replyingTo.id);
@@ -343,8 +347,7 @@ export function MessagesPage({
       } catch (error) {
         console.error("Error sending message:", error);
         // Remove the message from UI if sending failed
-        setMessages((prev) => prev.filter((msg) => msg.id !== message.id));
-        // You could also show an error toast here
+        //setMessages((prev) => prev.filter((msg) => msg.id !== message.id));
       }
 
       setNewMessage("");

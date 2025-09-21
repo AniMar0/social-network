@@ -142,8 +142,9 @@ func (S *Server) SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 
 	S.PushMessage("", resiverID, message)
 
+	message.IsOwn = true
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(true)
+	json.NewEncoder(w).Encode(message)
 }
 
 func (S *Server) SendMessage(currentUserID int, message Message) error {
