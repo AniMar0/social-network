@@ -124,6 +124,9 @@ func (S *Server) SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
+
+	fmt.Println(message)
+
 	message.ChatID = tools.StringToInt(ChatID)
 
 	S.SendMessage(currentUserID, message)
@@ -146,8 +149,15 @@ func (S *Server) SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (S *Server) SendMessage(currentUserID int, message Message) error {
-	query := `INSERT INTO messages (sender_id, id, chat_id, content, is_read, type) VALUES (?,?, ?, ? , ?, ?)`
-	_, err := S.db.Exec(query, currentUserID, message.ID, message.ChatID, message.Content, message.IsRead, message.Type)
+	var replyTo sql.NullString
+	if message.ReplyTo != nil {
+		replyTo = sql.NullString{String: message.ReplyTo.ID, Valid: true}
+	} else {
+		replyTo = sql.NullString{Valid: false}
+	}
+
+	query := `INSERT INTO messages (sender_id, id, chat_id, content, is_read, type, reply_to) VALUES (?,?, ?, ? , ?, ?, ?)`
+	_, err := S.db.Exec(query, currentUserID, message.ID, message.ChatID, message.Content, message.IsRead, message.Type, replyTo)
 	if err != nil {
 		fmt.Println(err)
 		return err
@@ -181,7 +191,7 @@ func (S *Server) GetMessagesHandler(w http.ResponseWriter, r *http.Request) {
 
 func (S *Server) GetMessages(currentUserID int, chatID string) ([]Message, error) {
 	var messages []Message
-	query := `SELECT id, sender_id, content, is_read, type, read_at FROM messages WHERE chat_id = ?`
+	query := `SELECT id, sender_id, content, is_read, type, read_at, reply_to FROM messages WHERE chat_id = ?`
 	rows, err := S.db.Query(query, chatID)
 	if err != nil {
 		fmt.Println("Get Messages Query Error : ", err)
@@ -191,10 +201,16 @@ func (S *Server) GetMessages(currentUserID int, chatID string) ([]Message, error
 	for rows.Next() {
 		var message Message
 		var readAt sql.NullTime
-		err = rows.Scan(&message.ID, &message.SenderID, &message.Content, &message.IsRead, &message.Type, &readAt)
+		var replyTo sql.NullString
+		err = rows.Scan(&message.ID, &message.SenderID, &message.Content, &message.IsRead, &message.Type, &readAt, &replyTo)
 		if readAt.Valid {
 			message.Timestamp = readAt.Time.String()
 		}
+		if replyTo.Valid {
+			ms := S.GetMessageContent(replyTo.String)
+			message.ReplyTo = &ReplyInfo{ID: ms.ID, Content: ms.Content, Type: ms.Type, IsOwn: ms.SenderID == currentUserID}
+		}
+
 		if err != nil {
 			fmt.Println("Get Messages Scan Error : ", err)
 			return nil, err
@@ -449,6 +465,13 @@ func (S *Server) GetLastMessageContent(chatID string) (Message, error) {
 		return Message{}, err
 	}
 	return message, nil
+}
+
+func (S *Server) GetMessageContent(messageID string) Message {
+	var message Message
+	query := `SELECT id, content FROM messages WHERE id = ?`
+	S.db.QueryRow(query, messageID).Scan(&message.ID, &message.Content)
+	return message
 }
 
 func (S *Server) UnsendMessageHandler(w http.ResponseWriter, r *http.Request) {

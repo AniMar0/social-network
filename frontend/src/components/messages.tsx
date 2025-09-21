@@ -33,7 +33,7 @@ interface Message {
     id: string;
     content: string;
     type: "text" | "emoji" | "gif" | "image";
-    senderName: string;
+    isOwn: boolean;
   };
 }
 
@@ -292,9 +292,7 @@ export function MessagesPage({
               id: replyingTo.id,
               content: replyingTo.content,
               type: replyingTo.type,
-              senderName: replyingTo.isOwn
-                ? "You"
-                : selectedChat?.name || "Unknown",
+              isOwn: replyingTo.isOwn,
             }
           : undefined,
       };
@@ -306,6 +304,8 @@ export function MessagesPage({
           return [message];
         }
       });
+
+      console.log("Sending message:", message);
 
       try {
         // TODO: Replace with actual API call
@@ -490,11 +490,22 @@ export function MessagesPage({
     }
   };
 
-  const handleReplyToMessage = (message: Message) => {
+  const handleReplyToMessage = async (message: Message) => {
     setReplyingTo(message);
     console.log("Replying to message:", message);
-    // Focus on input field
     // TODO: Add backend logic for reply context
+    // try {
+    //   const response = await fetch(`/api/set-reply-context/${message.id}`, {
+    //     method: "POST",
+    //     credentials: "include",
+    //     body: JSON.stringify(message),
+    //   });
+    //   if (!response.ok) {
+    //     throw new Error("Failed to set reply context");
+    //   }
+    // } catch (error) {
+    //   console.error("Error setting reply context:", error);
+    // }
   };
 
   const cancelReply = () => {
@@ -503,7 +514,6 @@ export function MessagesPage({
 
   const renderReplyContent = (replyTo: Message["replyTo"]) => {
     if (!replyTo) return null;
-
     switch (replyTo.type) {
       case "emoji":
         return replyTo.content;
@@ -750,9 +760,15 @@ export function MessagesPage({
                                       : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-400"
                                   }`}
                                 >
-                                  <div className="opacity-80 font-medium">
-                                    You replied to {message.replyTo.senderName}
-                                  </div>
+                                  {(message.isOwn && (
+                                    <div className="opacity-80 font-medium">
+                                      You replied to {selectedChat.name}:
+                                    </div>
+                                  )) || (
+                                    <div className="opacity-80 font-medium">
+                                      {selectedChat.name} replied to you:
+                                    </div>
+                                  )}
                                   <div className="opacity-70 truncate">
                                     {renderReplyContent(message.replyTo)}
                                   </div>
