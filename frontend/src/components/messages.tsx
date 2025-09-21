@@ -128,6 +128,7 @@ export function MessagesPage({
         }
       } else if (data.channel === "chat-seen") {
         if (onUserProfileClick && onUserProfileClick == data.payload.chat_id) {
+          console.log("Chat seen ws", data.payload);
           setMessages((prev) => {
             if (!prev || prev.length === 0) return [];
 
@@ -140,7 +141,7 @@ export function MessagesPage({
             updated[lastIndex] = {
               ...lastMessage,
               isRead: true,
-              timestamp: data.payload.timestamp,
+              timestamp: data.payload.message.timestamp,
             };
 
             return updated;

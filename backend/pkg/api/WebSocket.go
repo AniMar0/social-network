@@ -80,17 +80,29 @@ func (S *Server) StartReader(client *Client) {
 		if err := client.Conn.ReadJSON(&msg); err != nil {
 			return
 		}
-		fmt.Println("Received message:", msg)
 		// unified channel switch
 		switch msg["channel"] {
 		case "chat-seen":
 			targetID := msg["to"].(float64)
 			chatID := msg["chat_id"].(string)
+
+			err := S.SeenMessage(chatID, client.UserID)
+			if err != nil {
+				fmt.Println("ws: Error seen message : ", err)
+				break
+			}
+
 			Message, err := S.GetLastMessageContent(chatID)
+			//Message.IsOwn = int(targetID) == Message.SenderID
 			if err != nil {
 				fmt.Println(err)
+				break
 			}
-			S.PushMessageSeen(int(targetID), Message)
+
+			S.PushMessageSeen(int(targetID), map[string]interface{}{
+				"message": Message,
+				"chat_id": chatID,
+			})
 		}
 	}
 }

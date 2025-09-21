@@ -125,8 +125,6 @@ func (S *Server) SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println(message)
-
 	message.ChatID = tools.StringToInt(ChatID)
 
 	S.SendMessage(currentUserID, message)
@@ -426,11 +424,11 @@ func (S *Server) SeenMessageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userId := S.GetOtherUserID(currentUserID, tools.StringToInt(chatID))
-	GetLastMessage, _ := S.GetLastMessageID(chatID)
+	GetLastMessage, _ := S.GetLastMessageContent(chatID)
 
 	S.PushMessageSeen(userId, map[string]interface{}{
-		"message_id": GetLastMessage,
-		"chat_id":    chatID,
+		"message": GetLastMessage,
+		"chat_id": chatID,
 	})
 	w.WriteHeader(http.StatusOK)
 }
@@ -458,8 +456,12 @@ func (S *Server) GetLastMessageID(chatID string) (string, error) {
 
 func (S *Server) GetLastMessageContent(chatID string) (Message, error) {
 	var message Message
-	query := `SELECT id, content FROM messages WHERE chat_id = ? ORDER BY created_at DESC LIMIT 1`
-	err := S.db.QueryRow(query, chatID).Scan(&message.ID, &message.Content)
+	var timestamp sql.NullString
+	query := `SELECT id, sender_id, is_read, read_at FROM messages WHERE chat_id = ? ORDER BY created_at DESC LIMIT 1`
+	err := S.db.QueryRow(query, chatID).Scan(&message.ID, &message.SenderID, &message.IsRead, &timestamp)
+	if timestamp.Valid {
+		message.Timestamp = timestamp.String
+	}
 	if err != nil {
 		fmt.Println(err)
 		return Message{}, err
