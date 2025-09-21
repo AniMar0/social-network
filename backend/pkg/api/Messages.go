@@ -455,7 +455,7 @@ func (S *Server) UnsendMessageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	messageID := r.URL.Path[len("/api/unsend-message/"):]
 	_, _, err := S.CheckSession(r)
-	
+
 	if err != nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
@@ -467,4 +467,13 @@ func (S *Server) UnsendMessageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+}
+
+func (S *Server) UnsendMessage(messageID string) error {
+	_, err := S.db.Exec(`DELETE FROM messages WHERE id = ?`, messageID)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	return nil
 }
