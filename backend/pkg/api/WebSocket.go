@@ -195,7 +195,7 @@ func (S *Server) PushChatDelete(SessionID string, userID int, message map[string
 	S.RLock()
 	defer S.RUnlock()
 	for _, Session := range S.Users[userID] {
-		if Session.SessionID != SessionID {
+		if Session.SessionID == SessionID {
 			continue
 		}
 		Session.Send <- map[string]interface{}{

@@ -146,6 +146,8 @@ export function MessagesPage({
           });
         }
       } else if (data.channel === "chat-delete") {
+        console.log("Chat deleted", data.payload);
+
         if (onUserProfileClick && onUserProfileClick == data.payload.chat_id) {
           setMessages((prev) => {
             if (prev) {
@@ -154,11 +156,7 @@ export function MessagesPage({
               );
               if (index !== -1) {
                 const updated = [...prev];
-                updated[index] = {
-                  ...prev[index],
-                  isRead: true,
-                  timestamp: data.payload.timestamp,
-                };
+                updated.splice(index, 1);
                 return updated;
               }
               return prev;
