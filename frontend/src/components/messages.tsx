@@ -516,7 +516,7 @@ export function MessagesPage({
         messageType = "Message";
         break;
     }
-    switch (hideTime) {
+    switch (hideTime && chat.sender_id == chat.userId) {
       case true:
         return (
           <span className="text-sm text-muted-foreground truncate">
@@ -1009,7 +1009,7 @@ export function MessagesPage({
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground truncate">
-                          {chat.username} · {timeAgo(chat.timestamp)}
+                          {formatChatMeta(chat)}
                         </span>
                       </div>
                       <p className="text-sm text-muted-foreground truncate">

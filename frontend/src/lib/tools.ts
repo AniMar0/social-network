@@ -1,19 +1,3 @@
-import { useState, useEffect } from "react";
-
-export function useTimeAgo(timestamp: string, naveBar?: boolean) {
-  const [time, setTime] = useState(() => timeAgo(timestamp, naveBar));
-
-  useEffect(() => {
-    const update = () => setTime(timeAgo(timestamp, naveBar));
-    update();
-
-    const interval = setInterval(update, 60 * 1000);
-    return () => clearInterval(interval);
-  }, [timestamp, naveBar]);
-
-  return time;
-}
-
 export function timeAgo(timestamp: string, naveBar?: boolean) {
   const now = new Date();
   const then = new Date(timestamp);
