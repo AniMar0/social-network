@@ -447,10 +447,20 @@ export function MessagesPage({
     }
   };
 
-  const handleUnsendMessage = (messageId: string) => {
-    setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
-    console.log("Unsending message:", messageId);
+  const handleUnsendMessage = async (messageId: string) => {
     // TODO: Add backend logic to unsend message
+    try {
+      const response = await fetch(`/api/unsend-message/${messageId}`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!response.ok) {
+        throw new Error("Failed to unsend message");
+      }
+      setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
+    } catch (error) {
+      console.error("Error unsending message:", error);
+    }
   };
 
   const handleReplyToMessage = (message: Message) => {
