@@ -137,6 +137,17 @@ func (S *Server) PushMessage(SessionID string, userID int, msg interface{}) {
 	}
 }
 
+func (S *Server) PushMessageSeen(userID int, msg interface{}) {
+	S.RLock()
+	defer S.RUnlock()
+	for _, Session := range S.Users[userID] {
+		Session.Send <- map[string]interface{}{
+			"channel": "chat-seen",
+			"payload": msg,
+		}
+	}
+}
+
 func (S *Server) GetConnections(userID int) []*Client {
 	S.RLock()
 	defer S.RUnlock()

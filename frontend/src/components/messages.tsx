@@ -116,6 +116,22 @@ export function MessagesPage({
             }
           });
         }
+      } else if (data.channel === "chat-seen") {
+        if (onUserProfileClick && onUserProfileClick == data.payload.chat_id) {
+          setMessages((prev) => {
+            if (!prev || prev.length === 0) return [];
+
+            const lastIndex = prev.length - 1;
+            const lastMessage = prev[lastIndex];
+
+            if (lastMessage.isRead) return prev;
+
+            const updated = [...prev];
+            updated[lastIndex] = { ...lastMessage, isRead: true };
+
+            return updated;
+          });
+        }
       }
     };
   }, [selectedChat]);

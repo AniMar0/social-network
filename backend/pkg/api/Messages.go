@@ -372,7 +372,6 @@ func (S *Server) UploadFileHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (S *Server) SeenMessageHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Seen Message Handler")
 	if r.Method != http.MethodPost {
 		http.Redirect(w, r, "/404", http.StatusSeeOther)
 		return
@@ -389,7 +388,14 @@ func (S *Server) SeenMessageHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
-	fmt.Println("Seen Message done", chatID)
+
+	userId := S.GetOtherUserID(currentUserID, tools.StringToInt(chatID))
+	GetLastMessage, _ := S.GetLastMessage(chatID)
+
+	S.PushMessageSeen(userId, map[string]interface{}{
+		"message_id": GetLastMessage,
+		"chat_id":    chatID,
+	})
 	w.WriteHeader(http.StatusOK)
 }
 func (S *Server) SeenMessage(chatID string, userID int) error {
@@ -400,4 +406,16 @@ func (S *Server) SeenMessage(chatID string, userID int) error {
 		return err
 	}
 	return nil
+}
+
+// get the last message betwen two users
+func (S *Server) GetLastMessage(chatID string) (int, error) {
+	var message int
+	query := `SELECT id FROM messages WHERE chat_id = ? ORDER BY created_at DESC LIMIT 1`
+	err := S.db.QueryRow(query, chatID).Scan(&message)
+	if err != nil {
+		fmt.Println(err)
+		return 0, err
+	}
+	return message, nil
 }
