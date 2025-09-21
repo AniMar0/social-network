@@ -415,6 +415,7 @@ func (S *Server) SeenMessageHandler(w http.ResponseWriter, r *http.Request) {
 	})
 	w.WriteHeader(http.StatusOK)
 }
+
 func (S *Server) SeenMessage(chatID string, userID int) error {
 	// if last message is seen return
 	_, err := S.db.Exec(`UPDATE messages SET is_read = 1, read_at = CURRENT_TIMESTAMP WHERE chat_id = ? AND sender_id != ? AND is_read = 0`, chatID, userID)
@@ -425,7 +426,6 @@ func (S *Server) SeenMessage(chatID string, userID int) error {
 	return nil
 }
 
-// get the last message betwen two users
 func (S *Server) GetLastMessageID(chatID string) (int, error) {
 	var message int
 	query := `SELECT id FROM messages WHERE chat_id = ? ORDER BY created_at DESC LIMIT 1`
@@ -446,4 +446,25 @@ func (S *Server) GetLastMessageContent(chatID string) (Message, error) {
 		return Message{}, err
 	}
 	return message, nil
+}
+
+func (S *Server) UnsendMessageHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/404", http.StatusSeeOther)
+		return
+	}
+	messageID := r.URL.Path[len("/api/unsend-message/"):]
+	_, _, err := S.CheckSession(r)
+	
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	err = S.UnsendMessage(messageID)
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
