@@ -81,15 +81,22 @@ export function MessagesPage({
     followersCount: "",
   });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [isUserTyping, setIsUserTyping] = useState(false);
+  const [userTypingTimeout, setUserTypingTimeout] = useState<NodeJS.Timeout | null>(null);
 
   const router = useRouter();
 
   const [userOnlineStatus, setUserOnlineStatus] = useState<boolean>(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [lastSent, setLastSent] = useState(0);
+  const [isUserAtBottom, setIsUserAtBottom] = useState(true);
+  const [previousMessageCount, setPreviousMessageCount] = useState(0);
   // Get notification count for sidebar
   const notificationCount = useNotificationCount();
 
@@ -110,6 +117,10 @@ export function MessagesPage({
         if (selectedChat?.id == data.user) {
           setUserOnlineStatus(data.status);
         }
+      } else if (data.channel === "typing-start") {
+        handleOtherUserTypingStart(data.chat_id, data.user_id);
+      } else if (data.channel === "typing-stop") {
+        handleOtherUserTypingStop(data.chat_id, data.user_id);
       } else if (data.channel === "chat") {
         if (onUserProfileClick && onUserProfileClick == data.payload.chat_id) {
           ws.send(
@@ -282,21 +293,195 @@ export function MessagesPage({
   );
 
   // Function to scroll to bottom of messages
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollToBottom = (force = false) => {
+    if (force || isUserAtBottom) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   };
 
-  // Scroll to bottom when messages change
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  // Check if user is at bottom of messages
+  const checkIfAtBottom = () => {
+    if (!messagesContainerRef.current) return;
+    
+    const container = messagesContainerRef.current;
+    const threshold = 100; // pixels from bottom to consider "at bottom"
+    const isAtBottom = 
+      container.scrollHeight - container.scrollTop <= container.clientHeight + threshold;
+    
+    setIsUserAtBottom(isAtBottom);
+  };
 
-  // Scroll to bottom when chat is selected
+  // Smart scroll: only auto-scroll when new messages arrive and user is at bottom
+  useEffect(() => {
+    if (messages.length > previousMessageCount) {
+      // New messages arrived
+      scrollToBottom(); // This will only scroll if user is at bottom
+      setPreviousMessageCount(messages.length);
+    }
+  }, [messages, previousMessageCount, isUserAtBottom]);
+
+  // Always scroll to bottom when chat is selected (force scroll)
   useEffect(() => {
     if (selectedChat) {
-      setTimeout(scrollToBottom, 100); // Small delay to ensure messages are rendered
+      setIsUserAtBottom(true); // Reset to bottom when switching chats
+      setPreviousMessageCount(messages.length);
+      setTimeout(() => scrollToBottom(true), 100); // Force scroll with delay
+      
+      // Reset typing states when switching chats
+      setIsTyping(false);
+      setIsUserTyping(false);
+      if (typingTimeout) {
+        clearTimeout(typingTimeout);
+        setTypingTimeout(null);
+      }
+      if (userTypingTimeout) {
+        clearTimeout(userTypingTimeout);
+        setUserTypingTimeout(null);
+      }
     }
   }, [selectedChat]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimeout) {
+        clearTimeout(typingTimeout);
+      }
+      if (userTypingTimeout) {
+        clearTimeout(userTypingTimeout);
+      }
+      // Send stop typing signal if user was typing
+      if (isUserTyping) {
+        handleTypingStop();
+      }
+    };
+  }, []);
+
+  // Typing indicator functions
+  const handleTypingStart = () => {
+    if (!selectedChat || !onUserProfileClick) return;
+    
+    // Only send if user is not already marked as typing
+    if (!isUserTyping) {
+      setIsUserTyping(true);
+      
+      const ws = getWebSocket();
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(JSON.stringify({
+            channel: "typing-start",
+            chat_id: selectedChat.id,
+            user_id: onUserProfileClick
+          }));
+          console.log("Sent typing-start signal");
+        } catch (error) {
+          console.error("Error sending typing-start:", error);
+        }
+      }
+    }
+  };
+
+  const handleTypingStop = () => {
+    if (!selectedChat || !onUserProfileClick) return;
+    
+    // Only send if user is marked as typing
+    if (isUserTyping) {
+      setIsUserTyping(false);
+      
+      const ws = getWebSocket();
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(JSON.stringify({
+            channel: "typing-stop",
+            chat_id: selectedChat.id,
+            user_id: onUserProfileClick
+          }));
+          console.log("Sent typing-stop signal");
+        } catch (error) {
+          console.error("Error sending typing-stop:", error);
+        }
+      }
+    }
+  };
+
+  const handleOtherUserTypingStart = (chatId: string, userId: string) => {
+    // Only show typing indicator if it's for the current chat and not from current user
+    if (onUserProfileClick && chatId === selectedChat?.id && userId !== onUserProfileClick) {
+      setIsTyping(true);
+      console.log(`${selectedChat?.name} started typing`);
+      
+      // Clear any existing timeout
+      if (userTypingTimeout) {
+        clearTimeout(userTypingTimeout);
+      }
+      
+      // Auto-hide typing indicator after 5 seconds if no stop signal
+      const timeout = setTimeout(() => {
+        setIsTyping(false);
+        console.log("Auto-stopped typing indicator after timeout");
+      }, 5000);
+      
+      setUserTypingTimeout(timeout);
+    }
+  };
+
+  const handleOtherUserTypingStop = (chatId: string, userId: string) => {
+    // Only hide typing indicator if it's for the current chat and not from current user
+    if (onUserProfileClick && chatId === selectedChat?.id && userId !== onUserProfileClick) {
+      setIsTyping(false);
+      console.log(`${selectedChat?.name} stopped typing`);
+      
+      // Clear the auto-hide timeout
+      if (userTypingTimeout) {
+        clearTimeout(userTypingTimeout);
+        setUserTypingTimeout(null);
+      }
+    }
+  };
+
+  // Debug function to manually test typing indicator (for development)
+  const debugTypingIndicator = () => {
+    if (selectedChat) {
+      console.log("Debug: Triggering typing indicator");
+      handleOtherUserTypingStart(selectedChat.id, "debug-user");
+      
+      // Auto-stop after 3 seconds
+      setTimeout(() => {
+        handleOtherUserTypingStop(selectedChat.id, "debug-user");
+      }, 3000);
+    }
+  };
+
+  const handleInputChange = (value: string) => {
+    setNewMessage(value);
+    
+    // Handle typing indicators
+    if (value.length > 0) {
+      // User started typing
+      if (!isUserTyping) {
+        handleTypingStart();
+      }
+      
+      // Clear existing timeout and set new one
+      if (typingTimeout) {
+        clearTimeout(typingTimeout);
+      }
+      
+      // Set new timeout to stop typing after 3 seconds of no input
+      const timeout = setTimeout(() => {
+        handleTypingStop();
+      }, 3000);
+      
+      setTypingTimeout(timeout);
+    } else {
+      // Input is empty, stop typing immediately
+      handleTypingStop();
+      if (typingTimeout) {
+        clearTimeout(typingTimeout);
+        setTypingTimeout(null);
+      }
+    }
+  };
 
   const handleSendMessage = async () => {
     if (newMessage.trim() && selectedChat) {
@@ -364,6 +549,13 @@ export function MessagesPage({
 
       setNewMessage("");
       setReplyingTo(null); // Clear reply state
+      
+      // Stop typing indicator
+      handleTypingStop();
+      if (typingTimeout) {
+        clearTimeout(typingTimeout);
+        setTypingTimeout(null);
+      }
     }
   };
 
@@ -710,6 +902,15 @@ export function MessagesPage({
                   </span>
                 </div>
               </div>
+              {/* Debug button - remove in production */}
+              {/* <Button
+                variant="outline"
+                size="sm"
+                onClick={debugTypingIndicator}
+                className="text-xs"
+              >
+                Test Typing
+              </Button> */}
             </div>
           </div>
 
@@ -748,7 +949,11 @@ export function MessagesPage({
           </div>
 
           {/* Messages */}
-          <div className="flex-1 p-4 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          <div 
+            ref={messagesContainerRef}
+            onScroll={checkIfAtBottom}
+            className="flex-1 p-4 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+          >
             {messagesLoading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
@@ -916,6 +1121,44 @@ export function MessagesPage({
               theme={Theme.DARK}
             />
           )}
+          {/* Typing Indicator */}
+          {isTyping && selectedChat && (
+            <div className="px-4 py-2 animate-in fade-in duration-300">
+              <div className="flex items-center gap-3">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage
+                    src={`http://localhost:8080/${selectedChat.avatar}`}
+                    alt={selectedChat.name}
+                  />
+                  <AvatarFallback className="bg-muted text-foreground">
+                    {selectedChat.name.slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 px-4 py-2 rounded-lg">
+                    <div className="flex gap-1">
+                      <div 
+                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" 
+                        style={{ animationDelay: '0ms' }}
+                      ></div>
+                      <div 
+                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" 
+                        style={{ animationDelay: '150ms' }}
+                      ></div>
+                      <div 
+                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" 
+                        style={{ animationDelay: '300ms' }}
+                      ></div>
+                    </div>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {selectedChat.name} is typing...
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Reply Preview */}
           {replyingTo && (
             <div className="p-3 mx-4 bg-muted/50 border-l-4 border-blue-500 rounded-r-lg">
@@ -998,7 +1241,7 @@ export function MessagesPage({
                       : "Start a new message"
                   }
                   value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
+                  onChange={(e) => handleInputChange(e.target.value)}
                   onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
                   className="pr-10"
                 />
