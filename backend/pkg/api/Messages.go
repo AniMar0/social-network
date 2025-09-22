@@ -276,6 +276,7 @@ func (S *Server) GetUsers(w http.ResponseWriter, currentUserID int) ([]Chat, err
 			u.id,
     		u.first_name || ' ' || u.last_name AS name,
     		u.nickname,
+			m.id,
     		u.avatar,
     		m.sender_id,
     		m.created_at AS timestamp,
@@ -307,6 +308,7 @@ func (S *Server) GetUsers(w http.ResponseWriter, currentUserID int) ([]Chat, err
 		for rows.Next() {
 			var c Chat
 			var lastMessage sql.NullString
+			var lastMessageId sql.NullString
 			var timestamp sql.NullString
 			var nickname sql.NullString
 			var senderID sql.NullString
@@ -315,6 +317,7 @@ func (S *Server) GetUsers(w http.ResponseWriter, currentUserID int) ([]Chat, err
 				&c.ID,
 				&c.Name,
 				&nickname,
+				&lastMessageId,
 				&c.Avatar,
 				&senderID,
 				&timestamp,
@@ -358,6 +361,10 @@ func (S *Server) GetUsers(w http.ResponseWriter, currentUserID int) ([]Chat, err
 				c.Timestamp = timestamp.String
 			} else {
 				c.Timestamp = ""
+			}
+
+			if lastMessageId.Valid {
+				c.LastMessageID = lastMessageId.String
 			}
 
 			chats = append(chats, c)
@@ -457,8 +464,8 @@ func (S *Server) GetLastMessageID(chatID string) (string, error) {
 func (S *Server) GetLastMessageContent(chatID string) (Message, error) {
 	var message Message
 	var timestamp sql.NullString
-	query := `SELECT id, sender_id, is_read, read_at FROM messages WHERE chat_id = ? ORDER BY created_at DESC LIMIT 1`
-	err := S.db.QueryRow(query, chatID).Scan(&message.ID, &message.SenderID, &message.IsRead, &timestamp)
+	query := `SELECT id, sender_id, is_read, read_at, content, type,created_at FROM messages WHERE chat_id = ? ORDER BY created_at DESC LIMIT 1`
+	err := S.db.QueryRow(query, chatID).Scan(&message.ID, &message.SenderID, &message.IsRead, &timestamp, &message.Content, &message.Type, &message.Timestamp)
 	if timestamp.Valid {
 		message.Timestamp = timestamp.String
 	}
@@ -501,6 +508,12 @@ func (S *Server) UnsendMessageHandler(w http.ResponseWriter, r *http.Request) {
 
 	resiverID := S.GetOtherUserID(currentUserID, tools.StringToInt(chatID))
 
+	message, err := S.GetLastMessageContent(chatID)
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
 	if len(S.Users[currentUserID]) > 1 {
 		S.PushChatDelete(sessionID, currentUserID, map[string]interface{}{
 			"message_id": messageID,
@@ -510,6 +523,7 @@ func (S *Server) UnsendMessageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	S.PushChatDelete("", resiverID, map[string]interface{}{
+		"message":    message,
 		"message_id": messageID,
 		"chat_id":    chatID,
 	})

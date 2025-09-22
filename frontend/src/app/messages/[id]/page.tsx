@@ -15,6 +15,15 @@ function Messages() {
 
   const resiverID = params.id as string;
 
+  function isNumberRegex(str: string): boolean {
+    return /^[0-9]+$/.test(str);
+  }
+
+  if (!isNumberRegex(resiverID) && resiverID !== "chats") {
+    router.push("/404");
+    return
+  }
+
   useEffect(() => {
     const checkAuth = async () => {
       try {

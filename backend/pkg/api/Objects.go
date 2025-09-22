@@ -97,6 +97,7 @@ type Chat struct {
 	Username        string `json:"username"`
 	Avatar          string `json:"avatar"`
 	LastMessage     string `json:"lastMessage"`
+	LastMessageID   string `json:"lastMessageId"`
 	Timestamp       string `json:"timestamp"`
 	UnreadCount     int    `json:"unreadCount"`
 	IsVerified      *bool  `json:"isVerified,omitempty"`

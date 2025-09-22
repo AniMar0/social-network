@@ -43,6 +43,7 @@ interface Chat {
   username: string;
   avatar: string;
   lastMessage: string;
+  lastMessageId: string;
   timestamp: string;
   unreadCount: number;
   isVerified?: boolean;
@@ -125,10 +126,23 @@ export function MessagesPage({
               return [data.payload];
             }
           });
+        } else {
+          setChats((prevChats) =>
+            prevChats.map((c) =>
+              c.id == data.payload.chat_id
+                ? {
+                    ...c,
+                    unreadCount: c.unreadCount + 1,
+                    lastMessage: data.payload.content,
+                    lastMessageType: data.payload.type,
+                    timestamp: data.payload.timestamp,
+                  }
+                : c
+            )
+          );
         }
       } else if (data.channel === "chat-seen") {
         if (onUserProfileClick && onUserProfileClick == data.payload.chat_id) {
-          console.log("Chat seen ws", data.payload);
           setMessages((prev) => {
             if (!prev || prev.length === 0) return [];
 
@@ -153,6 +167,20 @@ export function MessagesPage({
         if (onUserProfileClick && onUserProfileClick == data.payload.chat_id) {
           setMessages((prev) =>
             prev.filter((msg) => msg.id !== data.payload.message_id)
+          );
+        } else {
+          setChats((prevChats) =>
+            prevChats.map((c) =>
+              c.lastMessageId == data.payload.message.id
+                ? {
+                    ...c,
+                    unreadCount: c.unreadCount - 1,
+                    lastMessage: data.payload.message.content,
+                    lastMessageType: data.payload.message.type,
+                    timestamp: data.payload.message.timestamp,
+                  }
+                : c
+            )
           );
         }
       }
