@@ -1,6 +1,7 @@
 package backend
 
 import (
+	tools "SOCIAL-NETWORK/pkg"
 	"fmt"
 	"net/http"
 
@@ -82,8 +83,6 @@ func (S *Server) StartReader(client *Client) {
 		}
 		// unified channel switch
 		switch msg["channel"] {
-		
-
 		case "chat-seen":
 			targetID := msg["to"].(float64)
 			chatID := msg["chat_id"].(string)
@@ -105,7 +104,25 @@ func (S *Server) StartReader(client *Client) {
 				"message": Message,
 				"chat_id": chatID,
 			})
+
+		case "typing-start":
+			chatID := msg["chat_id"].(string)
+			targetID := S.GetOtherUserID(client.UserID, tools.StringToInt(chatID))
+
+			S.PushTypingStart(targetID, map[string]interface{}{
+				"chat_id": chatID,
+				"user_id": client.UserID,
+			})
+		case "typing-stop":
+			chatID := msg["chat_id"].(string)
+			targetID := S.GetOtherUserID(client.UserID, tools.StringToInt(chatID))
+
+			S.PushTypingStop(targetID, map[string]interface{}{
+				"chat_id": chatID,
+				"user_id": client.UserID,
+			})
 		}
+
 	}
 }
 
@@ -214,6 +231,28 @@ func (S *Server) PushChatDelete(SessionID string, userID int, message map[string
 		}
 		Session.Send <- map[string]interface{}{
 			"channel": "chat-delete",
+			"payload": message,
+		}
+	}
+}
+
+func (S *Server) PushTypingStart(userID int, message map[string]interface{}) {
+	S.RLock()
+	defer S.RUnlock()
+	for _, Session := range S.Users[userID] {
+		Session.Send <- map[string]interface{}{
+			"channel": "typing-start",
+			"payload": message,
+		}
+	}
+}
+
+func (S *Server) PushTypingStop(userID int, message map[string]interface{}) {
+	S.RLock()
+	defer S.RUnlock()
+	for _, Session := range S.Users[userID] {
+		Session.Send <- map[string]interface{}{
+			"channel": "typing-stop",
 			"payload": message,
 		}
 	}
