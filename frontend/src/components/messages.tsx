@@ -142,101 +142,100 @@ export function MessagesPage({
 
   // Centralized WS events processor
   const handleWsEvent = (data: any) => {
-    // NOTE: Keep names and behaviours same as before but grouped.
-    if (data.channel === "status") {
-      setChats((prevChats) =>
-        prevChats.map((c) =>
-          c.id == data.user ? { ...c, isOnline: data.status } : c
-        )
-      );
-      if (selectedChat?.id == data.user) {
-        setUserOnlineStatus(data.status);
-      }
-      return;
-    }
+    switch (data.channel) {
+      case "status":
+        setChats((prevChats) =>
+          prevChats.map((c) =>
+            c.id == data.user ? { ...c, isOnline: data.status } : c
+          )
+        );
+        if (selectedChat?.id == data.user) {
+          setUserOnlineStatus(data.status);
+        }
+        break;
 
-    if (data.channel === "typing-start") {
-      handleOtherUserTypingStart(data.payload.chat_id, data.payload.user_id);
-      return;
-    }
+      case "typing-start":
+        handleOtherUserTypingStart(data.payload.chat_id, data.payload.user_id);
+        break;
 
-    if (data.channel === "typing-stop") {
-      handleOtherUserTypingStop(data.payload.chat_id, data.payload.user_id);
-      return;
-    }
+      case "typing-stop":
+        handleOtherUserTypingStop(data.payload.chat_id, data.payload.user_id);
+        break;
 
-    if (data.channel === "chat") {
-      // if viewing the chat -> append + send chat-seen (same behaviour)
-      if (onUserProfileClick && onUserProfileClick == data.payload.chat_id) {
-        // send seen ack
-        const ws = wsRef.current;
-        if (ws && ws.readyState === WebSocket.OPEN) {
-          ws.send(
-            JSON.stringify({
-              channel: "chat-seen",
-              chat_id: onUserProfileClick,
-              to: data.payload.sender_id,
-            })
+      case "chat":
+        if (onUserProfileClick && onUserProfileClick == data.payload.chat_id) {
+          const ws = wsRef.current;
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(
+              JSON.stringify({
+                channel: "chat-seen",
+                chat_id: onUserProfileClick,
+                to: data.payload.sender_id,
+              })
+            );
+          }
+          setMessages((prev) =>
+            prev ? [...prev, data.payload] : [data.payload]
+          );
+        } else {
+          setChats((prevChats) =>
+            prevChats.map((c) =>
+              c.id == data.payload.chat_id
+                ? {
+                    ...c,
+                    unreadCount: c.unreadCount + 1,
+                    lastMessage: data.payload.content,
+                    lastMessageType: data.payload.type,
+                    timestamp: data.payload.timestamp,
+                  }
+                : c
+            )
           );
         }
-        setMessages((prev) => (prev ? [...prev, data.payload] : [data.payload]));
-      } else {
-        // update sidebar chats
-        setChats((prevChats) =>
-          prevChats.map((c) =>
-            c.id == data.payload.chat_id
-              ? {
-                  ...c,
-                  unreadCount: c.unreadCount + 1,
-                  lastMessage: data.payload.content,
-                  lastMessageType: data.payload.type,
-                  timestamp: data.payload.timestamp,
-                }
-              : c
-          )
-        );
-      }
-      return;
-    }
+        break;
 
-    if (data.channel === "chat-seen") {
-      if (onUserProfileClick && onUserProfileClick == data.payload.chat_id) {
-        setMessages((prev) => {
-          if (!prev || prev.length === 0) return [];
-          const lastIndex = prev.length - 1;
-          const lastMessage = prev[lastIndex];
-          if (lastMessage.isRead) return prev;
-          const updated = [...prev];
-          updated[lastIndex] = {
-            ...lastMessage,
-            isRead: true,
-            timestamp: data.payload.message.timestamp,
-          };
-          return updated;
-        });
-      }
-      return;
-    }
+      case "chat-seen":
+        if (onUserProfileClick && onUserProfileClick == data.payload.chat_id) {
+          setMessages((prev) => {
+            if (!prev || prev.length === 0) return [];
+            const lastIndex = prev.length - 1;
+            const lastMessage = prev[lastIndex];
+            if (lastMessage.isRead) return prev;
+            const updated = [...prev];
+            updated[lastIndex] = {
+              ...lastMessage,
+              isRead: true,
+              timestamp: data.payload.message.timestamp,
+            };
+            return updated;
+          });
+        }
+        break;
 
-    if (data.channel === "chat-delete") {
-      if (onUserProfileClick && onUserProfileClick == data.payload.chat_id) {
-        setMessages((prev) => prev.filter((msg) => msg.id !== data.payload.message_id));
-      } else {
-        setChats((prevChats) =>
-          prevChats.map((c) =>
-            c.lastMessageId == data.payload.message.id
-              ? {
-                  ...c,
-                  unreadCount: Math.max(0, c.unreadCount - 1),
-                  lastMessage: data.payload.message.content,
-                  lastMessageType: data.payload.message.type,
-                  timestamp: data.payload.message.timestamp,
-                }
-              : c
-          )
-        );
-      }
-      return;
+      case "chat-delete":
+        if (onUserProfileClick && onUserProfileClick == data.payload.chat_id) {
+          setMessages((prev) =>
+            prev.filter((msg) => msg.id !== data.payload.message_id)
+          );
+        } else {
+          setChats((prevChats) =>
+            prevChats.map((c) =>
+              c.lastMessageId == data.payload.message.id
+                ? {
+                    ...c,
+                    unreadCount: Math.max(0, c.unreadCount - 1),
+                    lastMessage: data.payload.message.content,
+                    lastMessageType: data.payload.message.type,
+                    timestamp: data.payload.message.timestamp,
+                  }
+                : c
+            )
+          );
+        }
+        break;
+
+      default:
+        break;
     }
   };
 
@@ -738,7 +737,9 @@ export function MessagesPage({
         return (
           <span className="text-sm text-muted-foreground truncate">
             {message}{" "}
-            {!hideTime && chat.timestamp && <>{timeAgo(chat.timestamp, true)}</>}
+            {!hideTime && chat.timestamp && (
+              <>{timeAgo(chat.timestamp, true)}</>
+            )}
           </span>
         );
     }
@@ -901,7 +902,9 @@ export function MessagesPage({
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
-                  <p className="text-sm text-muted-foreground">Loading messages...</p>
+                  <p className="text-sm text-muted-foreground">
+                    Loading messages...
+                  </p>
                 </div>
               </div>
             ) : (
@@ -910,29 +913,98 @@ export function MessagesPage({
                   messages.map((message) => (
                     <div
                       key={message.id}
-                      className={`flex ${message.isOwn ? "justify-end" : "justify-start"}`}
+                      className={`flex ${
+                        message.isOwn ? "justify-end" : "justify-start"
+                      }`}
                     >
                       <div
-                        className={`max-w-xs lg:max-w-md ${message.isOwn ? "order-2" : "order-1"}`}
+                        className={`max-w-xs lg:max-w-md ${
+                          message.isOwn ? "order-2" : "order-1"
+                        }`}
                       >
                         <ContextMenu>
                           <ContextMenuTrigger>
-                            <div className={`${message.isOwn ? "ml-auto" : "mr-auto"} max-w-xs lg:max-w-md`}>
+                            <div
+                              className={`${
+                                message.isOwn ? "ml-auto" : "mr-auto"
+                              } max-w-xs lg:max-w-md`}
+                            >
                               {message.replyTo && (
-                                <div className={`mb-1 px-3 py-1 rounded-t-sm text-xs border-l-2 ${message.isOwn ? "bg-blue-400 text-white border-blue-200" : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-400"}`}>
-                                  {(message.isOwn && <div className="opacity-80 font-medium">You replied to {selectedChat.name}:</div>) || (<div className="opacity-80 font-medium">{selectedChat.name} replied to you:</div>)}
-                                  <div className="opacity-70 truncate">{renderReplyContent(message.replyTo)}</div>
+                                <div
+                                  className={`mb-1 px-3 py-1 rounded-t-sm text-xs border-l-2 ${
+                                    message.isOwn
+                                      ? "bg-blue-400 text-white border-blue-200"
+                                      : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-400"
+                                  }`}
+                                >
+                                  {(message.isOwn && (
+                                    <div className="opacity-80 font-medium">
+                                      You replied to {selectedChat.name}:
+                                    </div>
+                                  )) || (
+                                    <div className="opacity-80 font-medium">
+                                      {selectedChat.name} replied to you:
+                                    </div>
+                                  )}
+                                  <div className="opacity-70 truncate">
+                                    {renderReplyContent(message.replyTo)}
+                                  </div>
                                 </div>
                               )}
 
                               {message.type === "emoji" ? (
-                                <div className={`text-6xl cursor-pointer ${message.replyTo ? "rounded-b-sm" : "rounded-sm"}`}>{message.content}</div>
+                                <div
+                                  className={`text-6xl cursor-pointer ${
+                                    message.replyTo
+                                      ? "rounded-b-sm"
+                                      : "rounded-sm"
+                                  }`}
+                                >
+                                  {message.content}
+                                </div>
                               ) : message.type === "gif" ? (
-                                <div className={`overflow-hidden max-w-xs cursor-pointer ${message.replyTo ? "rounded-b-sm" : "rounded-sm"}`}><img src={message.content} alt="GIF" className="w-full h-auto" /></div>
+                                <div
+                                  className={`overflow-hidden max-w-xs cursor-pointer ${
+                                    message.replyTo
+                                      ? "rounded-b-sm"
+                                      : "rounded-sm"
+                                  }`}
+                                >
+                                  <img
+                                    src={message.content}
+                                    alt="GIF"
+                                    className="w-full h-auto"
+                                  />
+                                </div>
                               ) : message.type === "image" ? (
-                                <div className={`overflow-hidden max-w-xs cursor-pointer ${message.replyTo ? "rounded-b-sm" : "rounded-sm"}`}><img src={`http://localhost:8080/${message.content}`} alt="Uploaded image" className="w-full h-auto hover:opacity-90 transition-opacity" onClick={() => window.open(message.content, "_blank")} /></div>
+                                <div
+                                  className={`overflow-hidden max-w-xs cursor-pointer ${
+                                    message.replyTo
+                                      ? "rounded-b-sm"
+                                      : "rounded-sm"
+                                  }`}
+                                >
+                                  <img
+                                    src={`http://localhost:8080/${message.content}`}
+                                    alt="Uploaded image"
+                                    className="w-full h-auto hover:opacity-90 transition-opacity"
+                                    onClick={() =>
+                                      window.open(message.content, "_blank")
+                                    }
+                                  />
+                                </div>
                               ) : (
-                                <div className={`px-4 py-2 cursor-pointer ${message.replyTo ? "rounded-b-sm" : "rounded-sm"} ${message.isOwn ? "bg-blue-500 text-white" : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100"}`}>
+                                <div
+                                  className={`px-4 py-2 cursor-pointer ${
+                                    message.replyTo
+                                      ? "rounded-b-sm"
+                                      : "rounded-sm"
+                                  } ${
+                                    message.isOwn
+                                      ? "bg-blue-500 text-white"
+                                      : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                                  }`}
+                                >
                                   {message.content}
                                 </div>
                               )}
@@ -940,19 +1012,33 @@ export function MessagesPage({
                           </ContextMenuTrigger>
                           <ContextMenuContent>
                             {message.isOwn ? (
-                              <ContextMenuItem onClick={() => handleUnsendMessage(message.id)} className="text-red-600 focus:text-red-600">Unsend Message</ContextMenuItem>
+                              <ContextMenuItem
+                                onClick={() => handleUnsendMessage(message.id)}
+                                className="text-red-600 focus:text-red-600"
+                              >
+                                Unsend Message
+                              </ContextMenuItem>
                             ) : (
-                              <ContextMenuItem onClick={() => handleReplyToMessage(message)} className="text-blue-600 focus:text-blue-600">Reply to Message</ContextMenuItem>
+                              <ContextMenuItem
+                                onClick={() => handleReplyToMessage(message)}
+                                className="text-blue-600 focus:text-blue-600"
+                              >
+                                Reply to Message
+                              </ContextMenuItem>
                             )}
                           </ContextMenuContent>
                         </ContextMenu>
-                        {message.isRead && message.isOwn && message === messages[messages.length - 1] && (
-                          <div className="flex items-center gap-2 mt-1 justify-start">
-                            <span className="text-xs text-muted-foreground">
-                              {message.seen ? message.seen : timeAgo(message.timestamp)}
-                            </span>
-                          </div>
-                        )}
+                        {message.isRead &&
+                          message.isOwn &&
+                          message === messages[messages.length - 1] && (
+                            <div className="flex items-center gap-2 mt-1 justify-start">
+                              <span className="text-xs text-muted-foreground">
+                                {message.seen
+                                  ? message.seen
+                                  : timeAgo(message.timestamp)}
+                              </span>
+                            </div>
+                          )}
                       </div>
                     </div>
                   ))}
@@ -962,10 +1048,18 @@ export function MessagesPage({
           </div>
 
           {showEmojiPicker && (
-            <EmojiPicker onEmojiClick={(e) => handleEmojiSelect(e.emoji)} theme={Theme.DARK} />
+            <EmojiPicker
+              onEmojiClick={(e) => handleEmojiSelect(e.emoji)}
+              theme={Theme.DARK}
+            />
           )}
           {showGifPicker && (
-            <GifPicker onGifClick={(g) => handleGifSelect(g.url)} tenorApiKey="AIzaSyB78CUkLJjdlA67853bVqpcwjJaywRAlaQ" categoryHeight={100} theme={Theme.DARK} />
+            <GifPicker
+              onGifClick={(g) => handleGifSelect(g.url)}
+              tenorApiKey="AIzaSyB78CUkLJjdlA67853bVqpcwjJaywRAlaQ"
+              categoryHeight={100}
+              theme={Theme.DARK}
+            />
           )}
 
           {/* Typing indicator (other user) */}
@@ -973,18 +1067,34 @@ export function MessagesPage({
             <div className="px-4 py-2 animate-in fade-in duration-300">
               <div className="flex items-center gap-3">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={`http://localhost:8080/${selectedChat.avatar}`} alt={selectedChat.name} />
-                  <AvatarFallback className="bg-muted text-foreground">{selectedChat.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                  <AvatarImage
+                    src={`http://localhost:8080/${selectedChat.avatar}`}
+                    alt={selectedChat.name}
+                  />
+                  <AvatarFallback className="bg-muted text-foreground">
+                    {selectedChat.name.slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 px-4 py-2 rounded-lg">
                     <div className="flex gap-1">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
+                      <div
+                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                        style={{ animationDelay: "0ms" }}
+                      ></div>
+                      <div
+                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                        style={{ animationDelay: "150ms" }}
+                      ></div>
+                      <div
+                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                        style={{ animationDelay: "300ms" }}
+                      ></div>
                     </div>
                   </div>
-                  <span className="text-xs text-muted-foreground">{selectedChat.name} is typing...</span>
+                  <span className="text-xs text-muted-foreground">
+                    {selectedChat.name} is typing...
+                  </span>
                 </div>
               </div>
             </div>
@@ -995,12 +1105,28 @@ export function MessagesPage({
             <div className="p-3 mx-4 bg-muted/50 border-l-4 border-blue-500 rounded-r-lg">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <p className="text-xs text-muted-foreground mb-1">Replying to {replyingTo.isOwn ? "yourself" : selectedChat?.name}</p>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Replying to{" "}
+                    {replyingTo.isOwn ? "yourself" : selectedChat?.name}
+                  </p>
                   <p className="text-sm text-foreground truncate max-w-md">
-                    {replyingTo.type === "emoji" ? replyingTo.content : replyingTo.type === "image" ? "📷 Image" : replyingTo.type === "gif" ? "🎞️ GIF" : replyingTo.content}
+                    {replyingTo.type === "emoji"
+                      ? replyingTo.content
+                      : replyingTo.type === "image"
+                      ? "📷 Image"
+                      : replyingTo.type === "gif"
+                      ? "🎞️ GIF"
+                      : replyingTo.content}
                   </p>
                 </div>
-                <Button variant="ghost" size="sm" onClick={cancelReply} className="h-6 w-6 p-0 ml-2">×</Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={cancelReply}
+                  className="h-6 w-6 p-0 ml-2"
+                >
+                  ×
+                </Button>
               </div>
             </div>
           )}
@@ -1008,19 +1134,67 @@ export function MessagesPage({
           {/* Input */}
           <div className="p-4 border-t border-border bg-card">
             <div className="flex items-center gap-2">
-              <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
-              <Button variant="ghost" size="icon" onClick={handleImageSelect} title="Upload image"><ImageIcon className="h-4 w-4" /></Button>
-              <Button variant="ghost" size="sm" onClick={() => { setShowGifPicker(!showGifPicker); setShowEmojiPicker(false); }} className="text-white hover:text-foreground" title="Send GIF"><ImagePlay className="h-5 w-5" /></Button>
-              <Button variant="ghost" size="sm" onClick={() => { setShowEmojiPicker(!showEmojiPicker); setShowGifPicker(false); }} className="text-white hover:text-foreground" title="Add emoji"><Smile className="h-5 w-5" /></Button>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleImageUpload}
+                accept="image/*"
+                className="hidden"
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleImageSelect}
+                title="Upload image"
+              >
+                <ImageIcon className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setShowGifPicker(!showGifPicker);
+                  setShowEmojiPicker(false);
+                }}
+                className="text-white hover:text-foreground"
+                title="Send GIF"
+              >
+                <ImagePlay className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setShowEmojiPicker(!showEmojiPicker);
+                  setShowGifPicker(false);
+                }}
+                className="text-white hover:text-foreground"
+                title="Add emoji"
+              >
+                <Smile className="h-5 w-5" />
+              </Button>
               <div className="flex-1 relative">
                 <Input
-                  placeholder={replyingTo ? `Reply to ${replyingTo.isOwn ? "yourself" : selectedChat?.name}...` : "Start a new message"}
+                  placeholder={
+                    replyingTo
+                      ? `Reply to ${
+                          replyingTo.isOwn ? "yourself" : selectedChat?.name
+                        }...`
+                      : "Start a new message"
+                  }
                   value={newMessage}
                   onChange={(e) => handleInputChange(e.target.value)}
                   onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
                   className="pr-10"
                 />
-                <Button onClick={handleSendMessage} size="icon" variant="ghost" className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8"><Send className="h-4 w-4" /></Button>
+                <Button
+                  onClick={handleSendMessage}
+                  size="icon"
+                  variant="ghost"
+                  className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
               </div>
             </div>
           </div>
@@ -1029,8 +1203,12 @@ export function MessagesPage({
         <div className="flex-1 flex flex-col min-w-0">
           <div className="flex flex-1 items-center justify-center bg-muted/20">
             <div className="text-center">
-              <h3 className="text-lg font-medium text-foreground mb-2">Select a message</h3>
-              <p className="text-muted-foreground">Choose from your existing conversations or start a new one</p>
+              <h3 className="text-lg font-medium text-foreground mb-2">
+                Select a message
+              </h3>
+              <p className="text-muted-foreground">
+                Choose from your existing conversations or start a new one
+              </p>
             </div>
           </div>
         </div>
