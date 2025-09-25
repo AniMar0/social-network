@@ -14,14 +14,14 @@ function Messages() {
   const params = useParams();
 
   const resiverID = params.id as string;
-
+  let currentUserId = "";
   function isNumberRegex(str: string): boolean {
     return /^[0-9]+$/.test(str);
   }
 
   if (!isNumberRegex(resiverID) && resiverID !== "chats") {
     router.push("/404");
-    return
+    return;
   }
 
   useEffect(() => {
@@ -42,7 +42,7 @@ function Messages() {
           router.push("/auth");
           return;
         }
-
+        currentUserId = data.id;
         setUserLoggedIn(true);
       } catch (err) {
         console.error("Error checking auth:", err);
@@ -94,7 +94,11 @@ function Messages() {
 
   return (
     <div className="min-h-screen bg-background">
-      <MessagesPage onUserProfileClick={resiverID} onNewPost={handleNewPost} />
+      <MessagesPage
+        onUserProfileClick={resiverID}
+        onNewPost={handleNewPost}
+        currentUserId={currentUserId}
+      />
 
       <NewPostModal
         isOpen={isNewPostModalOpen}

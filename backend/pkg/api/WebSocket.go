@@ -257,3 +257,14 @@ func (S *Server) PushTypingStop(userID int, message map[string]interface{}) {
 		}
 	}
 }
+
+func (S *Server) PushNewChat(userID int, message map[string]interface{}) {
+	S.RLock()
+	defer S.RUnlock()
+	for _, Session := range S.Users[userID] {
+		Session.Send <- map[string]interface{}{
+			"channel": "new-chat",
+			"payload": message,
+		}
+	}
+}

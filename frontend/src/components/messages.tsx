@@ -63,12 +63,14 @@ interface MessagesPageProps {
   onNavigate?: (page: string) => void;
   onNewPost?: () => void;
   onUserProfileClick?: string;
+  currentUserId?: string;
 }
 
 export function MessagesPage({
   onNavigate,
   onNewPost,
   onUserProfileClick,
+  currentUserId,
 }: MessagesPageProps) {
   // --- states (kept original names where relevant) ---
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
@@ -176,9 +178,13 @@ export function MessagesPage({
               })
             );
           }
-          setMessages((prev) =>
-            prev ? [...prev, data.payload] : [data.payload]
-          );
+          if (messages[messages.length - 1]?.id != data.payload.id) {
+            setMessages((prev) =>
+              //skipe the prev withe the same id
+              prev ? [...prev, data.payload] : [data.payload]
+            );
+          }
+          console.log("New message:", data.payload);
           setChats((prevChats) =>
             prevChats.map((c) => {
               if (c.id == data.payload.sender_id) {
@@ -263,6 +269,10 @@ export function MessagesPage({
           })
         );
         break;
+      case "new-chat":
+        setChats((prevChats) => [...prevChats, data.payload.user]);
+        break;
+
       default:
         break;
     }
