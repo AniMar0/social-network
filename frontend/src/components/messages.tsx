@@ -241,35 +241,28 @@ export function MessagesPage({
           setMessages((prev) =>
             prev.filter((msg) => msg.id !== data.payload.old_message_id)
           );
-        } else {
-          console.log("chat 1", data);
-          setChats((prevChats) =>
-            prevChats.map((c) => {
-              if (
-                c.id == data.payload.chat_id &&
-                c.lastMessageId == data.payload.old_message_id
-              ) {
-                console.log("chat 2/1", c);
-                console.log("chat 2", c.unreadCount);
-                return {
-                  ...c,
-                  unreadCount: c.unreadCount == 0 ? 0 : c.unreadCount - 1,
-                  lastMessage: data.payload.new_message.content,
-                  lastMessageType: data.payload.new_message.type,
-                  lastMessageId: data.payload.new_message.id,
-                  timestamp: data.payload.new_message.timestamp,
-                  sender_id: data.payload.new_message.sender_id,
-                };
-                console.log("chat 3", c.unreadCount);
-                return c;
-              } else {
-                return c;
-              }
-            })
-          );
         }
+        setChats((prevChats) =>
+          prevChats.map((c) => {
+            if (
+              c.id == data.payload.chat_id &&
+              c.lastMessageId == data.payload.old_message_id
+            ) {
+              return {
+                ...c,
+                unreadCount: c.unreadCount == 0 ? 0 : c.unreadCount - 1,
+                lastMessage: data.payload.new_message.content,
+                lastMessageType: data.payload.new_message.type,
+                lastMessageId: data.payload.new_message.id,
+                timestamp: data.payload.new_message.timestamp,
+                sender_id: data.payload.new_message.sender_id,
+              };
+            } else {
+              return c;
+            }
+          })
+        );
         break;
-
       default:
         break;
     }
