@@ -44,6 +44,8 @@ interface Chat {
   avatar: string;
   lastMessage: string;
   lastMessageId: string;
+  lastMessageType: string;
+  sender_id: number;
   timestamp: string;
   unreadCount: number;
   isVerified?: boolean;
@@ -178,18 +180,26 @@ export function MessagesPage({
             prev ? [...prev, data.payload] : [data.payload]
           );
         } else {
+          console.log("chat", data.payload);
           setChats((prevChats) =>
-            prevChats.map((c) =>
-              c.id == data.payload.chat_id
-                ? {
-                    ...c,
-                    unreadCount: c.unreadCount + 1,
-                    lastMessage: data.payload.content,
-                    lastMessageType: data.payload.type,
-                    timestamp: data.payload.timestamp,
-                  }
-                : c
-            )
+            prevChats.map((c) => {
+              if (c.id == data.payload.sender_id) {
+                console.log("chat 2", c);
+                c = {
+                  ...c,
+                  unreadCount: c.unreadCount + 1,
+                  lastMessage: data.payload.content,
+                  lastMessageType: data.payload.type,
+                  lastMessageId: data.payload.id,
+                  timestamp: data.payload.timestamp,
+                  sender_id: data.payload.sender_id,
+                };
+                console.log("chat 3", c);
+                return c;
+              } else {
+                return c;
+              }
+            })
           );
         }
         break;
@@ -226,6 +236,7 @@ export function MessagesPage({
                     unreadCount: Math.max(0, c.unreadCount - 1),
                     lastMessage: data.payload.message.content,
                     lastMessageType: data.payload.message.type,
+                    lastMessageId: data.payload.message.id,
                     timestamp: data.payload.message.timestamp,
                   }
                 : c
@@ -385,7 +396,6 @@ export function MessagesPage({
 
     const ws = wsRef.current;
     if (newMessage.length > 0) {
-
       setIsUserTyping(true);
       if (ws && ws.readyState === WebSocket.OPEN) {
         try {
@@ -450,11 +460,8 @@ export function MessagesPage({
   // Other user typing handlers (kept names, simplified)
   // - use typingRef for debounce
   // ===========================
-  let counter = 0;
   const handleOtherUserTypingStart = (chatId: string, userId: string) => {
     if (onUserProfileClick && chatId === onUserProfileClick) {
-      counter++;
-      console.log("Other user is typing :" + counter);
       setIsOtherUserTyping(true);
       setIsTyping(true);
 

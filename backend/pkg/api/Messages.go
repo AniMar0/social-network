@@ -365,6 +365,7 @@ func (S *Server) GetUsers(w http.ResponseWriter, currentUserID int) ([]Chat, err
 
 			if lastMessageId.Valid {
 				c.LastMessageID = lastMessageId.String
+				//fmt.Println("Last message:", c.LastMessageID)
 			}
 
 			chats = append(chats, c)
