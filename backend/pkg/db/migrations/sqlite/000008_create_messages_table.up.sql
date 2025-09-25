@@ -1,5 +1,6 @@
 CREATE TABLE messages (
-    id TEXT NOT NULL PRIMARY KEY,
+    backend_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    id TEXT NOT NULL UNIQUE,
     chat_id INTEGER NOT NULL,
     sender_id INTEGER NOT NULL,
     content TEXT,

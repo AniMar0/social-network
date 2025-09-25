@@ -254,7 +254,7 @@ func (S *Server) GetOtherUserID(currentUserID, chatID int) int {
 	var user1_id, user2_id int
 	err := S.db.QueryRow(query, chatID).Scan(&user1_id, &user2_id)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Get Other User ID Query Error : ", err)
 		return 0
 	}
 	if user1_id == currentUserID {
@@ -465,13 +465,13 @@ func (S *Server) GetLastMessageID(chatID string) (string, error) {
 func (S *Server) GetLastMessageContent(chatID string) (Message, error) {
 	var message Message
 	var timestamp sql.NullString
-	query := `SELECT id, sender_id, is_read, read_at, content, type,created_at FROM messages WHERE chat_id = ? ORDER BY created_at DESC LIMIT 1`
+	query := `SELECT id, sender_id, is_read, read_at, content, type,created_at FROM messages WHERE chat_id = ? ORDER BY backend_id DESC LIMIT 1`
 	err := S.db.QueryRow(query, chatID).Scan(&message.ID, &message.SenderID, &message.IsRead, &timestamp, &message.Content, &message.Type, &message.Timestamp)
 	if timestamp.Valid {
 		message.Timestamp = timestamp.String
 	}
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Get Last Message Content Error : ", err)
 		return Message{}, err
 	}
 	return message, nil
@@ -511,8 +511,10 @@ func (S *Server) UnsendMessageHandler(w http.ResponseWriter, r *http.Request) {
 
 	message, err := S.GetLastMessageContent(chatID)
 	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
+		if err != sql.ErrNoRows {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
 	}
 
 	if len(S.Users[currentUserID]) > 1 {
@@ -524,8 +526,8 @@ func (S *Server) UnsendMessageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	S.PushChatDelete("", resiverID, map[string]interface{}{
-		"message":    message,
-		"message_id": messageID,
+		"new_message":    message,
+		"old_message_id": messageID,
 		"chat_id":    chatID,
 	})
 

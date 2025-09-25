@@ -179,12 +179,27 @@ export function MessagesPage({
           setMessages((prev) =>
             prev ? [...prev, data.payload] : [data.payload]
           );
-        } else {
-          console.log("chat", data.payload);
           setChats((prevChats) =>
             prevChats.map((c) => {
               if (c.id == data.payload.sender_id) {
-                console.log("chat 2", c);
+                c = {
+                  ...c,
+                  lastMessage: data.payload.content,
+                  lastMessageType: data.payload.type,
+                  lastMessageId: data.payload.id,
+                  timestamp: data.payload.timestamp,
+                  sender_id: data.payload.sender_id,
+                };
+                return c;
+              } else {
+                return c;
+              }
+            })
+          );
+        } else {
+          setChats((prevChats) =>
+            prevChats.map((c) => {
+              if (c.id == data.payload.sender_id) {
                 c = {
                   ...c,
                   unreadCount: c.unreadCount + 1,
@@ -194,7 +209,6 @@ export function MessagesPage({
                   timestamp: data.payload.timestamp,
                   sender_id: data.payload.sender_id,
                 };
-                console.log("chat 3", c);
                 return c;
               } else {
                 return c;
@@ -225,22 +239,33 @@ export function MessagesPage({
       case "chat-delete":
         if (onUserProfileClick && onUserProfileClick == data.payload.chat_id) {
           setMessages((prev) =>
-            prev.filter((msg) => msg.id !== data.payload.message_id)
+            prev.filter((msg) => msg.id !== data.payload.old_message_id)
           );
         } else {
+          console.log("chat 1", data);
           setChats((prevChats) =>
-            prevChats.map((c) =>
-              c.lastMessageId == data.payload.message.id
-                ? {
-                    ...c,
-                    unreadCount: Math.max(0, c.unreadCount - 1),
-                    lastMessage: data.payload.message.content,
-                    lastMessageType: data.payload.message.type,
-                    lastMessageId: data.payload.message.id,
-                    timestamp: data.payload.message.timestamp,
-                  }
-                : c
-            )
+            prevChats.map((c) => {
+              if (
+                c.id == data.payload.chat_id &&
+                c.lastMessageId == data.payload.old_message_id
+              ) {
+                console.log("chat 2/1", c);
+                console.log("chat 2", c.unreadCount);
+                return {
+                  ...c,
+                  unreadCount: c.unreadCount == 0 ? 0 : c.unreadCount - 1,
+                  lastMessage: data.payload.new_message.content,
+                  lastMessageType: data.payload.new_message.type,
+                  lastMessageId: data.payload.new_message.id,
+                  timestamp: data.payload.new_message.timestamp,
+                  sender_id: data.payload.new_message.sender_id,
+                };
+                console.log("chat 3", c.unreadCount);
+                return c;
+              } else {
+                return c;
+              }
+            })
           );
         }
         break;
@@ -358,9 +383,9 @@ export function MessagesPage({
   };
 
   useEffect(() => {
-    if (messages.length > previousMessageCount) {
+    if (messages?.length > previousMessageCount) {
       scrollToBottom();
-      setPreviousMessageCount(messages.length);
+      setPreviousMessageCount(messages?.length);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages]);
@@ -368,7 +393,7 @@ export function MessagesPage({
   useEffect(() => {
     if (selectedChat) {
       setIsUserAtBottom(true);
-      setPreviousMessageCount(messages.length);
+      setPreviousMessageCount(messages?.length);
       setTimeout(() => scrollToBottom(true), 100);
 
       // Reset typing states when switching chats
