@@ -385,20 +385,18 @@ export function MessagesPage({
 
     const ws = wsRef.current;
     if (newMessage.length > 0) {
-      // send typing-start only once
-      if (!isUserTyping) {
-        setIsUserTyping(true);
-        if (ws && ws.readyState === WebSocket.OPEN) {
-          try {
-            ws.send(
-              JSON.stringify({
-                channel: "typing-start",
-                chat_id: onUserProfileClick,
-              })
-            );
-          } catch (err) {
-            console.error("Error sending typing-start:", err);
-          }
+
+      setIsUserTyping(true);
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(
+            JSON.stringify({
+              channel: "typing-start",
+              chat_id: onUserProfileClick,
+            })
+          );
+        } catch (err) {
+          console.error("Error sending typing-start:", err);
         }
       }
 
@@ -452,8 +450,11 @@ export function MessagesPage({
   // Other user typing handlers (kept names, simplified)
   // - use typingRef for debounce
   // ===========================
+  let counter = 0;
   const handleOtherUserTypingStart = (chatId: string, userId: string) => {
     if (onUserProfileClick && chatId === onUserProfileClick) {
+      counter++;
+      console.log("Other user is typing :" + counter);
       setIsOtherUserTyping(true);
       setIsTyping(true);
 
