@@ -265,113 +265,136 @@ func (S *Server) GetOtherUserID(currentUserID, chatID int) int {
 }
 
 func (S *Server) GetUsers(w http.ResponseWriter, currentUserID int) ([]Chat, error) {
-	chatIDs, err := S.GetAllChatIDs(currentUserID)
+	query := `
+		WITH latest_messages AS (
+		    SELECT 
+		        c.id AS chat_id,
+		        CASE 
+		            WHEN m.sender_id = ? THEN 
+		                CASE WHEN c.user1_id = ? THEN c.user2_id ELSE c.user1_id END
+		            ELSE m.sender_id
+		        END AS other_user_id,
+		        MAX(m.backend_id) AS last_backend_id
+		    FROM chats c
+		    JOIN messages m ON m.chat_id = c.id
+		    WHERE c.user1_id = ? OR c.user2_id = ?
+		    GROUP BY c.id
+		),
+		cte_ordered_users AS (
+		    SELECT 
+		        u.id,
+		        u.nickname,
+		        u.first_name || ' ' || u.last_name AS name,
+		        u.avatar,
+		        m.id AS last_message_id,
+		        m.sender_id,
+		        m.content AS last_message,
+		        m.type AS lastMessageType,
+		        m.created_at AS lastInteraction,
+		        lm.last_backend_id,
+		        lm.chat_id,
+		        (
+		        	SELECT COUNT(*) 
+		        	FROM messages 
+		        	WHERE chat_id = lm.chat_id
+		        	  AND is_read = 0
+		        	  AND sender_id != ?
+		        ) AS unread_count
+		    FROM latest_messages lm
+		    JOIN users u ON u.id = lm.other_user_id
+		    LEFT JOIN messages m 
+		        ON m.backend_id = lm.last_backend_id
+		)
+		SELECT 
+		    id,
+		    nickname,
+		    name,
+		    avatar,
+		    last_message_id,
+		    sender_id,
+		    last_message,
+		    lastMessageType,
+		    lastInteraction,
+		    unread_count,
+		    last_backend_id,
+		    chat_id
+		FROM cte_ordered_users
+		ORDER BY last_backend_id DESC;
+	`
+
+	rows, err := S.db.Query(query,
+		currentUserID, // 1st ?
+		currentUserID, // 2nd ?
+		currentUserID, // 3rd ?
+		currentUserID, // 4th ?
+		currentUserID, // unread_count
+	)
 	if err != nil {
 		return nil, err
 	}
-	var chats []Chat
-	for _, chatID := range chatIDs {
-		//otherUserID := S.GetOtherUserID(currentUserID, chatID)
-		rows, err := S.db.Query(`
-        SELECT 
-			u.id,
-    		u.first_name || ' ' || u.last_name AS name,
-    		u.nickname,
-			m.id,
-    		u.avatar,
-    		m.sender_id,
-    		m.created_at AS timestamp,
-			m.content AS last_message,
-			m.type AS lastMessageType,
-    	(
-        SELECT COUNT(*) 
-		FROM messages 
-		WHERE chat_id = c.id 
-			AND is_read = 0 
-			AND sender_id != ?
-    	) AS unread_count
-		FROM chats c
-		JOIN users u ON (u.id = c.user1_id OR u.id = c.user2_id) AND u.id != ?
-		LEFT JOIN messages m ON m.id = (
-		SELECT id 
-    	FROM messages 
-		WHERE chat_id = c.id 
-    	ORDER BY created_at DESC 
-    	LIMIT 1
-		)
-		WHERE c.id = ?;
+	defer rows.Close()
 
-    `, currentUserID, currentUserID, chatID, chatID)
-		if err != nil {
+	var chats []Chat
+	for rows.Next() {
+		var c Chat
+		var nickname sql.NullString
+		var lastMessage sql.NullString
+		var lastMessageID sql.NullString
+		var senderID sql.NullInt64
+		var lastMessageType sql.NullString
+		var timestamp sql.NullString
+		var lastBackendID sql.NullInt64
+		var chatID int
+
+		if err := rows.Scan(
+			&c.ID,
+			&nickname,
+			&c.Name,
+			&c.Avatar,
+			&lastMessageID,
+			&senderID,
+			&lastMessage,
+			&lastMessageType,
+			&timestamp,
+			&c.UnreadCount,
+			&lastBackendID,
+			&chatID,
+		); err != nil {
 			return nil, err
 		}
-		defer rows.Close()
-		for rows.Next() {
-			var c Chat
-			var lastMessage sql.NullString
-			var lastMessageId sql.NullString
-			var timestamp sql.NullString
-			var nickname sql.NullString
-			var senderID sql.NullString
-			var lastMessageType sql.NullString
-			if err := rows.Scan(
-				&c.ID,
-				&c.Name,
-				&nickname,
-				&lastMessageId,
-				&c.Avatar,
-				&senderID,
-				&timestamp,
-				&lastMessage,
-				&lastMessageType,
-				&c.UnreadCount,
-			); err != nil {
-				return nil, err
-			}
-			connections := S.GetConnections(tools.StringToInt(c.ID))
 
-			if len(connections) > 0 {
-				online := true
-				c.IsOnline = &online
-			}
-
-			c.UserID = currentUserID
-			c.ID = tools.IntToString(chatID)
-
-			if nickname.Valid {
-				c.Username = nickname.String
-			} else {
-				c.Username = ""
-			}
-
-			if senderID.Valid {
-				c.SenderID = tools.StringToInt(senderID.String)
-			}
-
-			if lastMessage.Valid {
-				c.LastMessage = lastMessage.String
-			} else {
-				c.LastMessage = ""
-			}
-
-			if lastMessageType.Valid {
-				c.LastMessageType = lastMessageType.String
-			}
-
-			if timestamp.Valid {
-				c.Timestamp = timestamp.String
-			} else {
-				c.Timestamp = ""
-			}
-
-			if lastMessageId.Valid {
-				c.LastMessageID = lastMessageId.String
-				//fmt.Println("Last message:", c.LastMessageID)
-			}
-
-			chats = append(chats, c)
+		// Online check
+		connections := S.GetConnections(tools.StringToInt(c.ID))
+		if len(connections) > 0 {
+			online := true
+			c.IsOnline = &online
 		}
+
+		c.UserID = currentUserID
+		c.ID = tools.IntToString(chatID)
+
+		if nickname.Valid {
+			c.Username = nickname.String
+		}
+		if senderID.Valid {
+			c.SenderID = int(senderID.Int64)
+		}
+		if lastMessage.Valid {
+			c.LastMessage = lastMessage.String
+		}
+		if lastMessageType.Valid {
+			c.LastMessageType = lastMessageType.String
+		}
+		if timestamp.Valid {
+			c.Timestamp = timestamp.String
+		}
+		if lastMessageID.Valid {
+			c.LastMessageID = lastMessageID.String
+		}
+
+		chats = append(chats, c)
 	}
+
 	return chats, nil
 }
 

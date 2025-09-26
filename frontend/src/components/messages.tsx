@@ -656,6 +656,25 @@ export function MessagesPage({
         body: JSON.stringify(message),
       });
       if (!response.ok) throw new Error("Failed to send message");
+      const data = await response.json();
+      console.log("Image uploaded successfully:", data);
+      setChats((prevChats) =>
+        prevChats.map((c) => {
+          if (c.id == data.chat_id) {
+            c = {
+              ...c,
+              lastMessage: data.content,
+              lastMessageType: data.type,
+              lastMessageId: data.id,
+              timestamp: data.timestamp,
+              sender_id: data.sender_id,
+            };
+            return c;
+          } else {
+            return c;
+          }
+        })
+      );
     } catch (error) {
       console.error("Error sending message:", error);
       setMessages((prev) => prev.filter((msg) => msg.id !== message.id));
@@ -689,7 +708,9 @@ export function MessagesPage({
         }
         return res.json();
       })
-      .then((data) => (avatarUrl = data.messageImageUrl))
+      .then((data) => {
+        avatarUrl = data.messageImageUrl;
+      })
       .catch((err) => {
         console.error(err);
       });
@@ -713,6 +734,25 @@ export function MessagesPage({
         body: JSON.stringify(message),
       });
       if (!response.ok) throw new Error("Failed to send message");
+      const data = await response.json();
+      console.log("Image uploaded successfully:", data);
+      setChats((prevChats) =>
+        prevChats.map((c) => {
+          if (c.id == data.chat_id) {
+            c = {
+              ...c,
+              lastMessage: data.content,
+              lastMessageType: data.type,
+              lastMessageId: data.id,
+              timestamp: data.timestamp,
+              sender_id: data.sender_id,
+            };
+            return c;
+          } else {
+            return c;
+          }
+        })
+      );
     } catch (error) {
       console.error("Error sending message:", error);
       setMessages((prev) => prev.filter((msg) => msg.id !== message.id));
@@ -801,7 +841,11 @@ export function MessagesPage({
       case true:
         return (
           <span className="text-sm text-muted-foreground truncate">
-            {"You sent an " + messageType}
+            {messageType == "Message" ? (
+              <>{"You sent an " + messageType}</>
+            ) : (
+              <>{"You sent an " + message}</>
+            )}
           </span>
         );
       default:
