@@ -361,12 +361,6 @@ export function MessagesPage({
     }
   };
 
-  const filteredChats = (chats ?? []).filter(
-    (chat) =>
-      chat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      chat.username.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
   // scroll helpers (kept)
   const scrollToBottom = (force = false) => {
     if (force || isUserAtBottom) {
@@ -391,6 +385,19 @@ export function MessagesPage({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages]);
+
+  // =========================== // Sorted chats by last message // ===========================
+  const filteredAndSortedChats = (chats ?? [])
+    .filter(
+      (chat) =>
+        chat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        chat.username.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .sort((a, b) => {
+      const aTime = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+      const bTime = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+      return bTime - aTime; // newest first
+    });
 
   useEffect(() => {
     if (selectedChat) {
@@ -896,7 +903,7 @@ export function MessagesPage({
           </div>
 
           <div className="space-y-2">
-            {filteredChats.map((chat) => (
+            {filteredAndSortedChats.map((chat) => (
               <div
                 key={chat.id}
                 onClick={() => {
