@@ -503,8 +503,8 @@ func (S *Server) GetLastMessageContent(chatID string) (Message, error) {
 
 func (S *Server) GetMessageContent(messageID string) Message {
 	var message Message
-	query := `SELECT id, content FROM messages WHERE id = ?`
-	S.db.QueryRow(query, messageID).Scan(&message.ID, &message.Content)
+	query := `SELECT id, content, type FROM messages WHERE id = ?`
+	S.db.QueryRow(query, messageID).Scan(&message.ID, &message.Content, &message.Type)
 	return message
 }
 
@@ -564,6 +564,19 @@ func (S *Server) UnsendMessageHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (S *Server) UnsendMessage(messageID string) error {
+	// get message content
+	message := S.GetMessageContent(messageID)
+
+	if message.Type == "image" {
+		// Remove the image file from uploads/Messages folder if it exists and is not empty
+		if message.Content != "" {
+			messageImage := fmt.Sprintf(".%s", message.Content)
+			if err := os.Remove(messageImage); err != nil && !os.IsNotExist(err) {
+				return err
+			}
+		}
+	}
+
 	_, err := S.db.Exec(`DELETE FROM messages WHERE id = ?`, messageID)
 	if err != nil {
 		fmt.Println(err)

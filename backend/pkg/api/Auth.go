@@ -61,7 +61,6 @@ func (S *Server) MakeToken(Writer http.ResponseWriter, id int) {
 		Secure:   false,
 	})
 }
-
 func (S *Server) CheckSession(r *http.Request) (int, string, error) {
 
 	cookie, err := r.Cookie("session_token")
@@ -80,7 +79,6 @@ func (S *Server) CheckSession(r *http.Request) (int, string, error) {
 	}
 	return userID, sessionID, nil
 }
-
 func (S *Server) SessionMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		username, _, err := S.CheckSession(r)
