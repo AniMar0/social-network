@@ -178,16 +178,15 @@ export function MessagesPage({
               })
             );
           }
-          if (messages[messages.length - 1]?.id != data.payload.id) {
-            setMessages((prev) =>
-              //skipe the prev withe the same id
-              prev ? [...prev, data.payload] : [data.payload]
-            );
-          }
-          console.log("New message:", data.payload);
+
+          setMessages((prev) =>
+            //skipe the prev withe the same id
+            prev ? [...prev, data.payload] : [data.payload]
+          );
+
           setChats((prevChats) =>
             prevChats.map((c) => {
-              if (c.id == data.payload.sender_id) {
+              if (c.id == data.payload.chat_id) {
                 c = {
                   ...c,
                   lastMessage: data.payload.content,
@@ -205,7 +204,7 @@ export function MessagesPage({
         } else {
           setChats((prevChats) =>
             prevChats.map((c) => {
-              if (c.id == data.payload.sender_id) {
+              if (c.id == data.payload.chat_id) {
                 c = {
                   ...c,
                   unreadCount: c.unreadCount + 1,
@@ -575,6 +574,24 @@ export function MessagesPage({
         if (replyingTo) {
           // keep behavior
         }
+        const data = await response.json();
+        setChats((prevChats) =>
+          prevChats.map((c) => {
+            if (c.id == data.chat_id) {
+              c = {
+                ...c,
+                lastMessage: data.content,
+                lastMessageType: data.type,
+                lastMessageId: data.id,
+                timestamp: data.timestamp,
+                sender_id: data.sender_id,
+              };
+              return c;
+            } else {
+              return c;
+            }
+          })
+        );
       } catch (error) {
         console.error("Error sending message:", error);
         setMessages((prev) => prev.filter((msg) => msg.id !== tempId));
@@ -712,6 +729,24 @@ export function MessagesPage({
       });
       if (!response.ok) throw new Error("Failed to unsend message");
       setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
+      const data = await response.json();
+      console.log("Unsent message:", data);
+      setChats((prevChats) =>
+        prevChats.map((c) => {
+          if (c.id == data.chat_id && c.lastMessageId == messageId) {
+            return {
+              ...c,
+              lastMessage: data.content,
+              lastMessageType: data.type,
+              lastMessageId: data.id,
+              timestamp: data.timestamp,
+              sender_id: data.sender_id,
+            };
+          } else {
+            return c;
+          }
+        })
+      );
     } catch (error) {
       console.error("Error unsending message:", error);
     }

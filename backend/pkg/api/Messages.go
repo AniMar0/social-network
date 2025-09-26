@@ -132,11 +132,15 @@ func (S *Server) SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 	resiverID := S.GetOtherUserID(currentUserID, message.ChatID)
 	message.SenderID = currentUserID
 
-	message.IsOwn = true
-	S.PushMessage(SessionID, currentUserID, message)
+	if len(S.Users[currentUserID]) > 1 {
+		message.IsOwn = true
+		S.PushMessage(SessionID, currentUserID, message)
+	}
 
-	message.IsOwn = false
-	S.PushMessage("", resiverID, message)
+	if S.Users[resiverID] != nil {
+		message.IsOwn = false
+		S.PushMessage("", resiverID, message)
+	}
 
 	message.IsOwn = true
 	w.Header().Set("Content-Type", "application/json")
@@ -514,6 +518,8 @@ func (S *Server) UnsendMessageHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	message.ChatID = tools.StringToInt(chatID)
+
 	if len(S.Users[currentUserID]) > 1 {
 		S.PushChatDelete(sessionID, currentUserID, map[string]interface{}{
 			"new_message":    message,
@@ -530,6 +536,8 @@ func (S *Server) UnsendMessageHandler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(message)
 }
 
 func (S *Server) UnsendMessage(messageID string) error {
