@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
 import { ProfileSettings } from "./account-settings";
 import type { UserData } from "./account-settings";
 import { SidebarNavigation } from "./sidebar";
@@ -19,9 +20,28 @@ import {
   Users,
   MessageSquare,
   Lock,
+  Smile,
+  ImagePlay,
+  Send,
 } from "lucide-react";
 import { authUtils } from "@/lib/navigation";
 import { useNotificationCount } from "@/lib/notifications";
+import EmojiPicker, { Theme } from "emoji-picker-react";
+import GifPicker from "gif-picker-react";
+
+interface Comment {
+  id: string;
+  author: {
+    name: string;
+    username: string;
+    avatar: string;
+  };
+  content: string;
+  createdAt: string;
+  likes: number;
+  isLiked: boolean;
+  replies?: Comment[];
+}
 
 // Post interface for user posts
 export interface Post {
@@ -32,6 +52,7 @@ export interface Post {
   likes: number; // Number of likes
   comments: number; // Number of comments
   isLiked: boolean; // If current user liked this post
+  commentsList?: Comment[];
 }
 
 // Props for UserProfile component
@@ -76,6 +97,13 @@ function UserProfile({
   const [messageDialogOpen, setMessageDialogOpen] = useState(
     userData.isfollowing || isFollowing || userData.isfollower || isFollower
   );
+
+  // Comment-related states
+  const [showComments, setShowComments] = useState<{[key: string]: boolean}>({});
+  const [newComment, setNewComment] = useState<{[key: string]: string}>({});
+  const [replyingTo, setReplyingTo] = useState<{ [key: string]: string | null }>({});
+  const [showEmojiPicker, setShowEmojiPicker] = useState<{[key: string]: boolean}>({});
+  const [showGifPicker, setShowGifPicker] = useState<{[key: string]: boolean}>({});
 
   // Called when profile settings are saved
   const handleProfileUpdate = (updatedData: UserData) => {
@@ -189,6 +217,194 @@ function UserProfile({
     } catch (err) {
       console.error("Failed to like post", err);
     }
+  };
+
+  // Comment handling functions
+  const handleEmojiSelect = (emoji: string, postId: string) => {
+    setNewComment(prev => ({
+      ...prev,
+      [postId]: (prev[postId] || "") + emoji
+    }));
+    // Don't close emoji picker - let user add multiple emojis
+  };
+
+  const handleGifSelect = (gifUrl: string, postId: string) => {
+    // For comments, we'll treat GIFs as image content that gets submitted
+    setNewComment(prev => ({
+      ...prev,
+      [postId]: (prev[postId] || "") + `![GIF](${gifUrl})`
+    }));
+    setShowGifPicker(prev => ({
+      ...prev,
+      [postId]: false
+    }));
+  };
+
+  const toggleComments = (postId: string) => {
+    setShowComments(prev => ({
+      ...prev,
+      [postId]: !prev[postId]
+    }));
+  };
+
+  const handleCommentSubmit = async (postId: string, parentCommentId?: string) => {
+    const commentText = newComment[postId];
+    if (!commentText?.trim()) return;
+
+    try {
+      const res = await fetch(`http://localhost:8080/api/comment/${postId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ 
+          content: commentText,
+          parentCommentId: parentCommentId || null
+        }),
+      });
+
+      const data = await res.json();
+      
+      // Update the post with new comment
+      setPostsState((prevPosts) =>
+        prevPosts.map((post) =>
+          post.id === postId
+            ? {
+                ...post,
+                comments: post.comments + 1,
+                commentsList: data.comments || []
+              }
+            : post
+        )
+      );
+
+      // Clear the comment input
+      setNewComment(prev => ({
+        ...prev,
+        [postId]: ""
+      }));
+
+      // Clear reply state
+      setReplyingTo(prev => ({
+        ...prev,
+        [postId]: null
+      }));
+
+    } catch (err) {
+      console.error("Failed to post comment", err);
+    }
+  };
+
+  const handleCommentLike = async (commentId: string, postId: string) => {
+    try {
+      const res = await fetch(`http://localhost:8080/api/like-comment/${commentId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+
+      const data = await res.json();
+      
+      // Update the comment likes in the post
+      setPostsState((prevPosts) =>
+        prevPosts.map((post) => {
+          if (post.id === postId && post.commentsList) {
+            return {
+              ...post,
+              commentsList: updateCommentLikes(post.commentsList, commentId, data.liked)
+            };
+          }
+          return post;
+        })
+      );
+
+    } catch (err) {
+      console.error("Failed to like comment", err);
+    }
+  };
+
+  const updateCommentLikes = (comments: Comment[], commentId: string, isLiked: boolean): Comment[] => {
+    return comments.map(comment => {
+      if (comment.id === commentId) {
+        return {
+          ...comment,
+          isLiked,
+          likes: isLiked ? comment.likes + 1 : comment.likes - 1
+        };
+      }
+      if (comment.replies) {
+        return {
+          ...comment,
+          replies: updateCommentLikes(comment.replies, commentId, isLiked)
+        };
+      }
+      return comment;
+    });
+  };
+
+  const handleReply = (postId: string, commentId: string) => {
+    setReplyingTo(prev => ({
+      ...prev,
+      [postId]: commentId
+    }));
+  };
+
+  const renderComment = (comment: Comment, postId: string, isReply = false) => {
+    return (
+      <div key={comment.id} className={`${isReply ? 'ml-8 mt-2' : 'mt-4'} border-l-2 border-muted pl-4`}>
+        <div className="flex items-start gap-3">
+          <Avatar className="h-8 w-8">
+            <AvatarImage
+              src={`http://localhost:8080/${comment.author.avatar}`}
+              alt={comment.author.name}
+            />
+            <AvatarFallback className="bg-muted text-foreground text-xs">
+              {comment.author.name.split(" ").map((n) => n[0]).join("")}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1">
+            <div className="bg-muted rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="font-medium text-sm text-foreground">
+                  {comment.author.name}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {new Date(comment.createdAt).toLocaleString()}
+                </span>
+              </div>
+              <p className="text-sm text-foreground">{comment.content}</p>
+            </div>
+            <div className="flex items-center gap-4 mt-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleCommentLike(comment.id, postId)}
+                className={`flex items-center gap-1 h-6 px-2 ${
+                  comment.isLiked ? "text-red-500" : "text-muted-foreground"
+                }`}
+              >
+                <Heart className={`h-3 w-3 ${comment.isLiked ? "fill-current" : ""}`} />
+                <span className="text-xs">{comment.likes}</span>
+              </Button>
+              {!isReply && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleReply(postId, comment.id)}
+                  className="flex items-center gap-1 h-6 px-2 text-muted-foreground"
+                >
+                  <MessageCircle className="h-3 w-3" />
+                  <span className="text-xs">Reply</span>
+                </Button>
+              )}
+            </div>
+            {/* Render replies */}
+            {comment.replies && comment.replies.map(reply => 
+              renderComment(reply, postId, true)
+            )}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   // Can the current user view posts? (private logic)
@@ -479,7 +695,10 @@ function UserProfile({
                             {post.likes}
                           </button>
                           {/* Comment button */}
-                          <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
+                          <button 
+                            onClick={() => toggleComments(post.id)}
+                            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                          >
                             <MessageCircle className="h-4 w-4" />
                             {post.comments}
                           </button>
@@ -489,6 +708,133 @@ function UserProfile({
                             Share
                           </button> */}
                         </div>
+
+                        {/* Comments Section */}
+                        {showComments[post.id] && (
+                          <div className="mt-4 pt-4 border-t border-border">
+                            {/* Comment Input */}
+                            <div className="flex items-center gap-3 mb-4">
+                              <Avatar className="h-8 w-8">
+                                <AvatarImage src="/placeholder-avatar.jpg" alt="You" />
+                                <AvatarFallback className="bg-muted text-foreground text-xs">
+                                  You
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 flex items-center gap-2">
+                                <Input
+                                  placeholder={
+                                    replyingTo[post.id] 
+                                      ? "Write a reply..." 
+                                      : "Write a comment..."
+                                  }
+                                  value={newComment[post.id] || ""}
+                                  onChange={(e) => setNewComment(prev => ({
+                                    ...prev,
+                                    [post.id]: e.target.value
+                                  }))}
+                                  onKeyPress={(e) => {
+                                    if (e.key === "Enter") {
+                                      handleCommentSubmit(post.id, replyingTo[post.id] || undefined);
+                                    }
+                                  }}
+                                  className="flex-1"
+                                />
+                                <Button
+                                  size="sm"
+                                  variant={"outline"}
+                                  onClick={() => {
+                                    setShowGifPicker(prev => ({
+                                      ...prev,
+                                      [post.id]: !prev[post.id]
+                                    }));
+                                    setShowEmojiPicker(prev => ({
+                                      ...prev,
+                                      [post.id]: false
+                                    }));
+                                  }}
+                                  className="h-8 w-8 p-0 flex items-center justify-center cursor-pointer"
+                                >
+                                  <ImagePlay className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant={"outline"}
+                                  onClick={() => {
+                                    setShowEmojiPicker(prev => ({
+                                      ...prev,
+                                      [post.id]: !prev[post.id]
+                                    }));
+                                    setShowGifPicker(prev => ({
+                                      ...prev,
+                                      [post.id]: false
+                                    }));
+                                  }}
+                                  className="h-8 w-8 p-0 flex items-center justify-center cursor-pointer"
+                                >
+                                  <Smile className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleCommentSubmit(post.id, replyingTo[post.id] || undefined)}
+                                  disabled={!newComment[post.id]?.trim()}
+                                  className="h-8 w-8 p-0 flex items-center justify-center cursor-pointer"
+                                >
+                                  <Send className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+
+                            {/* Emoji & GIF Pickers for this post */}
+                            {showEmojiPicker[post.id] && (
+                              <div className="mb-4">
+                                <EmojiPicker
+                                  onEmojiClick={(e) => handleEmojiSelect(e.emoji, post.id)}
+                                  theme={Theme.DARK}
+                                />
+                              </div>
+                            )}
+                            {showGifPicker[post.id] && (
+                              <div className="mb-4">
+                                <GifPicker
+                                  onGifClick={(g) => handleGifSelect(g.url, post.id)}
+                                  tenorApiKey="AIzaSyB78CUkLJjdlA67853bVqpcwjJaywRAlaQ"
+                                  categoryHeight={100}
+                                  theme={Theme.DARK}
+                                />
+                              </div>
+                            )}
+
+                            {/* Cancel Reply Button */}
+                            {replyingTo[post.id] && (
+                              <div className="mb-3">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setReplyingTo(prev => ({
+                                    ...prev,
+                                    [post.id]: null
+                                  }))}
+                                  className="text-xs"
+                                >
+                                  Cancel Reply
+                                </Button>
+                              </div>
+                            )}
+
+                            {/* Comments List */}
+                            <div className="space-y-2">
+                              {post.commentsList && post.commentsList.length > 0 ? (
+                                post.commentsList.map(comment => 
+                                  renderComment(comment, post.id)
+                                )
+                              ) : (
+                                <p className="text-sm text-muted-foreground text-center py-4">
+                                  No comments yet. Be the first to comment!
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>

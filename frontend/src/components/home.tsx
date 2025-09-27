@@ -107,10 +107,7 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
       ...prev,
       [postId]: (prev[postId] || "") + emoji
     }));
-    setShowEmojiPicker(prev => ({
-      ...prev,
-      [postId]: false
-    }));
+    // Don't close emoji picker - let user add multiple emojis
   };
 
   const handleGifSelect = (gifUrl: string, postId: string) => {

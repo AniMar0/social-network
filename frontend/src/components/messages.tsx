@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, ImagePlay, ImageIcon, Smile, Send } from "lucide-react";
+import { Search, ImagePlay, ImageIcon, Smile, Send, ArrowLeft } from "lucide-react";
 import { useNotificationCount } from "@/lib/notifications";
 import EmojiPicker, { Theme } from "emoji-picker-react";
 import GifPicker from "gif-picker-react";
@@ -639,7 +639,7 @@ export function MessagesPage({
 
   const handleEmojiSelect = (emoji: any) => {
     setNewMessage((prev) => prev + emoji);
-    setShowEmojiPicker(false);
+    // Don't close emoji picker - let user add multiple emojis
   };
 
   const handleGifSelect = async (gifUrl: string) => {
@@ -869,7 +869,8 @@ export function MessagesPage({
 
   // --- JSX kept largely the same, only minor adjustments to use new state names ---
   return (
-    <div className="flex min-h-screen bg-background lg:ml-64">
+    <div className="flex min-h-screen bg-background">
+      {/* Mobile/Desktop Sidebar Navigation */}
       <SidebarNavigation
         activeItem="messages"
         onNewPost={handleNewPost}
@@ -878,13 +879,18 @@ export function MessagesPage({
         onMobileMenuToggle={toggleMobileMenu}
       />
 
-      {/* Sidebar */}
-      <div className="w-80 border-r border-border bg-card lg:block hidden">
-        <div className="p-4 border-b border-border">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-xl font-bold text-foreground">Messages</h1>
-            <div className="flex items-center gap-2"></div>
-          </div>
+      <div className="flex flex-1 lg:ml-64">
+        {/* Messages Sidebar - Full width on mobile when no chat selected */}
+        <div className={`${
+          selectedChat 
+            ? 'hidden lg:block lg:w-80' 
+            : 'w-full lg:w-80'
+        } border-r border-border bg-card transition-all duration-300`}>
+          <div className="p-3 lg:p-4 border-b border-border">
+            <div className="flex items-center justify-between mb-3 lg:mb-4">
+              <h1 className="text-lg lg:text-xl font-bold text-foreground">Messages</h1>
+              <div className="flex items-center gap-2"></div>
+            </div>
 
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -897,8 +903,8 @@ export function MessagesPage({
           </div>
         </div>
 
-        <div className="p-4">
-          <div className="flex items-center gap-2 mb-4">
+        <div className="p-3 lg:p-4">
+          <div className="flex items-center gap-2 mb-3 lg:mb-4">
             <span className="font-medium text-foreground">Chat</span>
           </div>
 
@@ -907,15 +913,17 @@ export function MessagesPage({
               <div
                 key={chat.id}
                 onClick={() => {
-                  router.replace(`/messages/${chat.id}`);
+                  if (window.innerWidth >= 1024) {
+                    router.replace(`/messages/${chat.id}`);
+                  }
                   setSelectedChat(chat);
                   setSeenChat(chat.id);
                 }}
-                className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                className={`flex items-center gap-3 p-3 lg:p-3 rounded-lg cursor-pointer transition-colors ${
                   selectedChat?.id === chat.id
                     ? "bg-accent text-accent-foreground"
                     : "hover:bg-muted/50"
-                }`}
+                } active:bg-muted/70`}
               >
                 <div className="relative">
                   <Avatar className="h-10 w-10">
@@ -953,35 +961,47 @@ export function MessagesPage({
             ))}
           </div>
         </div>
-      </div>
+        </div>
 
-      {/* Chat Area */}
-      {selectedChat ? (
-        <div className="flex-1 flex flex-col min-w-0">
-          {/* Header */}
-          <div className="p-4 border-b border-border bg-card">
+        {/* Chat Area - Full width on mobile when chat selected */}
+        {selectedChat ? (
+          <div className="w-full lg:flex-1 flex flex-col min-w-0">
+          {/* Header with back button for mobile */}
+          <div className="p-3 lg:p-4 border-b border-border bg-card">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 lg:gap-3">
+                {/* Back button for mobile */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedChat(null)}
+                  className="lg:hidden p-1"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
                 <Avatar className="h-8 w-8">
                   <AvatarImage
                     src={`http://localhost:8080/${selectedChat.avatar}`}
                     alt={selectedChat.name}
                   />
                   <AvatarFallback className="bg-muted text-foreground">
-                    {`http://localhost:8080/${selectedChat.avatar}`}
+                    {selectedChat.name.slice(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex items-center gap-1">
-                  <span className="font-medium text-foreground">
+                  <span className="font-medium text-foreground text-sm lg:text-base">
                     {selectedChat.name}
                   </span>
+                  {userOnlineStatus && (
+                    <div className="w-2 h-2 bg-green-500 rounded-full" />
+                  )}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Profile */}
-          <div className="p-6 border-b border-border bg-card text-center">
+          {/* Profile - Hide on mobile, show on desktop */}
+          <div className="p-6 border-b border-border bg-card text-center hidden lg:block">
             <div className="relative inline-block">
               <Avatar className="h-16 w-16 mx-auto mb-3">
                 <AvatarImage
@@ -1018,7 +1038,7 @@ export function MessagesPage({
           <div
             ref={messagesContainerRef}
             onScroll={checkIfAtBottom}
-            className="flex-1 p-4 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+            className="flex-1 p-2 lg:p-4 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
           >
             {messagesLoading ? (
               <div className="flex items-center justify-center h-full">
@@ -1040,7 +1060,7 @@ export function MessagesPage({
                       }`}
                     >
                       <div
-                        className={`max-w-xs lg:max-w-md ${
+                        className={`max-w-[280px] sm:max-w-xs lg:max-w-md ${
                           message.isOwn ? "order-2" : "order-1"
                         }`}
                       >
@@ -1049,7 +1069,7 @@ export function MessagesPage({
                             <div
                               className={`${
                                 message.isOwn ? "ml-auto" : "mr-auto"
-                              } max-w-xs lg:max-w-md`}
+                              } max-w-[280px] sm:max-w-xs lg:max-w-md`}
                             >
                               {message.replyTo && (
                                 <div
@@ -1076,7 +1096,7 @@ export function MessagesPage({
 
                               {message.type === "emoji" ? (
                                 <div
-                                  className={`text-6xl cursor-pointer ${
+                                  className={`text-4xl sm:text-6xl cursor-pointer ${
                                     message.replyTo
                                       ? "rounded-b-sm"
                                       : "rounded-sm"
@@ -1086,7 +1106,7 @@ export function MessagesPage({
                                 </div>
                               ) : message.type === "gif" ? (
                                 <div
-                                  className={`overflow-hidden max-w-xs cursor-pointer ${
+                                  className={`overflow-hidden max-w-[250px] sm:max-w-xs cursor-pointer ${
                                     message.replyTo
                                       ? "rounded-b-sm"
                                       : "rounded-sm"
@@ -1100,7 +1120,7 @@ export function MessagesPage({
                                 </div>
                               ) : message.type === "image" ? (
                                 <div
-                                  className={`overflow-hidden max-w-xs cursor-pointer ${
+                                  className={`overflow-hidden max-w-[250px] sm:max-w-xs cursor-pointer ${
                                     message.replyTo
                                       ? "rounded-b-sm"
                                       : "rounded-sm"
@@ -1117,7 +1137,7 @@ export function MessagesPage({
                                 </div>
                               ) : (
                                 <div
-                                  className={`px-4 py-2 cursor-pointer ${
+                                  className={`px-3 py-2 sm:px-4 sm:py-2 cursor-pointer text-sm sm:text-base ${
                                     message.replyTo
                                       ? "rounded-b-sm"
                                       : "rounded-sm"
@@ -1170,51 +1190,58 @@ export function MessagesPage({
           </div>
 
           {showEmojiPicker && (
-            <EmojiPicker
-              onEmojiClick={(e) => handleEmojiSelect(e.emoji)}
-              theme={Theme.DARK}
-            />
+            <div className="p-2 lg:p-0">
+              <EmojiPicker
+                onEmojiClick={(e) => handleEmojiSelect(e.emoji)}
+                theme={Theme.DARK}
+                width="100%"
+                height={300}
+              />
+            </div>
           )}
           {showGifPicker && (
-            <GifPicker
-              onGifClick={(g) => handleGifSelect(g.url)}
-              tenorApiKey="AIzaSyB78CUkLJjdlA67853bVqpcwjJaywRAlaQ"
-              categoryHeight={100}
-              theme={Theme.DARK}
-            />
+            <div className="p-2 lg:p-0">
+              <GifPicker
+                onGifClick={(g) => handleGifSelect(g.url)}
+                tenorApiKey="AIzaSyB78CUkLJjdlA67853bVqpcwjJaywRAlaQ"
+                categoryHeight={100}
+                theme={Theme.DARK}
+                width="100%"
+              />
+            </div>
           )}
 
           {/* Typing indicator (other user) */}
           {isTyping && selectedChat && (
-            <div className="px-4 py-2 animate-in fade-in duration-300">
-              <div className="flex items-center gap-3">
-                <Avatar className="h-8 w-8">
+            <div className="px-2 lg:px-4 py-2 animate-in fade-in duration-300">
+              <div className="flex items-center gap-2 lg:gap-3">
+                <Avatar className="h-6 w-6 lg:h-8 lg:w-8">
                   <AvatarImage
                     src={`http://localhost:8080/${selectedChat.avatar}`}
                     alt={selectedChat.name}
                   />
-                  <AvatarFallback className="bg-muted text-foreground">
+                  <AvatarFallback className="bg-muted text-foreground text-xs">
                     {selectedChat.name.slice(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 px-4 py-2 rounded-lg">
+                  <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 px-3 py-2 lg:px-4 lg:py-2 rounded-lg">
                     <div className="flex gap-1">
                       <div
-                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                        className="w-1.5 h-1.5 lg:w-2 lg:h-2 bg-gray-400 rounded-full animate-bounce"
                         style={{ animationDelay: "0ms" }}
                       ></div>
                       <div
-                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                        className="w-1.5 h-1.5 lg:w-2 lg:h-2 bg-gray-400 rounded-full animate-bounce"
                         style={{ animationDelay: "150ms" }}
                       ></div>
                       <div
-                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                        className="w-1.5 h-1.5 lg:w-2 lg:h-2 bg-gray-400 rounded-full animate-bounce"
                         style={{ animationDelay: "300ms" }}
                       ></div>
                     </div>
                   </div>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs text-muted-foreground hidden sm:block">
                     {selectedChat.name} is typing...
                   </span>
                 </div>
@@ -1224,14 +1251,14 @@ export function MessagesPage({
 
           {/* Reply Preview */}
           {replyingTo && (
-            <div className="p-3 mx-4 bg-muted/50 border-l-4 border-blue-500 rounded-r-lg">
+            <div className="p-3 mx-2 lg:mx-4 bg-muted/50 border-l-4 border-blue-500 rounded-r-lg">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <p className="text-xs text-muted-foreground mb-1">
                     Replying to{" "}
                     {replyingTo.isOwn ? "yourself" : selectedChat?.name}
                   </p>
-                  <p className="text-sm text-foreground truncate max-w-md">
+                  <p className="text-sm text-foreground truncate max-w-[200px] sm:max-w-md">
                     {replyingTo.type === "emoji"
                       ? replyingTo.content
                       : replyingTo.type === "image"
@@ -1254,8 +1281,8 @@ export function MessagesPage({
           )}
 
           {/* Input */}
-          <div className="p-4 border-t border-border bg-card">
-            <div className="flex items-center gap-2">
+          <div className="p-2 lg:p-4 border-t border-border bg-card">
+            <div className="flex items-center gap-1 lg:gap-2">
               <input
                 type="file"
                 ref={fileInputRef}
@@ -1268,6 +1295,7 @@ export function MessagesPage({
                 size="icon"
                 onClick={handleImageSelect}
                 title="Upload image"
+                className="h-8 w-8 lg:h-10 lg:w-10"
               >
                 <ImageIcon className="h-4 w-4" />
               </Button>
@@ -1278,10 +1306,10 @@ export function MessagesPage({
                   setShowGifPicker(!showGifPicker);
                   setShowEmojiPicker(false);
                 }}
-                className="text-white hover:text-foreground"
+                className="text-white hover:text-foreground h-8 w-8 lg:h-auto lg:w-auto p-1 lg:p-2"
                 title="Send GIF"
               >
-                <ImagePlay className="h-5 w-5" />
+                <ImagePlay className="h-4 w-4 lg:h-5 lg:w-5" />
               </Button>
               <Button
                 variant="ghost"
@@ -1290,10 +1318,10 @@ export function MessagesPage({
                   setShowEmojiPicker(!showEmojiPicker);
                   setShowGifPicker(false);
                 }}
-                className="text-white hover:text-foreground"
+                className="text-white hover:text-foreground h-8 w-8 lg:h-auto lg:w-auto p-1 lg:p-2"
                 title="Add emoji"
               >
-                <Smile className="h-5 w-5" />
+                <Smile className="h-4 w-4 lg:h-5 lg:w-5" />
               </Button>
               <div className="flex-1 relative">
                 <Input
@@ -1307,34 +1335,36 @@ export function MessagesPage({
                   value={newMessage}
                   onChange={(e) => handleInputChange(e.target.value)}
                   onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-                  className="pr-10"
+                  className="pr-10 text-sm lg:text-base"
                 />
                 <Button
                   onClick={handleSendMessage}
                   size="icon"
                   variant="ghost"
-                  className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8"
+                  className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 lg:h-8 lg:w-8"
                 >
-                  <Send className="h-4 w-4" />
+                  <Send className="h-3 w-3 lg:h-4 lg:w-4" />
                 </Button>
               </div>
             </div>
           </div>
-        </div>
-      ) : (
-        <div className="flex-1 flex flex-col min-w-0">
-          <div className="flex flex-1 items-center justify-center bg-muted/20">
-            <div className="text-center">
-              <h3 className="text-lg font-medium text-foreground mb-2">
-                Select a message
-              </h3>
-              <p className="text-muted-foreground">
-                Choose from your existing conversations or start a new one
-              </p>
+          </div>
+        ) : (
+          /* Empty state - show on desktop when no chat selected */
+          <div className="hidden lg:flex lg:flex-1 flex-col min-w-0">
+            <div className="flex flex-1 items-center justify-center bg-muted/20">
+              <div className="text-center p-4">
+                <h3 className="text-lg font-medium text-foreground mb-2">
+                  Select a message
+                </h3>
+                <p className="text-muted-foreground text-sm">
+                  Choose from your existing conversations or start a new one
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

@@ -30,6 +30,14 @@ import EmojiPicker, { Theme } from "emoji-picker-react";
 import GifPicker from "gif-picker-react";
 import { authUtils } from "@/lib/navigation";
 
+interface Follower {
+  id: string;
+  firstName: string;
+  lastName: string;
+  username: string;
+  avatar: string;
+}
+
 interface NewPostModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -40,6 +48,7 @@ interface PostData {
   content: string;
   image?: string;
   privacy: "public" | "almost-private" | "private";
+  selectedFollowers?: string[];
 }
 
 let postFile: File;
@@ -53,6 +62,9 @@ export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
   >("public");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showGifPicker, setShowGifPicker] = useState(false);
+  const [followers, setFollowers] = useState<Follower[]>([]);
+  const [selectedFollowers, setSelectedFollowers] = useState<string[]>([]);
+  const [showFollowerSelection, setShowFollowerSelection] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch current user
@@ -68,6 +80,52 @@ export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
     fetchCurrentUser();
   }, []);
 
+  // Fetch followers when component mounts Hna zid api dyal tjib followers dyalo bach ibano f lista ki ydir private f post 
+  useEffect(() => {
+    const fetchFollowers = async () => {
+      try {
+        const response = await fetch("http://localhost:8080/api/get-followers", {
+          credentials: "include",
+        });
+        const data = await response.json();
+        setFollowers(data || []);
+      } catch (err) {
+        console.error("Error fetching followers:", err);
+      }
+    };
+    fetchFollowers();
+  }, []);
+
+  // Handle privacy change to show/hide follower selection
+  const handlePrivacyChange = (newPrivacy: "public" | "almost-private" | "private") => {
+    setPrivacy(newPrivacy);
+    if (newPrivacy === "private") {
+      setShowFollowerSelection(true);
+    } else {
+      setShowFollowerSelection(false);
+      setSelectedFollowers([]);
+    }
+  };
+
+  // Toggle follower selection
+  const toggleFollowerSelection = (followerId: string) => {
+    setSelectedFollowers(prev => 
+      prev.includes(followerId)
+        ? prev.filter(id => id !== followerId)
+        : [...prev, followerId]
+    );
+  };
+
+  // Select all followers
+  const selectAllFollowers = () => {
+    setSelectedFollowers(followers.map(f => f.id));
+  };
+
+  // Deselect all followers
+  const deselectAllFollowers = () => {
+    setSelectedFollowers([]);
+  };
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -79,7 +137,7 @@ export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
 
   const handleEmojiSelect = (emoji: string) => {
     setContent((prev) => prev + emoji);
-    setShowEmojiPicker(false);
+    // Don't close emoji picker - let user add multiple emojis
   };
 
   const handleGifSelect = (gifUrl: string) => {
@@ -93,6 +151,8 @@ export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
     setPrivacy("public");
     setShowEmojiPicker(false);
     setShowGifPicker(false);
+    setSelectedFollowers([]);
+    setShowFollowerSelection(false);
     onClose();
   };
 
@@ -103,6 +163,7 @@ export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
       content: content.trim(),
       image: selectedImage || undefined,
       privacy,
+      selectedFollowers: privacy === "private" ? selectedFollowers : undefined,
     };
 
     if (postFile) {
@@ -163,7 +224,7 @@ export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
       case "almost-private":
         return "Followers - Only followers can see";
       case "private":
-        return "Private - Selected followers only";
+        return `Private - ${selectedFollowers.length > 0 ? `${selectedFollowers.length} selected followers` : 'Select followers to see this post'}`;
       default:
         return "Public - Everyone can see";
     }
@@ -306,7 +367,7 @@ export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
             <Select
               value={privacy}
               onValueChange={(v: "public" | "almost-private" | "private") =>
-                setPrivacy(v)
+                handlePrivacyChange(v)
               }
             >
               <SelectTrigger className="w-48 flex items-center gap-2">
@@ -325,6 +386,80 @@ export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
             {getPrivacyLabel(privacy)}
           </p>
 
+          {/* Follower Selection for Private Posts */}
+          {showFollowerSelection && (
+            <div className="border border-border rounded-lg p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="font-medium text-foreground">Select Followers</h4>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={selectAllFollowers}
+                    className="text-xs"
+                  >
+                    Select All
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={deselectAllFollowers}
+                    className="text-xs"
+                  >
+                    Clear All
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="text-xs text-muted-foreground">
+                {selectedFollowers.length} of {followers.length} followers selected
+              </div>
+
+              <div className="max-h-48 overflow-y-auto space-y-2">
+                {followers.length > 0 ? (
+                  followers.map((follower) => (
+                    <div
+                      key={follower.id}
+                      onClick={() => toggleFollowerSelection(follower.id)}
+                      className={`flex items-center gap-3 p-2 rounded-md cursor-pointer transition-colors ${
+                        selectedFollowers.includes(follower.id)
+                          ? "bg-primary/20 border border-primary/30"
+                          : "bg-muted/50 hover:bg-muted"
+                      }`}
+                    >
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage
+                          src={`http://localhost:8080/${follower.avatar}`}
+                          alt={`${follower.firstName} ${follower.lastName}`}
+                        />
+                        <AvatarFallback className="bg-muted text-foreground text-xs">
+                          {follower.firstName[0]}{follower.lastName[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-foreground">
+                          {follower.firstName} {follower.lastName}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          @{follower.username}
+                        </p>
+                      </div>
+                      <div className={`w-4 h-4 rounded-full border-2 ${
+                        selectedFollowers.includes(follower.id)
+                          ? "bg-primary border-primary"
+                          : "border-muted-foreground"
+                      }`} />
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No followers found
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Action Buttons */}
           <div className="flex justify-end gap-3 pt-4">
             <Button variant="outline" onClick={handleClose}>
@@ -332,7 +467,10 @@ export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
             </Button>
             <Button
               onClick={handlePost}
-              disabled={!content.trim() && !selectedImage}
+              disabled={
+                (!content.trim() && !selectedImage) || 
+                (privacy === "private" && selectedFollowers.length === 0)
+              }
               className="bg-primary hover:bg-primary/90"
             >
               Post
