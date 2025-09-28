@@ -76,6 +76,7 @@ func (S *Server) CreatePostHandler(w http.ResponseWriter, r *http.Request) {
         VALUES (?, ?, ?, ?)`,
 		userID, html.EscapeString(post.Content), post.Image, post.Privacy,
 	)
+
 	if err != nil {
 		fmt.Println("Error inserting post:", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -86,6 +87,21 @@ func (S *Server) CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 	post.ID = int(lastID)
 	post.UserID = userID
 	post.CreatedAt = time.Now().Format(time.RFC3339)
+
+	if post.Privacy == "private" {
+		for _, followerID := range post.SelectedFollowers {
+			_, err = S.db.Exec(`
+				INSERT INTO posts_private (post_id, user_id)
+				VALUES (?, ?)`,
+				post.ID, followerID,
+			)
+			if err != nil {
+				fmt.Println("Error inserting follower:", err)
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				return
+			}
+		}
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -236,7 +252,7 @@ func (S *Server) GetPostsHandler(w http.ResponseWriter, r *http.Request) {
 	var allPosts []Post
 	ids, err := S.GetAllUsers()
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("", err)
 		http.Error(w, "DB Error", http.StatusInternalServerError)
 		return
 	}
@@ -258,3 +274,4 @@ func (S *Server) GetPostsHandler(w http.ResponseWriter, r *http.Request) {
 		},
 	})
 }
+

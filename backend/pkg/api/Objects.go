@@ -45,17 +45,18 @@ type LoginUser struct {
 }
 
 type Post struct {
-	ID        int     `json:"id"`
-	UserID    int     `json:"-"`
-	Content   string  `json:"content"`
-	Image     *string `json:"image,omitempty"`
-	Privacy   string  `json:"privacy"`
-	CreatedAt string  `json:"createdAt"`
-	Likes     int     `json:"likes"`
-	Comments  int     `json:"comments"`
-	Shares    int     `json:"shares"`
-	IsLiked   bool    `json:"isLiked"`
-	Author    Author  `json:"author"`
+	ID                int      `json:"id"`
+	UserID            int      `json:"-"`
+	Content           string   `json:"content"`
+	Image             *string  `json:"image,omitempty"`
+	Privacy           string   `json:"privacy"`
+	CreatedAt         string   `json:"createdAt"`
+	Likes             int      `json:"likes"`
+	Comments          int      `json:"comments"`
+	Shares            int      `json:"shares"`
+	IsLiked           bool     `json:"isLiked"`
+	Author            Author   `json:"author"`
+	SelectedFollowers []string `json:"selectedFollowers,omitempty"`
 }
 
 type Notification struct {
