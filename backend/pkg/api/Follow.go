@@ -369,3 +369,50 @@ func (S *Server) IsFollower(r *http.Request, followingURL, followingID string) (
 
 	return isFollowing, nil
 }
+
+func (S *Server) GetFollowersHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	currentUser, _, _ := S.CheckSession(r)
+	followers, err := S.GetFollowers(currentUser)
+	if err != nil {
+		http.Error(w, "failed to get followers", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(followers)
+
+}
+
+func (S *Server) GetFollowers(User int) ([]Follower, error) {
+	var followers []Follower
+	query := `SELECT 
+    	u.id,
+    	u.first_name,
+    	u.last_name,
+    	u.nickname,
+    	u.avatar
+	FROM follows f
+	JOIN users u ON u.id = f.follower_id
+	WHERE f.following_id = ?;
+	`
+
+	rows, err := S.db.Query(query, User)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var follower Follower
+		if err := rows.Scan(&follower.ID, &follower.FirstName, &follower.LastName, &follower.Nickname, &follower.Avatar); err != nil {
+			return nil, err
+		}
+		followers = append(followers, follower)
+	}
+	return followers, nil
+}

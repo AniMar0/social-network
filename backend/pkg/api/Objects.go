@@ -111,3 +111,11 @@ type ReplyInfo struct {
 	Type    string `json:"type"`
 	IsOwn   bool   `json:"isOwn"`
 }
+
+type Follower struct {
+	ID        string `json:"id"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	Nickname  string `json:"username"`
+	Avatar    string `json:"avatar"`
+}
