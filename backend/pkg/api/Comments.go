@@ -38,11 +38,13 @@ func (S *Server) CreateCommentHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Println(commentID)
-
+	comment, err := S.GetCommentByID(commentID, r)
+	if err != nil {
+		http.Error(w, "Failed to get comment", http.StatusInternalServerError)
+		return
+	}
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{
-		"message": "Comment created successfully",
-	})
+	json.NewEncoder(w).Encode(comment)
 }
 
 func (S *Server) CreateComment(userID int, content string, postID int, parentCommentID *int) (int, error) {
@@ -59,7 +61,7 @@ func (S *Server) GetComments(postID int, r *http.Request) ([]Comment, error) {
 
 	rows, err := S.db.Query(`
 		SELECT 
-			c.id, c.content, c.created_at, c.parent_id,
+			c.id, c.content, c.created_at, c.parent_comment_id,
 			u.first_name || ' ' || u.last_name AS name, 
 			u.nickname, u.avatar,
 			(SELECT COUNT(*) FROM likes l WHERE l.comment_id = c.id) as like_count,
@@ -106,7 +108,7 @@ func (S *Server) GetComments(postID int, r *http.Request) ([]Comment, error) {
 		comment.Author.Name = authorName.String
 		comment.Author.Username = authorUsername.String
 		comment.Author.Avatar = authorAvatar.String
-		
+
 		comment.Replies = []Comment{}
 
 		commentsMap[tools.StringToInt(comment.ID)] = &comment
@@ -133,7 +135,7 @@ func (S *Server) GetCommentByID(commentID int, r *http.Request) (*Comment, error
 
 	row := S.db.QueryRow(`
 		SELECT 
-			c.id, c.content, c.created_at, c.parent_id,
+			c.id, c.content, c.created_at, c.parent_comment_id,
 			u.first_name || ' ' || u.last_name AS name, 
 			u.nickname, u.avatar,
 			(SELECT COUNT(*) FROM likes l WHERE l.comment_id = c.id) as like_count,
@@ -162,6 +164,7 @@ func (S *Server) GetCommentByID(commentID int, r *http.Request) (*Comment, error
 		if err == sql.ErrNoRows {
 			return nil, nil // comment not found
 		}
+		fmt.Println("get one comment error : ", err)
 		return nil, err
 	}
 
@@ -177,6 +180,6 @@ func (S *Server) GetCommentByID(commentID int, r *http.Request) (*Comment, error
 	comment.Author.Avatar = authorAvatar.String
 
 	comment.Replies = []Comment{}
-	
+
 	return &comment, nil
 }
