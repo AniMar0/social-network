@@ -214,7 +214,11 @@ func (S *Server) GetUserPosts(userID int, r *http.Request) ([]Post, error) {
 				continue
 			}
 		} else if post.Privacy == "private" {
-			if authorID != currentUserID {
+			UserAllowed, err := S.UserAllowedToSeePost(currentUserID, post.ID)
+			if err != nil {
+				return nil, err
+			}
+			if authorID != currentUserID && !UserAllowed {
 				continue
 			}
 		}
@@ -252,7 +256,7 @@ func (S *Server) GetPostsHandler(w http.ResponseWriter, r *http.Request) {
 	var allPosts []Post
 	ids, err := S.GetAllUsers()
 	if err != nil {
-		fmt.Println("", err)
+		fmt.Println("GetPostsHandler GetAllUsers error : ", err)
 		http.Error(w, "DB Error", http.StatusInternalServerError)
 		return
 	}
@@ -275,3 +279,17 @@ func (S *Server) GetPostsHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (S *Server) UserAllowedToSeePost(userID int, postID int) (bool, error) {
+	query := "SELECT id FROM posts_private WHERE post_id = ? AND user_id = ?"
+
+	var id int
+	err := S.db.QueryRow(query, postID, userID).Scan(&id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+
+		return false, err
+	}
+	return true, nil
+}
