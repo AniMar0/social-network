@@ -192,6 +192,7 @@ func (S *Server) GetUserPosts(userID int, r *http.Request) ([]Post, error) {
 		p.id, p.content, p.image, p.created_at, p.privacy,
 		u.id, u.first_name, u.last_name, u.nickname, u.avatar, u.is_private,
 		(SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id) as like_count,
+		(SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id AND c.parent_comment_id IS NULL) as comment_count,
 		EXISTS(SELECT 1 FROM likes l WHERE l.post_id = p.id AND l.user_id = ?) as is_liked
 	FROM posts p
 	JOIN users u ON p.user_id = u.id
@@ -213,7 +214,7 @@ func (S *Server) GetUserPosts(userID int, r *http.Request) ([]Post, error) {
 		if err := rows.Scan(
 			&post.ID, &post.Content, &post.Image, &post.CreatedAt, &post.Privacy,
 			&authorID, &firstName, &lastName, &nickname, &avatar, &isPrivate,
-			&post.Likes, &post.IsLiked,
+			&post.Likes, &post.Comments, &post.IsLiked,
 		); err != nil {
 			return nil, err
 		}
@@ -242,7 +243,6 @@ func (S *Server) GetUserPosts(userID int, r *http.Request) ([]Post, error) {
 			IsPrivate: isPrivate,
 		}
 		post.UserID = userID
-		post.Comments = 0
 		post.Shares = 0
 		posts = append(posts, post)
 	}

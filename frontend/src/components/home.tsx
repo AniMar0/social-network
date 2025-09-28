@@ -218,8 +218,7 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
       });
 
       const data = await res.json();
-
-      console.log("Comment created:", data);
+      
       // Update the post with new comment
       setPostsState((prevPosts) =>
         prevPosts.map((post) =>
@@ -331,7 +330,6 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
   };
 
   const renderComment = (comment: Comment, postId: string, isReply = false) => {
-    console.log("Rendering comment:", comment);
     return (
       <div
         key={comment.id}
