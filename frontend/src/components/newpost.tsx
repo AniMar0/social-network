@@ -80,7 +80,7 @@ export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
     fetchCurrentUser();
   }, []);
 
-  // Fetch followers when component mounts Hna zid api dyal tjib followers dyalo bach ibano f lista ki ydir private f post 
+  // Fetch followers when component mounts Hna zid api dyal tjib followers dyalo bach ibano f lista ki ydir private f post
   useEffect(() => {
     const fetchFollowers = async () => {
       try {
@@ -98,7 +98,9 @@ export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
   }, []);
 
   // Handle privacy change to show/hide follower selection
-  const handlePrivacyChange = (newPrivacy: "public" | "almost-private" | "private") => {
+  const handlePrivacyChange = (
+    newPrivacy: "public" | "almost-private" | "private"
+  ) => {
     setPrivacy(newPrivacy);
     if (newPrivacy === "private") {
       setShowFollowerSelection(true);
@@ -110,16 +112,16 @@ export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
 
   // Toggle follower selection
   const toggleFollowerSelection = (followerId: string) => {
-    setSelectedFollowers(prev => 
+    setSelectedFollowers((prev) =>
       prev.includes(followerId)
-        ? prev.filter(id => id !== followerId)
+        ? prev.filter((id) => id !== followerId)
         : [...prev, followerId]
     );
   };
 
   // Select all followers
   const selectAllFollowers = () => {
-    setSelectedFollowers(followers.map(f => f.id));
+    setSelectedFollowers(followers.map((f) => f.id));
   };
 
   // Deselect all followers
@@ -225,7 +227,11 @@ export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
       case "almost-private":
         return "Followers - Only followers can see";
       case "private":
-        return `Private - ${selectedFollowers.length > 0 ? `${selectedFollowers.length} selected followers` : 'Select followers to see this post'}`;
+        return `Private - ${
+          selectedFollowers.length > 0
+            ? `${selectedFollowers.length} selected followers`
+            : "Select followers to see this post"
+        }`;
       default:
         return "Public - Everyone can see";
     }
@@ -391,7 +397,9 @@ export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
           {showFollowerSelection && (
             <div className="border border-border rounded-lg p-4 space-y-4">
               <div className="flex items-center justify-between">
-                <h4 className="font-medium text-foreground">Select Followers</h4>
+                <h4 className="font-medium text-foreground">
+                  Select Followers
+                </h4>
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
@@ -411,9 +419,10 @@ export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
                   </Button>
                 </div>
               </div>
-              
+
               <div className="text-xs text-muted-foreground">
-                {selectedFollowers.length} of {followers.length} followers selected
+                {selectedFollowers.length} of {followers.length} followers
+                selected
               </div>
 
               <div className="max-h-48 overflow-y-auto space-y-2">
@@ -434,7 +443,8 @@ export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
                           alt={`${follower.firstName} ${follower.lastName}`}
                         />
                         <AvatarFallback className="bg-muted text-foreground text-xs">
-                          {follower.firstName[0]}{follower.lastName[0]}
+                          {follower.firstName[0]}
+                          {follower.lastName[0]}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
@@ -442,14 +452,16 @@ export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
                           {follower.firstName} {follower.lastName}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          @{follower.username}
+                          {follower.username && <>@{follower.username}</>}
                         </p>
                       </div>
-                      <div className={`w-4 h-4 rounded-full border-2 ${
-                        selectedFollowers.includes(follower.id)
-                          ? "bg-primary border-primary"
-                          : "border-muted-foreground"
-                      }`} />
+                      <div
+                        className={`w-4 h-4 rounded-full border-2 ${
+                          selectedFollowers.includes(follower.id)
+                            ? "bg-primary border-primary"
+                            : "border-muted-foreground"
+                        }`}
+                      />
                     </div>
                   ))
                 ) : (
@@ -469,7 +481,7 @@ export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
             <Button
               onClick={handlePost}
               disabled={
-                (!content.trim() && !selectedImage) || 
+                (!content.trim() && !selectedImage) ||
                 (privacy === "private" && selectedFollowers.length === 0)
               }
               className="bg-primary hover:bg-primary/90"
