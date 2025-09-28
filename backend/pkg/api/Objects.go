@@ -120,3 +120,17 @@ type Follower struct {
 	Nickname  string `json:"username,omitempty"`
 	Avatar    string `json:"avatar"`
 }
+
+type Comment struct {
+	ID     string `json:"id"`
+	Author struct {
+		Name     string `json:"name,omitempty"`
+		Username string `json:"username,omitempty"`
+		Avatar   string `json:"avatar,omitempty"`
+	} `json:"author,omitempty"`
+	Content   string    `json:"content"`
+	CreatedAt string    `json:"createdAt"`
+	Likes     int       `json:"likes"`
+	IsLiked   bool      `json:"isLiked"`
+	Replies   []Comment `json:"replies"`
+}

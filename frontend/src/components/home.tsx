@@ -99,7 +99,6 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
     };
   }, []);
 
-
   const handleWsEvent = (data: any) => {
     switch (data.channel) {
       case "new-post":
@@ -188,13 +187,14 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
     if (!commentText?.trim()) return;
 
     try {
-      const res = await fetch(`http://localhost:8080/api/comment/${postId}`, {
+      const res = await fetch(`/api/create-comment`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
           content: commentText,
           parentCommentId: parentCommentId || null,
+          postId: postId,
         }),
       });
 
