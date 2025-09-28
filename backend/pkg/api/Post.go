@@ -110,6 +110,10 @@ func (S *Server) CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	S.PushNewPost(userID, map[string]interface{}{
+		"post": Post,
+	})
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(Post)
