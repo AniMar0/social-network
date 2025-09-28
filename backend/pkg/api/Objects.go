@@ -123,7 +123,7 @@ type Follower struct {
 
 type Comment struct {
 	ID              string `json:"id"`
-	ParentCommentID *int   `json:"parentCommentId,omitempty"`
+	ParentCommentID int   `json:"parentCommentId,omitempty"`
 	Author          struct {
 		Name     string `json:"name,omitempty"`
 		Username string `json:"username,omitempty"`

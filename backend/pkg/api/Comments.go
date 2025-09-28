@@ -22,13 +22,14 @@ func (S *Server) CreateCommentHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var body struct {
-		Content         string `json:"content"`
-		ParentCommentId *int   `json:"parentCommentId,omitempty"`
-		PostID          int    `json:"postID"`
+		Content         string  `json:"content"`
+		ParentCommentId *string `json:"parentCommentId,omitempty"`
+		PostID          int     `json:"postId"`
 	}
 
 	err = json.NewDecoder(r.Body).Decode(&body)
 	if err != nil {
+		fmt.Println("decode error : ", err)
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
@@ -38,6 +39,8 @@ func (S *Server) CreateCommentHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to create comment", http.StatusInternalServerError)
 		return
 	}
+
+	fmt.Println(commentID)
 
 	comment, err := S.GetCommentByID(commentID, r)
 	if err != nil {
@@ -91,7 +94,7 @@ func (S *Server) LikeCommentHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]interface{}{"liked": liked})
 }
 
-func (S *Server) CreateComment(userID int, content string, postID int, parentCommentID *int) (int, error) {
+func (S *Server) CreateComment(userID int, content string, postID int, parentCommentID *string) (int, error) {
 	sqlRes, err := S.db.Exec("INSERT INTO comments (user_id, content, post_id, parent_comment_id) VALUES (?, ?, ?, ?)", userID, content, postID, parentCommentID)
 	if err != nil {
 		return 0, err
@@ -105,10 +108,9 @@ func (S *Server) GetComments(postID int, r *http.Request) ([]Comment, error) {
 
 	rows, err := S.db.Query(`
 		SELECT 
-			c.id, c.content, c.created_at, c.parent_comment_id,
+			c.id, c.content, c.created_at, c.parent_comment_id,c.likes as like_count,
 			u.first_name || ' ' || u.last_name AS name, 
 			u.nickname, u.avatar,
-			(SELECT COUNT(*) FROM likes l WHERE l.comment_id = c.id) as like_count,
 			EXISTS(SELECT 1 FROM likes l WHERE l.comment_id = c.id AND l.user_id = ?) as is_liked
 		FROM comments c
 		JOIN users u ON c.user_id = u.id
@@ -120,8 +122,8 @@ func (S *Server) GetComments(postID int, r *http.Request) ([]Comment, error) {
 	}
 	defer rows.Close()
 
-	commentsMap := make(map[int]*Comment)
-	var allComments []*Comment
+	commentsMap := make(map[int][]Comment)
+	var allComments []Comment
 
 	for rows.Next() {
 		var comment Comment
@@ -133,10 +135,10 @@ func (S *Server) GetComments(postID int, r *http.Request) ([]Comment, error) {
 			&comment.Content,
 			&comment.CreatedAt,
 			&parentCommentID,
+			&comment.Likes,
 			&authorName,
 			&authorUsername,
 			&authorAvatar,
-			&comment.Likes,
 			&comment.IsLiked,
 		); err != nil {
 			return nil, err
@@ -145,7 +147,7 @@ func (S *Server) GetComments(postID int, r *http.Request) ([]Comment, error) {
 		// handle nullable parent_id
 		if parentCommentID.Valid {
 			id := int(parentCommentID.Int64)
-			comment.ParentCommentID = &id
+			comment.ParentCommentID = id
 		}
 
 		// author
@@ -155,22 +157,22 @@ func (S *Server) GetComments(postID int, r *http.Request) ([]Comment, error) {
 
 		comment.Replies = []Comment{}
 
-		commentsMap[tools.StringToInt(comment.ID)] = &comment
-		allComments = append(allComments, &comment)
+		if comment.ParentCommentID != 0 {
+			commentsMap[comment.ParentCommentID] = append(commentsMap[comment.ParentCommentID], comment)
+		} else {
+			allComments = append(allComments, comment)
+		}
+
 	}
 
 	var rootComments []Comment
-	for _, c := range allComments {
-		if c.ParentCommentID != nil {
-			parent := commentsMap[*c.ParentCommentID]
-			if parent != nil {
-				parent.Replies = append(parent.Replies, *c)
-			}
-		} else {
-			rootComments = append(rootComments, *c)
-		}
-	}
+	for _, parent := range allComments {
+		if commentsMap[tools.StringToInt(parent.ID)] != nil {
+			parent.Replies = append(parent.Replies, commentsMap[tools.StringToInt(parent.ID)]...)
 
+		}
+		rootComments = append(rootComments, parent)
+	}
 	return rootComments, nil
 }
 
@@ -179,10 +181,9 @@ func (S *Server) GetCommentByID(commentID int, r *http.Request) (Comment, error)
 
 	row := S.db.QueryRow(`
 		SELECT 
-			c.id, c.content, c.created_at, c.parent_comment_id,
+			c.id, c.content, c.created_at, c.parent_comment_id,c.likes as like_count,
 			u.first_name || ' ' || u.last_name AS name, 
 			u.nickname, u.avatar,
-			(SELECT COUNT(*) FROM likes l WHERE l.comment_id = c.id) as like_count,
 			EXISTS(SELECT 1 FROM likes l WHERE l.comment_id = c.id AND l.user_id = ?) as is_liked
 		FROM comments c
 		JOIN users u ON c.user_id = u.id
@@ -198,10 +199,10 @@ func (S *Server) GetCommentByID(commentID int, r *http.Request) (Comment, error)
 		&comment.Content,
 		&comment.CreatedAt,
 		&parentCommentID,
+		&comment.Likes,
 		&authorName,
 		&authorUsername,
 		&authorAvatar,
-		&comment.Likes,
 		&comment.IsLiked,
 	)
 	if err != nil {
@@ -215,7 +216,7 @@ func (S *Server) GetCommentByID(commentID int, r *http.Request) (Comment, error)
 	// handle nullable parent_id
 	if parentCommentID.Valid {
 		id := int(parentCommentID.Int64)
-		comment.ParentCommentID = &id
+		comment.ParentCommentID = id
 	}
 
 	// author

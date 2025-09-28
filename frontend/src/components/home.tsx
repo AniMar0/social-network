@@ -221,6 +221,8 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
 
       const data = await res.json();
 
+      console.log(" New comment: ", data);
+
       // Update the post with new comment
       setPostsState((prevPosts) =>
         prevPosts.map((post) =>
@@ -229,7 +231,7 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
                 ...post,
                 comments: post.comments + 1,
                 commentsList: post.commentsList
-                  ? [data, ...post.commentsList]
+                  ? [...post.commentsList, data]
                   : [data],
               }
             : post
