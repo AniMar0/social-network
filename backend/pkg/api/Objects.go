@@ -116,6 +116,6 @@ type Follower struct {
 	ID        string `json:"id"`
 	FirstName string `json:"firstName"`
 	LastName  string `json:"lastName"`
-	Nickname  string `json:"username"`
+	Nickname  string `json:"username,omitempty"`
 	Avatar    string `json:"avatar"`
 }

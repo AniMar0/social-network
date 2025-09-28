@@ -34,7 +34,7 @@ interface Follower {
   id: string;
   firstName: string;
   lastName: string;
-  username: string;
+  username?: string;
   avatar: string;
 }
 

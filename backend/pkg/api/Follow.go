@@ -2,6 +2,7 @@ package backend
 
 import (
 	tools "SOCIAL-NETWORK/pkg"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -400,7 +401,6 @@ func (S *Server) GetFollowers(User int) ([]Follower, error) {
 	JOIN users u ON u.id = f.follower_id
 	WHERE f.following_id = ?;
 	`
-
 	rows, err := S.db.Query(query, User)
 	if err != nil {
 		return nil, err
@@ -409,8 +409,12 @@ func (S *Server) GetFollowers(User int) ([]Follower, error) {
 
 	for rows.Next() {
 		var follower Follower
-		if err := rows.Scan(&follower.ID, &follower.FirstName, &follower.LastName, &follower.Nickname, &follower.Avatar); err != nil {
+		var nickname sql.NullString
+		if err := rows.Scan(&follower.ID, &follower.FirstName, &follower.LastName, &nickname, &follower.Avatar); err != nil {
 			return nil, err
+		}
+		if nickname.Valid {
+			follower.Nickname = nickname.String
 		}
 		followers = append(followers, follower)
 	}
