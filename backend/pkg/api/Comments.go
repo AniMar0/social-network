@@ -19,7 +19,7 @@ func (S *Server) CreateCommentHandler(w http.ResponseWriter, r *http.Request) {
 
 	var body struct {
 		Content         string `json:"content"`
-		ParentCommentId int    `json:"parentCommentId,omitempty"`
+		ParentCommentId *int   `json:"parentCommentId,omitempty"`
 		PostID          int    `json:"postID"`
 	}
 
@@ -29,10 +29,22 @@ func (S *Server) CreateCommentHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//S.CreateComment(currentUserID, body.Content, body.PostID, body.ParentCommentId)
+	err = S.CreateComment(currentUserID, body.Content, body.PostID, body.ParentCommentId)
+	if err != nil {
+		http.Error(w, "Failed to create comment", http.StatusInternalServerError)
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{
 		"message": "Comment created successfully",
 	})
+}
+
+func (S *Server) CreateComment(userID int, content string, postID int, parentCommentID *int) error {
+	_, err := S.db.Exec("INSERT INTO comments (user_id, content, post_id, parent_comment_id) VALUES (?, ?, ?, ?)", userID, content, postID, parentCommentID)
+	if err != nil {
+		return err
+	}
+	return nil
 }
