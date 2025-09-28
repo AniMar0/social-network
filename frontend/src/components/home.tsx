@@ -31,6 +31,7 @@ interface Comment {
   createdAt: string;
   likes: number;
   isLiked: boolean;
+  parentId?: string;
   replies?: Comment[];
 }
 
@@ -231,20 +232,30 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
                 ...post,
                 comments: post.comments + 1,
                 commentsList: post.commentsList
-                  ? [...post.commentsList, data]
+                  ? parentCommentId
+                    ? post.commentsList.map((comment) => {
+                        if (comment.id === parentCommentId) {
+                          return {
+                            ...comment,
+                            replies: [...(comment.replies || []), data],
+                          };
+                        }
+                        return comment;
+                      })
+                    : [...post.commentsList, data]
                   : [data],
               }
             : post
         )
       );
 
-      // Clear the comment input
+      // Clear input
       setNewComment((prev) => ({
         ...prev,
         [postId]: "",
       }));
-
-      // Clear reply state
+          
+      // clear reply
       setReplyingTo((prev) => ({
         ...prev,
         [postId]: null,
