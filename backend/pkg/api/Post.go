@@ -52,19 +52,9 @@ func (S *Server) CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cookie, err := r.Cookie("session_token")
+	userID, _, err := S.CheckSession(r)
 	if err != nil {
 		http.Error(w, "Unauthorized - No session", http.StatusUnauthorized)
-		return
-	}
-
-	sessionID := cookie.Value
-	var userID int
-	err = S.db.QueryRow(`
-        SELECT user_id FROM sessions 
-        WHERE session_id = ? AND expires_at > datetime('now')`, sessionID).Scan(&userID)
-	if err != nil {
-		http.Error(w, "Unauthorized - Invalid session", http.StatusUnauthorized)
 		return
 	}
 

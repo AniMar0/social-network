@@ -2,7 +2,6 @@ package backend
 
 import (
 	tools "SOCIAL-NETWORK/pkg"
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -78,16 +77,4 @@ func (S *Server) CheckSession(r *http.Request) (int, string, error) {
 		return 0, "", fmt.Errorf("invalid or expired session")
 	}
 	return userID, sessionID, nil
-}
-func (S *Server) SessionMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		username, _, err := S.CheckSession(r)
-		if err != nil {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
-
-		ctx := context.WithValue(r.Context(), "username", username)
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
 }
