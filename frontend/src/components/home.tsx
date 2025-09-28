@@ -1,16 +1,24 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { SidebarNavigation } from "./sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Heart, MessageCircle, Share, MoreHorizontal, Send, ImagePlay, Smile } from "lucide-react";
+import {
+  Heart,
+  MessageCircle,
+  Share,
+  MoreHorizontal,
+  Send,
+  ImagePlay,
+  Smile,
+} from "lucide-react";
 import { useNotificationCount } from "@/lib/notifications";
 import EmojiPicker, { Theme } from "emoji-picker-react";
 import GifPicker from "gif-picker-react";
-
+import { getWebSocket } from "@/lib/websocket";
 interface Comment {
   id: string;
   author: {
@@ -53,11 +61,54 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
   const notificationCount = useNotificationCount();
   const [postsState, setPostsState] = useState<Post[]>([]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [showComments, setShowComments] = useState<{[key: string]: boolean}>({});
-  const [newComment, setNewComment] = useState<{[key: string]: string}>({});
-  const [replyingTo, setReplyingTo] = useState<{ [key: string]: string | null }>({});
-  const [showEmojiPicker, setShowEmojiPicker] = useState<{[key: string]: boolean}>({});
-  const [showGifPicker, setShowGifPicker] = useState<{[key: string]: boolean}>({});
+  const [showComments, setShowComments] = useState<{ [key: string]: boolean }>(
+    {}
+  );
+  const [newComment, setNewComment] = useState<{ [key: string]: string }>({});
+  const [replyingTo, setReplyingTo] = useState<{
+    [key: string]: string | null;
+  }>({});
+  const [showEmojiPicker, setShowEmojiPicker] = useState<{
+    [key: string]: boolean;
+  }>({});
+  const [showGifPicker, setShowGifPicker] = useState<{
+    [key: string]: boolean;
+  }>({});
+  const wsRef = useRef<WebSocket | null>(null);
+
+  useEffect(() => {
+    const ws = getWebSocket();
+    if (!ws) return;
+    wsRef.current = ws;
+
+    // Handlers: separated to keep effect concise
+    const onMessage = (event: MessageEvent) => {
+      try {
+        const data = JSON.parse(event.data);
+        handleWsEvent(data);
+      } catch (err) {
+        console.error("Invalid ws message", err);
+      }
+    };
+
+    ws.addEventListener("message", onMessage);
+
+    return () => {
+      ws.removeEventListener("message", onMessage);
+      wsRef.current = null;
+    };
+  }, []);
+
+
+  const handleWsEvent = (data: any) => {
+    switch (data.channel) {
+      case "new-post":
+        setPostsState((prevPosts) => [data.payload.post, ...prevPosts]);
+        break;
+      default:
+        break;
+    }
+  };
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -103,33 +154,36 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
   };
 
   const handleEmojiSelect = (emoji: string, postId: string) => {
-    setNewComment(prev => ({
+    setNewComment((prev) => ({
       ...prev,
-      [postId]: (prev[postId] || "") + emoji
+      [postId]: (prev[postId] || "") + emoji,
     }));
     // Don't close emoji picker - let user add multiple emojis
   };
 
   const handleGifSelect = (gifUrl: string, postId: string) => {
     // For comments, we'll treat GIFs as image content that gets submitted
-    setNewComment(prev => ({
+    setNewComment((prev) => ({
       ...prev,
-      [postId]: (prev[postId] || "") + `![GIF](${gifUrl})`
+      [postId]: (prev[postId] || "") + `![GIF](${gifUrl})`,
     }));
-    setShowGifPicker(prev => ({
+    setShowGifPicker((prev) => ({
       ...prev,
-      [postId]: false
+      [postId]: false,
     }));
   };
 
   const toggleComments = (postId: string) => {
-    setShowComments(prev => ({
+    setShowComments((prev) => ({
       ...prev,
-      [postId]: !prev[postId]
+      [postId]: !prev[postId],
     }));
   };
 
-  const handleCommentSubmit = async (postId: string, parentCommentId?: string) => {
+  const handleCommentSubmit = async (
+    postId: string,
+    parentCommentId?: string
+  ) => {
     const commentText = newComment[postId];
     if (!commentText?.trim()) return;
 
@@ -138,14 +192,14 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           content: commentText,
-          parentCommentId: parentCommentId || null
+          parentCommentId: parentCommentId || null,
         }),
       });
 
       const data = await res.json();
-      
+
       // Update the post with new comment
       setPostsState((prevPosts) =>
         prevPosts.map((post) =>
@@ -153,24 +207,23 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
             ? {
                 ...post,
                 comments: post.comments + 1,
-                commentsList: data.comments || []
+                commentsList: data.comments || [],
               }
             : post
         )
       );
 
       // Clear the comment input
-      setNewComment(prev => ({
+      setNewComment((prev) => ({
         ...prev,
-        [postId]: ""
+        [postId]: "",
       }));
 
       // Clear reply state
-      setReplyingTo(prev => ({
+      setReplyingTo((prev) => ({
         ...prev,
-        [postId]: null
+        [postId]: null,
       }));
-
     } catch (err) {
       console.error("Failed to post comment", err);
     }
@@ -178,45 +231,55 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
 
   const handleCommentLike = async (commentId: string, postId: string) => {
     try {
-      const res = await fetch(`http://localhost:8080/api/like-comment/${commentId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      });
+      const res = await fetch(
+        `http://localhost:8080/api/like-comment/${commentId}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        }
+      );
 
       const data = await res.json();
-      
+
       // Update the comment likes in the post
       setPostsState((prevPosts) =>
         prevPosts.map((post) => {
           if (post.id === postId && post.commentsList) {
             return {
               ...post,
-              commentsList: updateCommentLikes(post.commentsList, commentId, data.liked)
+              commentsList: updateCommentLikes(
+                post.commentsList,
+                commentId,
+                data.liked
+              ),
             };
           }
           return post;
         })
       );
-
     } catch (err) {
       console.error("Failed to like comment", err);
     }
   };
 
-  const updateCommentLikes = (comments: Comment[], commentId: string, isLiked: boolean): Comment[] => {
-    return comments.map(comment => {
+  const updateCommentLikes = (
+    comments: Comment[],
+    commentId: string,
+    isLiked: boolean
+  ): Comment[] => {
+    return comments.map((comment) => {
       if (comment.id === commentId) {
         return {
           ...comment,
           isLiked,
-          likes: isLiked ? comment.likes + 1 : comment.likes - 1
+          likes: isLiked ? comment.likes + 1 : comment.likes - 1,
         };
       }
       if (comment.replies) {
         return {
           ...comment,
-          replies: updateCommentLikes(comment.replies, commentId, isLiked)
+          replies: updateCommentLikes(comment.replies, commentId, isLiked),
         };
       }
       return comment;
@@ -224,9 +287,9 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
   };
 
   const handleReply = (postId: string, commentId: string) => {
-    setReplyingTo(prev => ({
+    setReplyingTo((prev) => ({
       ...prev,
-      [postId]: commentId
+      [postId]: commentId,
     }));
   };
 
@@ -247,7 +310,12 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
 
   const renderComment = (comment: Comment, postId: string, isReply = false) => {
     return (
-      <div key={comment.id} className={`${isReply ? 'ml-8 mt-2' : 'mt-4'} border-l-2 border-muted pl-4`}>
+      <div
+        key={comment.id}
+        className={`${
+          isReply ? "ml-8 mt-2" : "mt-4"
+        } border-l-2 border-muted pl-4`}
+      >
         <div className="flex items-start gap-3">
           <Avatar className="h-8 w-8">
             <AvatarImage
@@ -255,7 +323,10 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
               alt={comment.author.name}
             />
             <AvatarFallback className="bg-muted text-foreground text-xs">
-              {comment.author.name.split(" ").map((n) => n[0]).join("")}
+              {comment.author.name
+                .split(" ")
+                .map((n) => n[0])
+                .join("")}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1">
@@ -279,7 +350,9 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
                   comment.isLiked ? "text-red-500" : "text-muted-foreground"
                 }`}
               >
-                <Heart className={`h-3 w-3 ${comment.isLiked ? "fill-current" : ""}`} />
+                <Heart
+                  className={`h-3 w-3 ${comment.isLiked ? "fill-current" : ""}`}
+                />
                 <span className="text-xs">{comment.likes}</span>
               </Button>
               {!isReply && (
@@ -295,9 +368,10 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
               )}
             </div>
             {/* Render replies */}
-            {comment.replies && comment.replies.map(reply => 
-              renderComment(reply, postId, true)
-            )}
+            {comment.replies &&
+              comment.replies.map((reply) =>
+                renderComment(reply, postId, true)
+              )}
           </div>
         </div>
       </div>
@@ -423,7 +497,10 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
                       {/* Comment Input */}
                       <div className="flex items-center gap-3 mb-4">
                         <Avatar className="h-8 w-8">
-                          <AvatarImage src="/placeholder-avatar.jpg" alt="You" />
+                          <AvatarImage
+                            src="/placeholder-avatar.jpg"
+                            alt="You"
+                          />
                           <AvatarFallback className="bg-muted text-foreground text-xs">
                             You
                           </AvatarFallback>
@@ -431,18 +508,23 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
                         <div className="flex-1 flex items-center gap-2">
                           <Input
                             placeholder={
-                              replyingTo[post.id] 
-                                ? "Write a reply..." 
+                              replyingTo[post.id]
+                                ? "Write a reply..."
                                 : "Write a comment..."
                             }
                             value={newComment[post.id] || ""}
-                            onChange={(e) => setNewComment(prev => ({
-                              ...prev,
-                              [post.id]: e.target.value
-                            }))}
+                            onChange={(e) =>
+                              setNewComment((prev) => ({
+                                ...prev,
+                                [post.id]: e.target.value,
+                              }))
+                            }
                             onKeyPress={(e) => {
                               if (e.key === "Enter") {
-                                handleCommentSubmit(post.id, replyingTo[post.id] || undefined);
+                                handleCommentSubmit(
+                                  post.id,
+                                  replyingTo[post.id] || undefined
+                                );
                               }
                             }}
                             className="flex-1"
@@ -451,13 +533,13 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
                             size="sm"
                             variant={"outline"}
                             onClick={() => {
-                              setShowGifPicker(prev => ({
+                              setShowGifPicker((prev) => ({
                                 ...prev,
-                                [post.id]: !prev[post.id]
+                                [post.id]: !prev[post.id],
                               }));
-                              setShowEmojiPicker(prev => ({
+                              setShowEmojiPicker((prev) => ({
                                 ...prev,
-                                [post.id]: false
+                                [post.id]: false,
                               }));
                             }}
                             className="h-8 w-8 p-0 flex items-center justify-center cursor-pointer"
@@ -468,13 +550,13 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
                             size="sm"
                             variant={"outline"}
                             onClick={() => {
-                              setShowEmojiPicker(prev => ({
+                              setShowEmojiPicker((prev) => ({
                                 ...prev,
-                                [post.id]: !prev[post.id]
+                                [post.id]: !prev[post.id],
                               }));
-                              setShowGifPicker(prev => ({
+                              setShowGifPicker((prev) => ({
                                 ...prev,
-                                [post.id]: false
+                                [post.id]: false,
                               }));
                             }}
                             className="h-8 w-8 p-0 flex items-center justify-center cursor-pointer"
@@ -483,7 +565,12 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
                           </Button>
                           <Button
                             size="sm"
-                            onClick={() => handleCommentSubmit(post.id, replyingTo[post.id] || undefined)}
+                            onClick={() =>
+                              handleCommentSubmit(
+                                post.id,
+                                replyingTo[post.id] || undefined
+                              )
+                            }
                             disabled={!newComment[post.id]?.trim()}
                             className="h-8 w-8 p-0 flex items-center justify-center cursor-pointer"
                           >
@@ -496,7 +583,9 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
                       {showEmojiPicker[post.id] && (
                         <div className="mb-4">
                           <EmojiPicker
-                            onEmojiClick={(e) => handleEmojiSelect(e.emoji, post.id)}
+                            onEmojiClick={(e) =>
+                              handleEmojiSelect(e.emoji, post.id)
+                            }
                             theme={Theme.DARK}
                           />
                         </div>
@@ -518,7 +607,12 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => setReplyingTo(prev => ({...prev, [post.id]: null}))}
+                            onClick={() =>
+                              setReplyingTo((prev) => ({
+                                ...prev,
+                                [post.id]: null,
+                              }))
+                            }
                             className="text-xs text-muted-foreground"
                           >
                             Cancel Reply
@@ -528,10 +622,12 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
 
                       {/* Comments List */}
                       <div className="space-y-2">
-                        {post.commentsList && post.commentsList.map(comment => 
-                          renderComment(comment, post.id)
-                        )}
-                        {(!post.commentsList || post.commentsList.length === 0) && (
+                        {post.commentsList &&
+                          post.commentsList.map((comment) =>
+                            renderComment(comment, post.id)
+                          )}
+                        {(!post.commentsList ||
+                          post.commentsList.length === 0) && (
                           <p className="text-sm text-muted-foreground text-center py-4">
                             No comments yet. Be the first to comment!
                           </p>
