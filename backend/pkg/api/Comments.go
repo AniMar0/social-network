@@ -265,7 +265,7 @@ func (S *Server) LikeComment(commentID int, userID int) (bool, error) {
 			return false, err
 		}
 		if AuthorID != userID {
-			notification := Notification{ID: AuthorID, ActorID: userID, Type: "like", Content: "Like Your Post", IsRead: false}
+			notification := Notification{ID: AuthorID, ActorID: userID, Type: "like", Content: "Like Your Comment", IsRead: false}
 
 			S.IsertNotification(notification)
 			S.PushNotification("-new", AuthorID, notification)
