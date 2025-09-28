@@ -259,8 +259,10 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
         headers: { "Content-Type": "application/json" },
         credentials: "include",
       });
-
+      if (!res.ok) throw new Error("Failed to like comment");
       const data = await res.json();
+
+      console.log("Comment liked:", data);
 
       // Update the comment likes in the post
       setPostsState((prevPosts) =>

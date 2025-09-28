@@ -38,7 +38,7 @@ func (S *Server) CreateCommentHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to create comment", http.StatusInternalServerError)
 		return
 	}
-	
+
 	comment, err := S.GetCommentByID(commentID, r)
 	if err != nil {
 		http.Error(w, "Failed to get comment", http.StatusInternalServerError)
@@ -80,14 +80,15 @@ func (S *Server) LikeCommentHandler(w http.ResponseWriter, r *http.Request) {
 
 	commentID := strings.TrimPrefix(r.URL.Path, "/api/like-comment/")
 
-	err = S.LikeComment(tools.StringToInt(commentID), currentUserID)
+	liked, err := S.LikeComment(tools.StringToInt(commentID), currentUserID)
 	if err != nil {
-		fmt.Println("liked comment error db : ",err)
+		fmt.Println("liked comment error db : ", err)
 		http.Error(w, "Failed to like comment", http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]interface{}{"liked": liked})
 }
 
 func (S *Server) CreateComment(userID int, content string, postID int, parentCommentID *int) (int, error) {
@@ -227,7 +228,58 @@ func (S *Server) GetCommentByID(commentID int, r *http.Request) (Comment, error)
 	return comment, nil
 }
 
-func (S *Server) LikeComment(commentID int, userID int) error {
-	_, err := S.db.Exec("INSERT INTO likes (comment_id, user_id) VALUES (?, ?)", commentID, userID)
-	return err
+func (S *Server) LikeComment(commentID int, userID int) (bool, error) {
+	var exists bool
+	err := S.db.QueryRow(
+		"SELECT EXISTS(SELECT 1 FROM likes WHERE user_id=? AND comment_id=?)",
+		userID, commentID,
+	).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+
+	AuthorID, err := S.GetCommentAuthorID(commentID)
+	if err != nil {
+		return false, err
+	}
+
+	if exists {
+		_, err = S.db.Exec("DELETE FROM likes WHERE user_id=? AND comment_id=?", userID, commentID)
+		if err != nil {
+			return false, err
+		}
+		_, err = S.db.Exec("UPDATE comments SET likes = likes - 1 WHERE id=?", commentID)
+		if err != nil {
+			return false, err
+		}
+		S.DeleteNotification(tools.IntToString(userID), tools.IntToString(AuthorID), "like")
+		S.PushNotification("-delete", AuthorID, Notification{})
+		return false, nil
+	} else {
+		_, err = S.db.Exec("INSERT INTO likes (comment_id, user_id) VALUES (?, ?)", commentID, userID)
+		if err != nil {
+			return false, err
+		}
+		_, err = S.db.Exec("UPDATE comments SET likes = likes + 1 WHERE id=?", commentID)
+		if err != nil {
+			return false, err
+		}
+		if AuthorID != userID {
+			notification := Notification{ID: AuthorID, ActorID: userID, Type: "like", Content: "Like Your Post", IsRead: false}
+
+			S.IsertNotification(notification)
+			S.PushNotification("-new", AuthorID, notification)
+		}
+
+	}
+	return true, nil
+}
+
+func (S *Server) GetCommentAuthorID(commentID int) (int, error) {
+	var userID int
+	err := S.db.QueryRow("SELECT user_id FROM comments WHERE id = ?", commentID).Scan(&userID)
+	if err != nil {
+		return 0, err
+	}
+	return userID, nil
 }
