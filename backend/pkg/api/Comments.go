@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 )
 
 func (S *Server) CreateCommentHandler(w http.ResponseWriter, r *http.Request) {
@@ -45,6 +46,24 @@ func (S *Server) CreateCommentHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(comment)
+}
+
+func (S *Server) GetCommentsHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/404", http.StatusSeeOther)
+		return
+	}
+
+	postID := strings.TrimPrefix(r.URL.Path, "/api/get-comments/")
+
+	comments, err := S.GetComments(tools.StringToInt(postID), r)
+	if err != nil {
+		http.Error(w, "Failed to get comments", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(comments)
 }
 
 func (S *Server) CreateComment(userID int, content string, postID int, parentCommentID *int) (int, error) {
