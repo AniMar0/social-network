@@ -100,7 +100,6 @@ func (S *Server) initRoutes() {
 	S.mux.HandleFunc("/api/upoad-file", S.UploadFileHandler)
 	S.mux.HandleFunc("/api/set-seen-chat/", S.SeenMessageHandler)
 	S.mux.HandleFunc("/api/unsend-message/", S.UnsendMessageHandler)
-	//S.mux.HandleFunc("/api/set-reply-context/", S.SetReplyContextHandler)
 }
 
 func (S *Server) initWebSocket() {
