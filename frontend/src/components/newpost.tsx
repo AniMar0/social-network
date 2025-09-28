@@ -29,6 +29,7 @@ import {
 import EmojiPicker, { Theme } from "emoji-picker-react";
 import GifPicker from "gif-picker-react";
 import { authUtils } from "@/lib/navigation";
+import { is } from "date-fns/locale";
 
 interface Follower {
   id: string;
@@ -77,11 +78,13 @@ export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
         console.error("Error fetching user:", err);
       }
     };
+
     fetchCurrentUser();
   }, []);
 
   // Fetch followers when component mounts Hna zid api dyal tjib followers dyalo bach ibano f lista ki ydir private f post
   useEffect(() => {
+    if (privacy !== "private") return;
     const fetchFollowers = async () => {
       try {
         const response = await fetch("/api/get-followers", {
@@ -95,7 +98,7 @@ export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
       }
     };
     fetchFollowers();
-  }, []);
+  }, [privacy]);
 
   // Handle privacy change to show/hide follower selection
   const handlePrivacyChange = (
