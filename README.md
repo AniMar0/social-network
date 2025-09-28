@@ -25,7 +25,7 @@ It includes features such as followers, profiles, posts, groups, notifications, 
 |-----------------------------|----------|-------|
 | **Followers**              | ✅ 100%  | Follow/unfollow, accept/decline requests, public profile auto-follow ✅ |
 | **Profile**                | ✅ 100%  | Display info, activity, posts, followers/following lists, public/private toggle ✅ |
-| **Posts**                  | ⚠️ 75%   | Create posts ✅, include images/GIF ✅, privacy settings ✅, create comments ❌ |
+| **Posts**                  | ✅ 100%   | Create posts ✅, include images/GIF ✅, privacy settings ✅, create comments ✅ |
 | **Groups**                 | ❌ 0%    | Everything remaining: create group, invitations, group posts/comments, events ❌ |
 | **Notifications**          | ✅ 100%  | All types of notifications implemented, UI and realtime updates ✅ |
 | **Chat (Private + Group)** | ⚠️ 75% | Private messages, seen/read receipts, emojis ✅, group chat ❌ |
@@ -33,7 +33,7 @@ It includes features such as followers, profiles, posts, groups, notifications, 
 | **Frontend**               | ⚠️ 90%   | Messages UI, notifications UI, sidebar/search/avatar ✅, group UI ❌ |
 | **Backend (Server & DB)**  | ⚠️ 90%  | Go server, Websockets, DB tables, migrations ✅, Docker setup ❌ |
 
-**Overall Project Progress ≈ 81% ✅**
+**Overall Project Progress ≈ 83% ✅**
 
 ---
 
