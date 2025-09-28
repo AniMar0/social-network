@@ -200,6 +200,7 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
 
       const data = await res.json();
 
+      console.log("Comment created:", data);
       // Update the post with new comment
       setPostsState((prevPosts) =>
         prevPosts.map((post) =>
@@ -207,7 +208,9 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
             ? {
                 ...post,
                 comments: post.comments + 1,
-                commentsList: data.comments || [],
+                commentsList: post.commentsList
+                  ? [data, ...post.commentsList]
+                  : [data],
               }
             : post
         )
@@ -309,6 +312,7 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
   };
 
   const renderComment = (comment: Comment, postId: string, isReply = false) => {
+    console.log("Rendering comment:", comment);
     return (
       <div
         key={comment.id}
@@ -498,7 +502,7 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
                       <div className="flex items-center gap-3 mb-4">
                         <Avatar className="h-8 w-8">
                           <AvatarImage
-                            src="/placeholder-avatar.jpg"
+                            src={`http://localhost:8080/${post.author.avatar}`}
                             alt="You"
                           />
                           <AvatarFallback className="bg-muted text-foreground text-xs">

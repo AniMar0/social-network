@@ -130,7 +130,7 @@ func (S *Server) GetComments(postID int, r *http.Request) ([]Comment, error) {
 	return rootComments, nil
 }
 
-func (S *Server) GetCommentByID(commentID int, r *http.Request) (*Comment, error) {
+func (S *Server) GetCommentByID(commentID int, r *http.Request) (Comment, error) {
 	currentUserID, _, _ := S.CheckSession(r)
 
 	row := S.db.QueryRow(`
@@ -162,10 +162,10 @@ func (S *Server) GetCommentByID(commentID int, r *http.Request) (*Comment, error
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil // comment not found
+			return Comment{}, nil // comment not found
 		}
 		fmt.Println("get one comment error : ", err)
-		return nil, err
+		return Comment{}, err
 	}
 
 	// handle nullable parent_id
@@ -181,5 +181,5 @@ func (S *Server) GetCommentByID(commentID int, r *http.Request) (*Comment, error
 
 	comment.Replies = []Comment{}
 
-	return &comment, nil
+	return comment, nil
 }
