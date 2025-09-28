@@ -127,3 +127,56 @@ func (S *Server) GetComments(postID int, r *http.Request) ([]Comment, error) {
 
 	return rootComments, nil
 }
+
+func (S *Server) GetCommentByID(commentID int, r *http.Request) (*Comment, error) {
+	currentUserID, _, _ := S.CheckSession(r)
+
+	row := S.db.QueryRow(`
+		SELECT 
+			c.id, c.content, c.created_at, c.parent_id,
+			u.first_name || ' ' || u.last_name AS name, 
+			u.nickname, u.avatar,
+			(SELECT COUNT(*) FROM likes l WHERE l.comment_id = c.id) as like_count,
+			EXISTS(SELECT 1 FROM likes l WHERE l.comment_id = c.id AND l.user_id = ?) as is_liked
+		FROM comments c
+		JOIN users u ON c.user_id = u.id
+		WHERE c.id = ?
+	`, currentUserID, commentID)
+
+	var comment Comment
+	var parentCommentID sql.NullInt64
+	var authorName, authorUsername, authorAvatar sql.NullString
+
+	err := row.Scan(
+		&comment.ID,
+		&comment.Content,
+		&comment.CreatedAt,
+		&parentCommentID,
+		&authorName,
+		&authorUsername,
+		&authorAvatar,
+		&comment.Likes,
+		&comment.IsLiked,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil // comment not found
+		}
+		return nil, err
+	}
+
+	// handle nullable parent_id
+	if parentCommentID.Valid {
+		id := int(parentCommentID.Int64)
+		comment.ParentCommentID = &id
+	}
+
+	// author
+	comment.Author.Name = authorName.String
+	comment.Author.Username = authorUsername.String
+	comment.Author.Avatar = authorAvatar.String
+
+	comment.Replies = []Comment{}
+	
+	return &comment, nil
+}
