@@ -19,6 +19,7 @@ import { useNotificationCount } from "@/lib/notifications";
 import EmojiPicker, { Theme } from "emoji-picker-react";
 import GifPicker from "gif-picker-react";
 import { getWebSocket } from "@/lib/websocket";
+import { ca } from "date-fns/locale";
 interface Comment {
   id: string;
   author: {
@@ -172,7 +173,25 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
     }));
   };
 
-  const toggleComments = (postId: string) => {
+  const toggleComments = async (postId: string) => {
+    try {
+      const res = await fetch(`/api/get-comments/${postId}`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch comments");
+      const data = await res.json();
+      setPostsState((prevPosts) =>
+        prevPosts.map((post) =>
+          post.id === postId
+            ? {
+                ...post,
+                commentsList: data || [],
+              }
+            : post
+        )
+      );
+    } catch (err) {}
     setShowComments((prev) => ({
       ...prev,
       [postId]: !prev[postId],
