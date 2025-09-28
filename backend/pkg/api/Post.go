@@ -46,6 +46,7 @@ func (S *Server) UploadPostHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(fmt.Sprintf(`{"postUrl": "/%s"}`, postPath)))
 }
+
 func (S *Server) CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
@@ -103,10 +104,17 @@ func (S *Server) CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	Post, err := S.GetPostFromID(post.ID, r)
+	if err != nil {
+		http.Error(w, "DB Error", http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(post)
+	json.NewEncoder(w).Encode(Post)
 }
+
 func (S *Server) LikeHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
@@ -292,4 +300,69 @@ func (S *Server) UserAllowedToSeePost(userID int, postID int) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+func (S *Server) GetPostFromID(postID int, r *http.Request) (Post, error) {
+	currentUserID, _, _ := S.CheckSession(r)
+
+	row := S.db.QueryRow(`
+	SELECT 
+		p.id, p.content, p.image, p.created_at, p.privacy,
+		u.id, u.first_name, u.last_name, u.nickname, u.avatar, u.is_private,
+		(SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id) as like_count,
+		EXISTS(SELECT 1 FROM likes l WHERE l.post_id = p.id AND l.user_id = ?) as is_liked
+	FROM posts p
+	JOIN users u ON p.user_id = u.id
+	WHERE p.id = ?
+`, currentUserID, postID)
+
+	var post Post
+	var authorID int
+	var firstName, lastName, nickname, avatar sql.NullString
+	var isPrivate bool
+
+	err := row.Scan(
+		&post.ID, &post.Content, &post.Image, &post.CreatedAt, &post.Privacy,
+		&authorID, &firstName, &lastName, &nickname, &avatar, &isPrivate,
+		&post.Likes, &post.IsLiked,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return Post{}, nil // post not found
+		}
+		return Post{}, err
+	}
+
+	// privacy check
+	if post.Privacy == "almost-private" && authorID != currentUserID {
+		isFollowing, err := S.IsFollowing(r, "", strconv.Itoa(authorID))
+		if err != nil {
+			return Post{}, err
+		}
+		if !isFollowing {
+			return Post{}, nil
+		}
+	} else if post.Privacy == "private" {
+		UserAllowed, err := S.UserAllowedToSeePost(currentUserID, post.ID)
+		if err != nil {
+			return Post{}, err
+		}
+		if authorID != currentUserID && !UserAllowed {
+			return Post{}, nil
+		}
+	}
+
+	// convert NullString
+	post.Author = Author{
+		Name:      firstName.String + " " + lastName.String,
+		Username:  nickname.String,
+		Avatar:    avatar.String,
+		IsPrivate: isPrivate,
+	}
+	post.UserID = authorID
+	post.Comments = 0
+	post.Shares = 0
+
+	return post, nil
+
 }
