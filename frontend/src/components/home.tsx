@@ -191,7 +191,9 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
             : post
         )
       );
-    } catch (err) {}
+    } catch (err) {
+      console.error("Failed to fetch comments", err);
+    }
     setShowComments((prev) => ({
       ...prev,
       [postId]: !prev[postId],
@@ -218,7 +220,7 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
       });
 
       const data = await res.json();
-      
+
       // Update the post with new comment
       setPostsState((prevPosts) =>
         prevPosts.map((post) =>
@@ -252,14 +254,11 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
 
   const handleCommentLike = async (commentId: string, postId: string) => {
     try {
-      const res = await fetch(
-        `http://localhost:8080/api/like-comment/${commentId}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-        }
-      );
+      const res = await fetch(`/api/like-comment/${commentId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
 
       const data = await res.json();
 

@@ -38,7 +38,7 @@ func (S *Server) CreateCommentHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to create comment", http.StatusInternalServerError)
 		return
 	}
-	fmt.Println(commentID)
+	
 	comment, err := S.GetCommentByID(commentID, r)
 	if err != nil {
 		http.Error(w, "Failed to get comment", http.StatusInternalServerError)
@@ -64,6 +64,30 @@ func (S *Server) GetCommentsHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(comments)
+}
+
+func (S *Server) LikeCommentHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/404", http.StatusSeeOther)
+		return
+	}
+
+	currentUserID, _, err := S.CheckSession(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	commentID := strings.TrimPrefix(r.URL.Path, "/api/like-comment/")
+
+	err = S.LikeComment(tools.StringToInt(commentID), currentUserID)
+	if err != nil {
+		fmt.Println("liked comment error db : ",err)
+		http.Error(w, "Failed to like comment", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func (S *Server) CreateComment(userID int, content string, postID int, parentCommentID *int) (int, error) {
@@ -201,4 +225,9 @@ func (S *Server) GetCommentByID(commentID int, r *http.Request) (Comment, error)
 	comment.Replies = []Comment{}
 
 	return comment, nil
+}
+
+func (S *Server) LikeComment(commentID int, userID int) error {
+	_, err := S.db.Exec("INSERT INTO likes (comment_id, user_id) VALUES (?, ?)", commentID, userID)
+	return err
 }

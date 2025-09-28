@@ -89,6 +89,7 @@ func (S *Server) initRoutes() {
 	//comment handlers
 	S.mux.HandleFunc("/api/create-comment", S.CreateCommentHandler)
 	S.mux.HandleFunc("/api/get-comments/", S.GetCommentsHandler)
+	S.mux.HandleFunc("/api/like-comment/", S.LikeCommentHandler)
 	// S.mux.HandleFunc("/api/delete-comment/", S.DeleteCommentHandler)
 
 	//message handlers
