@@ -13,6 +13,7 @@ import (
 )
 
 func (S *Server) GetUsersHandler(w http.ResponseWriter, r *http.Request) {
+	
 	if r.Method != http.MethodGet {
 		http.Redirect(w, r, "/404", http.StatusSeeOther)
 		return
@@ -267,59 +268,59 @@ func (S *Server) GetOtherUserID(currentUserID, chatID int) int {
 func (S *Server) GetUsers(w http.ResponseWriter, currentUserID int) ([]Chat, error) {
 	query := `
 		WITH latest_messages AS (
-		    SELECT 
-		        c.id AS chat_id,
-		        CASE 
-		            WHEN m.sender_id = ? THEN 
-		                CASE WHEN c.user1_id = ? THEN c.user2_id ELSE c.user1_id END
-		            ELSE m.sender_id
-		        END AS other_user_id,
-		        MAX(m.backend_id) AS last_backend_id
-		    FROM chats c
-		    JOIN messages m ON m.chat_id = c.id
-		    WHERE c.user1_id = ? OR c.user2_id = ?
-		    GROUP BY c.id
-		),
-		cte_ordered_users AS (
-		    SELECT 
-		        u.id,
-		        u.nickname,
-		        u.first_name || ' ' || u.last_name AS name,
-		        u.avatar,
-		        m.id AS last_message_id,
-		        m.sender_id,
-		        m.content AS last_message,
-		        m.type AS lastMessageType,
-		        m.created_at AS lastInteraction,
-		        lm.last_backend_id,
-		        lm.chat_id,
-		        (
-		        	SELECT COUNT(*) 
-		        	FROM messages 
-		        	WHERE chat_id = lm.chat_id
-		        	  AND is_read = 0
-		        	  AND sender_id != ?
-		        ) AS unread_count
-		    FROM latest_messages lm
-		    JOIN users u ON u.id = lm.other_user_id
-		    LEFT JOIN messages m 
-		        ON m.backend_id = lm.last_backend_id
-		)
-		SELECT 
-		    id,
-		    nickname,
-		    name,
-		    avatar,
-		    last_message_id,
-		    sender_id,
-		    last_message,
-		    lastMessageType,
-		    lastInteraction,
-		    unread_count,
-		    last_backend_id,
-		    chat_id
-		FROM cte_ordered_users
-		ORDER BY last_backend_id DESC;
+    SELECT 
+        c.id AS chat_id,
+        CASE 
+            WHEN m.sender_id = ? THEN 
+                CASE WHEN c.user1_id = ? THEN c.user2_id ELSE c.user1_id END
+            ELSE 
+                CASE WHEN c.user1_id = ? THEN c.user2_id ELSE c.user1_id END
+        END AS other_user_id,
+        MAX(m.backend_id) AS last_backend_id
+    FROM chats c
+    LEFT JOIN messages m ON m.chat_id = c.id
+    WHERE c.user1_id = ? OR c.user2_id = ?
+    GROUP BY c.id
+),
+cte_ordered_users AS (
+    SELECT 
+        u.id,
+        u.nickname,
+        u.first_name || ' ' || u.last_name AS name,
+        u.avatar,
+        m.id AS last_message_id,
+        m.sender_id,
+        m.content AS last_message,
+        m.type AS lastMessageType,
+        m.created_at AS lastInteraction,
+        lm.last_backend_id,
+        lm.chat_id,
+        (
+        	SELECT COUNT(*) 
+        	FROM messages 
+        	WHERE chat_id = lm.chat_id
+        	  AND is_read = 0
+        	  AND sender_id != ?
+        ) AS unread_count
+    FROM latest_messages lm
+    JOIN users u ON u.id = lm.other_user_id
+    LEFT JOIN messages m ON m.backend_id = lm.last_backend_id
+)
+SELECT 
+    id,
+    nickname,
+    name,
+    avatar,
+    last_message_id,
+    sender_id,
+    last_message,
+    lastMessageType,
+    lastInteraction,
+    unread_count,
+    last_backend_id,
+    chat_id
+FROM cte_ordered_users
+ORDER BY last_backend_id DESC;
 	`
 
 	rows, err := S.db.Query(query,
@@ -327,9 +328,11 @@ func (S *Server) GetUsers(w http.ResponseWriter, currentUserID int) ([]Chat, err
 		currentUserID, // 2nd ?
 		currentUserID, // 3rd ?
 		currentUserID, // 4th ?
+		currentUserID,
 		currentUserID, // unread_count
 	)
 	if err != nil {
+		fmt.Println("Get Users Query Error : ", err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -360,6 +363,7 @@ func (S *Server) GetUsers(w http.ResponseWriter, currentUserID int) ([]Chat, err
 			&lastBackendID,
 			&chatID,
 		); err != nil {
+			fmt.Println("Get Users Scan Error : ", err)
 			return nil, err
 		}
 
@@ -392,9 +396,10 @@ func (S *Server) GetUsers(w http.ResponseWriter, currentUserID int) ([]Chat, err
 			c.LastMessageID = lastMessageID.String
 		}
 
+		
 		chats = append(chats, c)
 	}
-
+	
 	return chats, nil
 }
 
