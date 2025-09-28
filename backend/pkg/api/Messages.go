@@ -495,6 +495,9 @@ func (S *Server) GetLastMessageContent(chatID string) (Message, error) {
 		message.Timestamp = timestamp.String
 	}
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return Message{}, nil
+		}
 		fmt.Println("Get Last Message Content Error : ", err)
 		return Message{}, err
 	}

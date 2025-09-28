@@ -99,11 +99,19 @@ function UserProfile({
   );
 
   // Comment-related states
-  const [showComments, setShowComments] = useState<{[key: string]: boolean}>({});
-  const [newComment, setNewComment] = useState<{[key: string]: string}>({});
-  const [replyingTo, setReplyingTo] = useState<{ [key: string]: string | null }>({});
-  const [showEmojiPicker, setShowEmojiPicker] = useState<{[key: string]: boolean}>({});
-  const [showGifPicker, setShowGifPicker] = useState<{[key: string]: boolean}>({});
+  const [showComments, setShowComments] = useState<{ [key: string]: boolean }>(
+    {}
+  );
+  const [newComment, setNewComment] = useState<{ [key: string]: string }>({});
+  const [replyingTo, setReplyingTo] = useState<{
+    [key: string]: string | null;
+  }>({});
+  const [showEmojiPicker, setShowEmojiPicker] = useState<{
+    [key: string]: boolean;
+  }>({});
+  const [showGifPicker, setShowGifPicker] = useState<{
+    [key: string]: boolean;
+  }>({});
 
   // Called when profile settings are saved
   const handleProfileUpdate = (updatedData: UserData) => {
@@ -221,49 +229,75 @@ function UserProfile({
 
   // Comment handling functions
   const handleEmojiSelect = (emoji: string, postId: string) => {
-    setNewComment(prev => ({
+    setNewComment((prev) => ({
       ...prev,
-      [postId]: (prev[postId] || "") + emoji
+      [postId]: (prev[postId] || "") + emoji,
     }));
     // Don't close emoji picker - let user add multiple emojis
   };
 
   const handleGifSelect = (gifUrl: string, postId: string) => {
     // For comments, we'll treat GIFs as image content that gets submitted
-    setNewComment(prev => ({
+    setNewComment((prev) => ({
       ...prev,
-      [postId]: (prev[postId] || "") + `![GIF](${gifUrl})`
+      [postId]: (prev[postId] || "") + `![GIF](${gifUrl})`,
     }));
-    setShowGifPicker(prev => ({
+    setShowGifPicker((prev) => ({
       ...prev,
-      [postId]: false
-    }));
-  };
-
-  const toggleComments = (postId: string) => {
-    setShowComments(prev => ({
-      ...prev,
-      [postId]: !prev[postId]
+      [postId]: false,
     }));
   };
 
-  const handleCommentSubmit = async (postId: string, parentCommentId?: string) => {
+  const toggleComments = async (postId: string) => {
+    try {
+      const res = await fetch(`/api/get-comments/${postId}`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch comments");
+      const data = await res.json();
+      setPostsState((prevPosts) =>
+        prevPosts.map((post) =>
+          post.id === postId
+            ? {
+                ...post,
+                commentsList: data || [],
+              }
+            : post
+        )
+      );
+    } catch (err) {
+      console.error("Failed to fetch comments", err);
+    }
+    setShowComments((prev) => ({
+      ...prev,
+      [postId]: !prev[postId],
+    }));
+  };
+
+  const handleCommentSubmit = async (
+    postId: string,
+    parentCommentId?: string
+  ) => {
     const commentText = newComment[postId];
     if (!commentText?.trim()) return;
 
     try {
-      const res = await fetch(`http://localhost:8080/api/comment/${postId}`, {
+      const res = await fetch(`/api/create-comment`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           content: commentText,
-          parentCommentId: parentCommentId || null
+          parentCommentId: parentCommentId || null,
+          postId: postId,
         }),
       });
 
       const data = await res.json();
-      
+
+      console.log(" New comment: ", data);
+
       // Update the post with new comment
       setPostsState((prevPosts) =>
         prevPosts.map((post) =>
@@ -271,24 +305,35 @@ function UserProfile({
             ? {
                 ...post,
                 comments: post.comments + 1,
-                commentsList: data.comments || []
+                commentsList: post.commentsList
+                  ? parentCommentId
+                    ? post.commentsList.map((comment) => {
+                        if (comment.id === parentCommentId) {
+                          return {
+                            ...comment,
+                            replies: [...(comment.replies || []), data],
+                          };
+                        }
+                        return comment;
+                      })
+                    : [...post.commentsList, data]
+                  : [data],
               }
             : post
         )
       );
 
-      // Clear the comment input
-      setNewComment(prev => ({
+      // Clear input
+      setNewComment((prev) => ({
         ...prev,
-        [postId]: ""
+        [postId]: "",
       }));
 
-      // Clear reply state
-      setReplyingTo(prev => ({
+      // clear reply
+      setReplyingTo((prev) => ({
         ...prev,
-        [postId]: null
+        [postId]: null,
       }));
-
     } catch (err) {
       console.error("Failed to post comment", err);
     }
@@ -296,45 +341,54 @@ function UserProfile({
 
   const handleCommentLike = async (commentId: string, postId: string) => {
     try {
-      const res = await fetch(`http://localhost:8080/api/like-comment/${commentId}`, {
+      const res = await fetch(`/api/like-comment/${commentId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
       });
-
+      if (!res.ok) throw new Error("Failed to like comment");
       const data = await res.json();
-      
+
+      console.log("Comment liked:", data);
+
       // Update the comment likes in the post
       setPostsState((prevPosts) =>
         prevPosts.map((post) => {
           if (post.id === postId && post.commentsList) {
             return {
               ...post,
-              commentsList: updateCommentLikes(post.commentsList, commentId, data.liked)
+              commentsList: updateCommentLikes(
+                post.commentsList,
+                commentId,
+                data.liked
+              ),
             };
           }
           return post;
         })
       );
-
     } catch (err) {
       console.error("Failed to like comment", err);
     }
   };
 
-  const updateCommentLikes = (comments: Comment[], commentId: string, isLiked: boolean): Comment[] => {
-    return comments.map(comment => {
+  const updateCommentLikes = (
+    comments: Comment[],
+    commentId: string,
+    isLiked: boolean
+  ): Comment[] => {
+    return comments.map((comment) => {
       if (comment.id === commentId) {
         return {
           ...comment,
           isLiked,
-          likes: isLiked ? comment.likes + 1 : comment.likes - 1
+          likes: isLiked ? comment.likes + 1 : comment.likes - 1,
         };
       }
       if (comment.replies) {
         return {
           ...comment,
-          replies: updateCommentLikes(comment.replies, commentId, isLiked)
+          replies: updateCommentLikes(comment.replies, commentId, isLiked),
         };
       }
       return comment;
@@ -342,15 +396,20 @@ function UserProfile({
   };
 
   const handleReply = (postId: string, commentId: string) => {
-    setReplyingTo(prev => ({
+    setReplyingTo((prev) => ({
       ...prev,
-      [postId]: commentId
+      [postId]: commentId,
     }));
   };
 
   const renderComment = (comment: Comment, postId: string, isReply = false) => {
     return (
-      <div key={comment.id} className={`${isReply ? 'ml-8 mt-2' : 'mt-4'} border-l-2 border-muted pl-4`}>
+      <div
+        key={comment.id}
+        className={`${
+          isReply ? "ml-8 mt-2" : "mt-4"
+        } border-l-2 border-muted pl-4`}
+      >
         <div className="flex items-start gap-3">
           <Avatar className="h-8 w-8">
             <AvatarImage
@@ -358,7 +417,10 @@ function UserProfile({
               alt={comment.author.name}
             />
             <AvatarFallback className="bg-muted text-foreground text-xs">
-              {comment.author.name.split(" ").map((n) => n[0]).join("")}
+              {comment.author.name
+                .split(" ")
+                .map((n) => n[0])
+                .join("")}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1">
@@ -382,7 +444,9 @@ function UserProfile({
                   comment.isLiked ? "text-red-500" : "text-muted-foreground"
                 }`}
               >
-                <Heart className={`h-3 w-3 ${comment.isLiked ? "fill-current" : ""}`} />
+                <Heart
+                  className={`h-3 w-3 ${comment.isLiked ? "fill-current" : ""}`}
+                />
                 <span className="text-xs">{comment.likes}</span>
               </Button>
               {!isReply && (
@@ -398,9 +462,10 @@ function UserProfile({
               )}
             </div>
             {/* Render replies */}
-            {comment.replies && comment.replies.map(reply => 
-              renderComment(reply, postId, true)
-            )}
+            {comment.replies &&
+              comment.replies.map((reply) =>
+                renderComment(reply, postId, true)
+              )}
           </div>
         </div>
       </div>
@@ -695,7 +760,7 @@ function UserProfile({
                             {post.likes}
                           </button>
                           {/* Comment button */}
-                          <button 
+                          <button
                             onClick={() => toggleComments(post.id)}
                             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
                           >
@@ -715,7 +780,10 @@ function UserProfile({
                             {/* Comment Input */}
                             <div className="flex items-center gap-3 mb-4">
                               <Avatar className="h-8 w-8">
-                                <AvatarImage src="/placeholder-avatar.jpg" alt="You" />
+                                <AvatarImage
+                                  src={`http://localhost:8080/${profileData.avatar}`}
+                                  alt="You"
+                                />
                                 <AvatarFallback className="bg-muted text-foreground text-xs">
                                   You
                                 </AvatarFallback>
@@ -723,18 +791,23 @@ function UserProfile({
                               <div className="flex-1 flex items-center gap-2">
                                 <Input
                                   placeholder={
-                                    replyingTo[post.id] 
-                                      ? "Write a reply..." 
+                                    replyingTo[post.id]
+                                      ? "Write a reply..."
                                       : "Write a comment..."
                                   }
                                   value={newComment[post.id] || ""}
-                                  onChange={(e) => setNewComment(prev => ({
-                                    ...prev,
-                                    [post.id]: e.target.value
-                                  }))}
+                                  onChange={(e) =>
+                                    setNewComment((prev) => ({
+                                      ...prev,
+                                      [post.id]: e.target.value,
+                                    }))
+                                  }
                                   onKeyPress={(e) => {
                                     if (e.key === "Enter") {
-                                      handleCommentSubmit(post.id, replyingTo[post.id] || undefined);
+                                      handleCommentSubmit(
+                                        post.id,
+                                        replyingTo[post.id] || undefined
+                                      );
                                     }
                                   }}
                                   className="flex-1"
@@ -743,13 +816,13 @@ function UserProfile({
                                   size="sm"
                                   variant={"outline"}
                                   onClick={() => {
-                                    setShowGifPicker(prev => ({
+                                    setShowGifPicker((prev) => ({
                                       ...prev,
-                                      [post.id]: !prev[post.id]
+                                      [post.id]: !prev[post.id],
                                     }));
-                                    setShowEmojiPicker(prev => ({
+                                    setShowEmojiPicker((prev) => ({
                                       ...prev,
-                                      [post.id]: false
+                                      [post.id]: false,
                                     }));
                                   }}
                                   className="h-8 w-8 p-0 flex items-center justify-center cursor-pointer"
@@ -760,13 +833,13 @@ function UserProfile({
                                   size="sm"
                                   variant={"outline"}
                                   onClick={() => {
-                                    setShowEmojiPicker(prev => ({
+                                    setShowEmojiPicker((prev) => ({
                                       ...prev,
-                                      [post.id]: !prev[post.id]
+                                      [post.id]: !prev[post.id],
                                     }));
-                                    setShowGifPicker(prev => ({
+                                    setShowGifPicker((prev) => ({
                                       ...prev,
-                                      [post.id]: false
+                                      [post.id]: false,
                                     }));
                                   }}
                                   className="h-8 w-8 p-0 flex items-center justify-center cursor-pointer"
@@ -775,7 +848,12 @@ function UserProfile({
                                 </Button>
                                 <Button
                                   size="sm"
-                                  onClick={() => handleCommentSubmit(post.id, replyingTo[post.id] || undefined)}
+                                  onClick={() =>
+                                    handleCommentSubmit(
+                                      post.id,
+                                      replyingTo[post.id] || undefined
+                                    )
+                                  }
                                   disabled={!newComment[post.id]?.trim()}
                                   className="h-8 w-8 p-0 flex items-center justify-center cursor-pointer"
                                 >
@@ -788,7 +866,9 @@ function UserProfile({
                             {showEmojiPicker[post.id] && (
                               <div className="mb-4">
                                 <EmojiPicker
-                                  onEmojiClick={(e) => handleEmojiSelect(e.emoji, post.id)}
+                                  onEmojiClick={(e) =>
+                                    handleEmojiSelect(e.emoji, post.id)
+                                  }
                                   theme={Theme.DARK}
                                 />
                               </div>
@@ -796,7 +876,9 @@ function UserProfile({
                             {showGifPicker[post.id] && (
                               <div className="mb-4">
                                 <GifPicker
-                                  onGifClick={(g) => handleGifSelect(g.url, post.id)}
+                                  onGifClick={(g) =>
+                                    handleGifSelect(g.url, post.id)
+                                  }
                                   tenorApiKey="AIzaSyB78CUkLJjdlA67853bVqpcwjJaywRAlaQ"
                                   categoryHeight={100}
                                   theme={Theme.DARK}
@@ -810,10 +892,12 @@ function UserProfile({
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => setReplyingTo(prev => ({
-                                    ...prev,
-                                    [post.id]: null
-                                  }))}
+                                  onClick={() =>
+                                    setReplyingTo((prev) => ({
+                                      ...prev,
+                                      [post.id]: null,
+                                    }))
+                                  }
                                   className="text-xs"
                                 >
                                   Cancel Reply
@@ -823,8 +907,9 @@ function UserProfile({
 
                             {/* Comments List */}
                             <div className="space-y-2">
-                              {post.commentsList && post.commentsList.length > 0 ? (
-                                post.commentsList.map(comment => 
+                              {post.commentsList &&
+                              post.commentsList.length > 0 ? (
+                                post.commentsList.map((comment) =>
                                   renderComment(comment, post.id)
                                 )
                               ) : (
