@@ -85,6 +85,7 @@ export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
     const fetchFollowers = async () => {
       try {
         const response = await fetch("/api/get-followers", {
+          method: "POST",
           credentials: "include",
         });
         const data = await response.json();
