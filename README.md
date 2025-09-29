@@ -1,4 +1,4 @@
-# Social Network Project
+# social-network
 
 ## Overview
 This project is a Facebook-like social network application built with Go (backend) and Next.js (frontend).  
