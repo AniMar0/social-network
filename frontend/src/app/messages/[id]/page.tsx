@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import MessagesPage from "@/components/messages";
 import { NewPostModal } from "@/components/newpost";
+import { siteConfig } from "@/config/site.config";
 
 function Messages() {
   const [isNewPostModalOpen, setIsNewPostModalOpen] = useState(false);
@@ -27,7 +28,7 @@ function Messages() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const res = await fetch("http://localhost:8080/api/logged", {
+        const res = await fetch(`${siteConfig.domain}/api/logged`, {
           method: "POST",
           credentials: "include",
         });
@@ -74,7 +75,7 @@ function Messages() {
   }
 
   const setSeenChat = (chatId: string) => {
-    fetch(`/api/set-seen-chat/${chatId}`, {
+    fetch(`${siteConfig.domain}/api/set-seen-chat/${chatId}`, {
       method: "POST",
       credentials: "include",
     })

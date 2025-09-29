@@ -30,6 +30,7 @@ import EmojiPicker, { Theme } from "emoji-picker-react";
 import GifPicker from "gif-picker-react";
 import { authUtils } from "@/lib/navigation";
 import { is } from "date-fns/locale";
+import { siteConfig } from "@/config/site.config";
 
 interface Follower {
   id: string;
@@ -87,7 +88,7 @@ export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
     if (privacy !== "private") return;
     const fetchFollowers = async () => {
       try {
-        const response = await fetch("/api/get-followers", {
+        const response = await fetch(`${siteConfig.domain}/api/get-followers`, {
           method: "POST",
           credentials: "include",
         });
@@ -176,7 +177,7 @@ export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
       const avatarForm = new FormData();
       avatarForm.append("post", postFile);
       try {
-        const res = await fetch("http://localhost:8080/api/upload-post-file", {
+        const res = await fetch(`${siteConfig.domain}/api/upload-post-file`, {
           method: "POST",
           body: avatarForm,
           credentials: "include",
@@ -190,7 +191,7 @@ export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
     }
 
     try {
-      const res = await fetch("http://localhost:8080/api/create-post", {
+      const res = await fetch(`${siteConfig.domain}/api/create-post`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -261,7 +262,7 @@ export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
           <div className="flex items-center gap-3">
             <Avatar className="h-12 w-12">
               <AvatarImage
-                src={`http://localhost:8080/${currentUser.avatar}`}
+                src={`${siteConfig.domain}/${currentUser.avatar}`}
                 alt={currentUser.fullName}
               />
               <AvatarFallback className="bg-muted text-foreground">
@@ -442,7 +443,7 @@ export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
                     >
                       <Avatar className="h-8 w-8">
                         <AvatarImage
-                          src={`http://localhost:8080/${follower.avatar}`}
+                          src={`${siteConfig.domain}/${follower.avatar}`}
                           alt={`${follower.firstName} ${follower.lastName}`}
                         />
                         <AvatarFallback className="bg-muted text-foreground text-xs">

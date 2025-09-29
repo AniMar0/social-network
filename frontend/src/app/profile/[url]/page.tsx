@@ -6,7 +6,7 @@ import UserProfile from "@/components/user-profile";
 import { NewPostModal } from "@/components/newpost";
 import { profileUtils } from "@/lib/navigation";
 import { initWebSocket, closeWebSocket } from "@/lib/websocket";
-
+import { siteConfig } from "@/config/site.config";
 export default function UserProfilePage() {
   const [isNewPostModalOpen, setIsNewPostModalOpen] = useState(false);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
@@ -24,7 +24,7 @@ export default function UserProfilePage() {
     const checkAuthAndLoadProfile = async () => {
       try {
         // First check if user is logged in
-        const authRes = await fetch("/api/logged", {
+        const authRes = await fetch(`${siteConfig.domain}/api/logged`, {
           method: "POST",
           credentials: "include",
         });

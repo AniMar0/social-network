@@ -1,5 +1,4 @@
 "use client";
-
 import type React from "react";
 
 import { useState } from "react";
@@ -22,6 +21,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import { siteConfig } from "@/config/site.config";
 
 export interface UserData {
   id: string;
@@ -99,7 +99,7 @@ export function ProfileSettings({ userData, onSave }: ProfileSettingsProps) {
     avatarForm.append("avatar", avatarFile);
     if (avatarFile) {
       // TODO: Implement actual file upload to server and get the URL
-      await fetch("http://localhost:8080/api/upload-avatar", {
+      await fetch("api/upload-avatar", {
         method: "POST",
         body: avatarForm,
         credentials: "include",
@@ -142,7 +142,7 @@ export function ProfileSettings({ userData, onSave }: ProfileSettingsProps) {
     }
 
     try {
-      const res = await fetch("http://localhost:8080/api/user/update", {
+      const res = await fetch(`${siteConfig.domain}/api/user/update`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -201,8 +201,8 @@ export function ProfileSettings({ userData, onSave }: ProfileSettingsProps) {
                     formData.avatar?.startsWith("blob:")
                       ? formData.avatar
                       : formData.avatar
-                      ? `http://localhost:8080/${formData.avatar}`
-                      : `http://localhost:8080/${userData.avatar}`
+                      ? `${siteConfig.domain}/${formData.avatar}`
+                      : `${siteConfig.domain}/${userData.avatar}`
                   }
                   alt="Profile avatar"
                 />

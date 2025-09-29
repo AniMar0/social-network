@@ -3,6 +3,7 @@
  */
 
 import { useRouter } from "next/navigation";
+import { siteConfig } from "@/config/site.config";
 
 export interface NavigationProps {
   onNavigate?: (itemId: string) => void;
@@ -89,7 +90,7 @@ export const extractUsernameFromUrl = (pathname: string): string | null => {
 export const authUtils = {
   checkAuth: async () => {
     try {
-      const res = await fetch("http://localhost:8080/api/logged", {
+      const res = await fetch(`${siteConfig.domain}/api/logged`, {
         method: "POST",
         credentials: "include",
       });
@@ -108,7 +109,7 @@ export const authUtils = {
 
   CurrentUser: async () => {
     try {
-      const res = await fetch("http://localhost:8080/api/me", {
+      const res = await fetch(`${siteConfig.domain}/api/me`, {
         method: "POST",
         credentials: "include",
       });
@@ -121,7 +122,7 @@ export const authUtils = {
   },
   logout: async () => {
     try {
-      await fetch("http://localhost:8080/api/logout", {
+      await fetch(`${siteConfig.domain}/api/logout`, {
         method: "POST",
         credentials: "include",
       });
@@ -142,10 +143,13 @@ export const profileUtils = {
   fetchUserProfile: async (url: string) => {
     try {
       // TODO: Replace with actual backend endpoint
-      const res = await fetch(`http://localhost:8080/api/profile/${url}`, {
-        method: "GET",
-        credentials: "include",
-      });
+      const res = await fetch(
+        `${siteConfig.domain}/api/profile/${url}`,
+        {
+          method: "GET",
+          credentials: "include",
+        }
+      );
 
       if (!res.ok) {
         return null;

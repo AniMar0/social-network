@@ -6,7 +6,7 @@ import NotificationsPage from "@/components/notifications";
 import { NewPostModal } from "@/components/newpost";
 import { authUtils } from "@/lib/navigation";
 import { initWebSocket, closeWebSocket } from "@/lib/websocket";
-
+import { siteConfig } from "@/config/site.config";
 export default function Notifications() {
   const [isNewPostModalOpen, setIsNewPostModalOpen] = useState(false);
   const [userLoggedIn, setUserLoggedIn] = useState(false);
@@ -16,7 +16,7 @@ export default function Notifications() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const res = await fetch("http://localhost:8080/api/logged", {
+        const res = await fetch(`${siteConfig.domain}/api/logged`, {
           method: "POST",
           credentials: "include",
         });

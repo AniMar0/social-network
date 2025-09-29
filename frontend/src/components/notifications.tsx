@@ -29,6 +29,7 @@ import {
   deleteNotification,
   type Notification,
 } from "@/lib/notifications";
+import { siteConfig } from "@/config/site.config";
 
 interface NotificationsPageProps {
   onNavigate?: (page: string) => void;
@@ -45,7 +46,7 @@ function NotificationsPage({ onNewPost, onNavigate }: NotificationsPageProps) {
     useEffect(() => {
       const init = async () => {
         try {
-          const res = await fetch("http://localhost:8080/api/notifications", {
+          const res = await fetch(`${siteConfig.domain}/api/notifications`, {
             credentials: "include",
           });
           const data = await res.json();
@@ -145,10 +146,13 @@ function NotificationsPage({ onNewPost, onNavigate }: NotificationsPageProps) {
   ) => {
     console.log(`Follow request ${action}ed for notification:`, notificationId);
     // TODO: Add backend logic here to handle follow requests
-    await fetch(`/api/${action}-follow-request/${notificationId}`, {
-      method: "POST",
-      credentials: "include",
-    });
+    await fetch(
+      `${siteConfig.domain}/api/${action}-follow-request/${notificationId}`,
+      {
+        method: "POST",
+        credentials: "include",
+      }
+    );
 
     handleDelete(notificationId);
   };
@@ -228,8 +232,8 @@ function NotificationsPage({ onNewPost, onNavigate }: NotificationsPageProps) {
                       <Avatar className="h-10 w-10 flex-shrink-0">
                         <AvatarImage
                           src={
-                            `http://localhost:8080/${notification.user.avatar}` ||
-                            "http://localhost:8080/uploads/default.jpg"
+                            `${siteConfig.domain}/${notification.user.avatar}` ||
+                            `${siteConfig.domain}/uploads/default.jpg`
                           }
                         />
                         <AvatarFallback className="bg-muted text-foreground">

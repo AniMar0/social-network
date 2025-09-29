@@ -6,6 +6,7 @@ import ExplorePage from "@/components/explore";
 import { NewPostModal } from "@/components/newpost";
 import { authUtils } from "@/lib/navigation";
 import { initWebSocket, closeWebSocket } from "@/lib/websocket";
+import { siteConfig } from "@/config/site.config";
 
 export default function Explore() {
   const [isNewPostModalOpen, setIsNewPostModalOpen] = useState(false);
@@ -16,7 +17,7 @@ export default function Explore() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const res = await fetch("http://localhost:8080/api/logged", {
+        const res = await fetch(`${siteConfig.domain}/api/logged`, {
           method: "POST",
           credentials: "include",
         });
@@ -96,10 +97,7 @@ export default function Explore() {
 
   return (
     <div className="min-h-screen bg-background">
-      <ExplorePage
-        onNewPost={handleNewPost}
-        onNavigate={handleNavigate}
-      />
+      <ExplorePage onNewPost={handleNewPost} onNavigate={handleNavigate} />
 
       <NewPostModal
         isOpen={isNewPostModalOpen}

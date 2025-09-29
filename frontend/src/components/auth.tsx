@@ -7,16 +7,33 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { CalendarIcon, Upload, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { siteConfig } from "@/config/site.config";
 
 interface FormData {
   // Required fields for registration
@@ -204,7 +221,7 @@ export function AuthForm() {
       if (isLogin) {
         // Handle login logic here
         // TODO: Implement actual login API call
-        await fetch("http://localhost:8080/api/login", {
+        await fetch(`${siteConfig.domain}/api/login`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -246,7 +263,10 @@ export function AuthForm() {
           })
           .catch((err) => {
             console.error(err);
-            setErrors((prev) => ({ ...prev, general: String(err.message || err) }));
+            setErrors((prev) => ({
+              ...prev,
+              general: String(err.message || err),
+            }));
           });
       } else {
         const avatarForm = new FormData();
@@ -254,29 +274,32 @@ export function AuthForm() {
         if (formData.avatar) {
           console.log(formData.avatar);
           avatarForm.append("avatar", formData.avatar);
-        await fetch("http://localhost:8080/api/upload-avatar", {
-          method: "POST",
-          body: avatarForm,
-          credentials: "include",
-        })
-          .then(async (res) => {
-            if (!res.ok) {
-              // backend may return plain text error messages for bad requests
-              const text = await res.text();
-              throw new Error(text || "Upload failed");
-            }
-            return res.json();
+          await fetch(`${siteConfig.domain}/api/upload-avatar`, {
+            method: "POST",
+            body: avatarForm,
+            credentials: "include",
           })
-          .then((data) => (avatarUrl = data.avatarUrl))
-          .catch((err) => {
-            console.error(err);
-            setErrors((prev) => ({ ...prev, general: String(err.message || err) }));
-          });
+            .then(async (res) => {
+              if (!res.ok) {
+                // backend may return plain text error messages for bad requests
+                const text = await res.text();
+                throw new Error(text || "Upload failed");
+              }
+              return res.json();
+            })
+            .then((data) => (avatarUrl = data.avatarUrl))
+            .catch((err) => {
+              console.error(err);
+              setErrors((prev) => ({
+                ...prev,
+                general: String(err.message || err),
+              }));
+            });
         } else {
           avatarUrl = "/uploads/default.jpg";
         }
 
-        await fetch("http://localhost:8080/api/register", {
+        await fetch(`${siteConfig.domain}/api/register`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -287,7 +310,9 @@ export function AuthForm() {
             password: formData.password,
             firstName: formData.firstName,
             lastName: formData.lastName,
-            dateOfBirth: formData.dateOfBirth ? formData.dateOfBirth.toISOString() : "",
+            dateOfBirth: formData.dateOfBirth
+              ? formData.dateOfBirth.toISOString()
+              : "",
             nickname: formData.nickname,
             aboutMe: formData.aboutMe,
             avatarUrl: avatarUrl,
@@ -307,7 +332,7 @@ export function AuthForm() {
                 throw new Error(text || "Registration failed");
               }
             }
-            
+
             // For successful responses, try to parse as JSON, but handle non-JSON responses gracefully
             try {
               const data = await res.json();
@@ -340,10 +365,18 @@ export function AuthForm() {
             console.error(err);
             // Convert backend error messages to user-friendly messages
             let errorMessage = String(err.message || err);
-            if (errorMessage.includes("User already exists") || errorMessage.includes("Status Conflict")) {
-              errorMessage = "An account with this email already exists. Please use a different email or try logging in.";
-            } else if (errorMessage.includes("404") || errorMessage.includes("not found")) {
-              errorMessage = "Registration service is currently unavailable. Please try again later.";
+            if (
+              errorMessage.includes("User already exists") ||
+              errorMessage.includes("Status Conflict")
+            ) {
+              errorMessage =
+                "An account with this email already exists. Please use a different email or try logging in.";
+            } else if (
+              errorMessage.includes("404") ||
+              errorMessage.includes("not found")
+            ) {
+              errorMessage =
+                "Registration service is currently unavailable. Please try again later.";
             }
             setErrors((prev) => ({ ...prev, general: errorMessage }));
           });
@@ -623,7 +656,10 @@ export function AuthForm() {
                     <div className="flex items-center space-x-4">
                       <Avatar className="h-16 w-16">
                         <AvatarImage
-                            src={avatarPreview || "http://localhost:8080/uploads/default.jpg"}
+                          src={
+                            avatarPreview ||
+                            `${siteConfig.domain}/uploads/default.jpg`
+                          }
                         />
                         <AvatarFallback>
                           <Upload className="h-6 w-6 text-muted-foreground" />

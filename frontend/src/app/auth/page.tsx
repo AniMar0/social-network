@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AuthForm } from "@/components/auth";
-
+import { siteConfig } from "@/config/site.config";
 export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -19,7 +19,7 @@ export default function HomePage() {
 
     const checkLogin = async () => {
       try {
-        const res = await fetch("http://localhost:8080/api/logged", {
+        const res = await fetch(`${siteConfig.domain}/api/logged`, {
           method: "POST",
           credentials: "include",
         });

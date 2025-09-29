@@ -28,6 +28,7 @@ import { authUtils } from "@/lib/navigation";
 import { useNotificationCount } from "@/lib/notifications";
 import EmojiPicker, { Theme } from "emoji-picker-react";
 import GifPicker from "gif-picker-react";
+import { siteConfig } from "@/config/site.config";
 
 interface Comment {
   id: string;
@@ -134,7 +135,7 @@ function UserProfile({
 
       if (followingState) {
         // Unfollow user
-        await fetch("http://localhost:8080/api/unfollow", {
+        await fetch(`${siteConfig.domain}/api/unfollow`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
@@ -152,7 +153,7 @@ function UserProfile({
         // Cancel pending follow request
 
         console.log("sending cancel request", body);
-        await fetch("http://localhost:8080/api/cancel-follow-request", {
+        await fetch(`${siteConfig.domain}/api/cancel-follow-request`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
@@ -165,7 +166,7 @@ function UserProfile({
         // Check if profile is private
         if (profileData.isPrivate) {
           // Send follow request for private profile
-          await fetch("http://localhost:8080/api/send-follow-request", {
+          await fetch(`${siteConfig.domain}/api/send-follow-request`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
@@ -176,7 +177,7 @@ function UserProfile({
           setMessageDialogOpen(false);
         } else {
           // Follow public profile instantly
-          await fetch("http://localhost:8080/api/follow", {
+          await fetch(`${siteConfig.domain}/api/follow`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
@@ -201,11 +202,14 @@ function UserProfile({
   // TODO: Call backend to like/unlike post
   const handleLikePost = async (postId: string) => {
     try {
-      const res = await fetch(`http://localhost:8080/api/like/${postId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      });
+      const res = await fetch(
+        `${siteConfig.domain}/api/like/${postId}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        }
+      );
 
       const data = await res.json();
       const isLiked = data.liked ?? false;
@@ -250,10 +254,13 @@ function UserProfile({
 
   const toggleComments = async (postId: string) => {
     try {
-      const res = await fetch(`/api/get-comments/${postId}`, {
-        method: "POST",
-        credentials: "include",
-      });
+      const res = await fetch(
+        `${siteConfig.domain}/api/get-comments/${postId}`,
+        {
+          method: "POST",
+          credentials: "include",
+        }
+      );
       if (!res.ok) throw new Error("Failed to fetch comments");
       const data = await res.json();
       setPostsState((prevPosts) =>
@@ -283,7 +290,7 @@ function UserProfile({
     if (!commentText?.trim()) return;
 
     try {
-      const res = await fetch(`/api/create-comment`, {
+      const res = await fetch(`${siteConfig.domain}/api/create-comment`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -341,11 +348,14 @@ function UserProfile({
 
   const handleCommentLike = async (commentId: string, postId: string) => {
     try {
-      const res = await fetch(`/api/like-comment/${commentId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      });
+      const res = await fetch(
+        `${siteConfig.domain}/api/like-comment/${commentId}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        }
+      );
       if (!res.ok) throw new Error("Failed to like comment");
       const data = await res.json();
 
@@ -413,7 +423,7 @@ function UserProfile({
         <div className="flex items-start gap-3">
           <Avatar className="h-8 w-8">
             <AvatarImage
-              src={`http://localhost:8080/${comment.author.avatar}`}
+              src={`${siteConfig.domain}/${comment.author.avatar}`}
               alt={comment.author.name}
             />
             <AvatarFallback className="bg-muted text-foreground text-xs">
@@ -519,10 +529,13 @@ function UserProfile({
   const handleMessage = async () => {
     console.log("Sending message to:", profileData.id);
     try {
-      const res = await fetch(`/api/make-message/${profileData.id}`, {
-        method: "POST",
-        credentials: "include",
-      });
+      const res = await fetch(
+        `${siteConfig.domain}/api/make-message/${profileData.id}`,
+        {
+          method: "POST",
+          credentials: "include",
+        }
+      );
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
 
@@ -588,8 +601,8 @@ function UserProfile({
               <Avatar className="h-32 w-32 border-4 border-primary/20 flex-shrink-0">
                 <AvatarImage
                   src={
-                    `http://localhost:8080/${profileData.avatar}` ||
-                    "http://localhost:8080/uploads/default.jpg"
+                    `${siteConfig.domain}/${profileData.avatar}` ||
+                    `${siteConfig.domain}/uploads/default.jpg`
                   }
                   alt={`${profileData.firstName} ${profileData.lastName}`}
                 />
@@ -697,8 +710,8 @@ function UserProfile({
                         <Avatar className="h-10 w-10">
                           <AvatarImage
                             src={
-                              `http://localhost:8080/${profileData.avatar}` ||
-                              "http://localhost:8080/uploads/default.jpg"
+                              `${siteConfig.domain}/${profileData.avatar}` ||
+                              `${siteConfig.domain}/uploads/default.jpg`
                             }
                             alt={`${profileData.firstName} ${profileData.lastName}`}
                           />
@@ -732,7 +745,7 @@ function UserProfile({
                               src={
                                 post.image.startsWith("http")
                                   ? post.image // external URL
-                                  : `http://localhost:8080/${post.image}` // internal URL
+                                  : `${siteConfig.domain}/${post.image}` // internal URL
                               }
                               alt="Post content"
                               className="w-full h-auto max-h-96 object-cover"
@@ -781,7 +794,7 @@ function UserProfile({
                             <div className="flex items-center gap-3 mb-4">
                               <Avatar className="h-8 w-8">
                                 <AvatarImage
-                                  src={`http://localhost:8080/${profileData.avatar}`}
+                                  src={`${siteConfig.domain}/${profileData.avatar}`}
                                   alt="You"
                                 />
                                 <AvatarFallback className="bg-muted text-foreground text-xs">

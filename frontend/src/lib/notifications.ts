@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { getWebSocket } from "@/lib/websocket";
-
+import { siteConfig } from "@/config/site.config";
 export interface Notification {
   id: number;
   type: "like" | "follow" | "comment" | "mention" | "follow_request";
@@ -29,7 +29,7 @@ export const useNotificationCount = () => {
   useEffect(() => {
     const init = async () => {
       try {
-        const res = await fetch("http://localhost:8080/api/notifications", {
+        const res = await fetch(`${siteConfig.domain}/api/notifications`, {
           credentials: "include",
         });
         const data = await res.json();
@@ -71,7 +71,7 @@ export const useNotificationCount = () => {
 export const fetchNotifications = async (): Promise<Notification[]> => {
   try {
     // TODO: Replace with actual API call
-    const response = await fetch("http://localhost:8080/api/notifications", {
+    const response = await fetch(`${siteConfig.domain}/api/notifications`, {
       credentials: "include",
     });
     if (!response.ok) throw new Error("Failed to fetch notifications");
@@ -94,7 +94,7 @@ export const markNotificationAsRead = async (
   if (AllNotifications) {
     try {
       // TODO: Replace with actual API call
-      await fetch(`/api/mark-all-notification-as-read`, {
+      await fetch(`${siteConfig.domain}/api/mark-all-notification-as-read`, {
         method: "POST",
         credentials: "include",
       });
@@ -104,10 +104,13 @@ export const markNotificationAsRead = async (
   } else if (notificationId) {
     try {
       // TODO: Replace with actual API call
-      await fetch(`/api/mark-notification-as-read/${notificationId}`, {
-        method: "POST",
-        credentials: "include",
-      });
+      await fetch(
+        `${siteConfig.domain}/api/mark-notification-as-read/${notificationId}`,
+        {
+          method: "POST",
+          credentials: "include",
+        }
+      );
     } catch (error) {
       console.error("Error marking notification as read:", error);
     }
@@ -120,10 +123,13 @@ export const deleteNotification = async (
 ): Promise<void> => {
   try {
     // TODO: Replace with actual API call
-    await fetch(`/api/delete-notification/${notificationId}`, {
-      method: "POST",
-      credentials: "include",
-    });
+    await fetch(
+      `${siteConfig.domain}/api/delete-notification/${notificationId}`,
+      {
+        method: "POST",
+        credentials: "include",
+      }
+    );
   } catch (error) {
     console.error("Error deleting notification:", error);
   }
