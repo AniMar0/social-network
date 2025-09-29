@@ -1,4 +1,4 @@
-// Please note Some data Below are Just Placeholder for now due to active development
+
 
 export type NavItem = {
   label: string;

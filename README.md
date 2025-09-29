@@ -191,6 +191,8 @@ frontend/                 # Next.js frontend
 │  │  ├─ sidebar.tsx
 │  │  ├─ user-profile.tsx
 │  │  └─ ui/
+│  ├─ config/
+│  │  └─  site.config.ts # config your site domain,name...
 │  ├─ lib/
 │  │  ├─ navigation.ts
 │  │  ├─ notifications.ts
