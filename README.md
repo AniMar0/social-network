@@ -1,58 +1,218 @@
-# social-network
+# Social Network Project
 
-## Overview
-This project is a Facebook-like social network application built with Go (backend) and Next.js (frontend).  
-It includes features such as followers, profiles, posts, groups, notifications, and chat with realtime updates.
-
----
-
-## Project Objectives
-- **Followers**: follow/unfollow users, handle follow requests, support public/private profiles.
-- **Profile**: display user info, activity, posts, followers/following lists.
-- **Posts**: create posts and comments with image/GIF support, set privacy levels.
-- **Groups**: create groups, invite users, group posts/comments, group events.
-- **Notifications**: show all notifications with realtime updates.
-- **Chat**: private messages with Websockets, seen/read receipts, emojis, group chat.
-- **Authentication**: registration, login, sessions & cookies.
-- **Frontend**: responsive UI with messages, notifications, sidebar, search, avatars.
-- **Backend**: Go server, database management, migrations, Docker setup.
+A Facebook-like social network application built with **Go** (backend) and **Next.js** (frontend).  
+This project demonstrates a full-stack web application with realtime features, user authentication, and a responsive UI.
 
 ---
 
-## Current Progress
+## 🚀 Features
 
-| Feature / Part             | Progress | Notes |
-|-----------------------------|----------|-------|
-| **Followers**              | ✅ 100%  | Follow/unfollow, accept/decline requests, public profile auto-follow ✅ |
-| **Profile**                | ✅ 100%  | Display info, activity, posts, followers/following lists, public/private toggle ✅ |
-| **Posts**                  | ✅ 100%   | Create posts ✅, include images/GIF ✅, privacy settings ✅, create comments ✅ |
-| **Groups**                 | ❌ 0%    | Everything remaining: create group, invitations, group posts/comments, events ❌ |
-| **Notifications**          | ✅ 100%  | All types of notifications implemented, UI and realtime updates ✅ |
-| **Chat (Private + Group)** | ⚠️ 75% | Private messages, seen/read receipts, emojis ✅, group chat ❌ |
-| **Authentication & Sessions** | ✅ 100% | Registration/login, sessions & cookies ✅ |
-| **Frontend**               | ⚠️ 90%   | Messages UI, notifications UI, sidebar/search/avatar ✅, group UI ❌ |
-| **Backend (Server & DB)**  | ⚠️ 90%  | Go server, Websockets, DB tables, migrations ✅, Docker setup ❌ |
+### User Management
 
-**Overall Project Progress ≈ 83% ✅**
+- Registration, login, and authentication (sessions & cookies)
+- Public/private profiles
+- Follow/unfollow users
+- Handle follow requests
+
+### Posts & Comments
+
+- Create posts with text, images, or GIFs
+- Comment on posts
+- Set post privacy (public/private/friends)
+- Like and reply to comments
+
+### Groups
+
+- Create and join groups
+- Group posts and comments
+- Group events (UI only for now)
+
+### Chat
+
+- Private messaging using WebSockets
+- Seen/read receipts
+- Emojis support
+- Group chat
+
+### Notifications
+
+- Realtime notifications
+- Mark as read/unread
+
+### Frontend
+
+- Responsive design
+- Sidebar for navigation
+- Search users & posts
+- Avatars & user activity indicators
+
+### Backend
+
+- Go server with clean architecture
+- SQLite database (with migrations)
+- RESTful APIs
 
 ---
 
-## Tech Stack
-- **Backend**: Go, Gorilla Websocket, SQLite, golang-migrate
-- **Frontend**: Next.js, React, Tailwind CSS
-- **Database**: SQLite3
-- **Deployment**: Docker (frontend & backend containers)
-- **Authentication**: Sessions & cookies
-- **Other**: bcrypt, uuid libraries
+## 🛠 Tech Stack
+
+- **Backend:** Go, Gorilla WebSocket, SQLite
+- **Frontend:** Next.js, React, Tailwind CSS
+- **Realtime:** WebSockets
 
 ---
 
-## Next Steps
-1. Complete **Posts** (create comments)  
-2. Implement **Groups** (all features: create, invite, posts, events)  
-3. Finish **Chat** group chat functionality  
-4. Improve **Frontend** responsive design  
-5. Setup **Docker** containers for backend & frontend  
+## 📦 Getting Started
+
+### Prerequisites
+
+- Go >= 1.20
+- Node.js >= 18
+
+### Setup
+
+1. **Clone the repository:**
+
+   ```bash
+   git clone https://github.com/AniMar0/social-network.git
+   cd social-network
+   ```
+
+2. **Setup backend:**
+
+   ```bash
+   cd backend
+   go mod tidy
+   go run main.go
+   ```
+
+3. **Setup frontend:**
+
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+
+4. **Access the app:**
+   - Frontend: [http://localhost:3000](http://localhost:3000)
+   - Backend API: [http://localhost:8080](http://localhost:8080)
 
 ---
 
+## 📝 Database & Migrations
+
+- **Database:** SQLite
+- **Migrations:** Go scripts in `backend/migrations`
+
+To apply migrations:
+
+```bash
+go run backend/migrations/main.go
+```
+
+---
+
+## 📁 Project Structure
+
+```
+backend/                  # Go backend
+├─ go.mod
+├─ go.sum
+├─ main.go
+├─ pkg/
+│  ├─ tools.go
+│  ├─ api/
+│  │  ├─ Auth.go
+│  │  ├─ Comments.go
+│  │  ├─ Follow.go
+│  │  ├─ Messages.go
+│  │  ├─ Notification.go
+│  │  ├─ Objects.go
+│  │  ├─ Post.go
+│  │  ├─ Profile.go
+│  │  ├─ server.go
+│  │  ├─ User.go
+│  │  └─ WebSocket.go
+│  └─ db/
+│     ├─ migrations/
+│     │  ├─ app.db
+│     │  └─ sqlite/
+│     │     ├─ *.sql
+│     └─ sqlite/
+│        └─ sqlite.go
+├─ uploads/
+│  ├─ default.jpg
+│  ├─ Avatars/
+│  ├─ Messages/
+│  └─ Posts/
+
+frontend/                 # Next.js frontend
+├─ .gitignore
+├─ components.json
+├─ eslint.config.mjs
+├─ LICENSE
+├─ next-env.d.ts
+├─ next.config.ts
+├─ package.json
+├─ pnpm-lock.yaml
+├─ postcss.config.mjs
+├─ tsconfig.json
+├─ public/
+│  ├─ file.svg
+│  ├─ globe.svg
+│  ├─ next.svg
+│  ├─ vercel.svg
+│  └─ window.svg
+├─ src/
+│  ├─ app/
+│  │  ├─ ClientRoot.tsx
+│  │  ├─ favicon.ico
+│  │  ├─ globals.css
+│  │  ├─ layout.tsx
+│  │  ├─ page.tsx
+│  │  ├─ 404/
+│  │  ├─ auth/
+│  │  ├─ explore/
+│  │  ├─ groups/
+│  │  ├─ messages/
+│  │  ├─ notifications/
+│  │  └─ profile/
+│  ├─ components/
+│  │  ├─ account-settings.tsx
+│  │  ├─ auth.tsx
+│  │  ├─ explore.tsx
+│  │  ├─ group-chat.tsx
+│  │  ├─ groups.tsx
+│  │  ├─ home.tsx
+│  │  ├─ messages.tsx
+│  │  ├─ newpost.tsx
+│  │  ├─ notifications.tsx
+│  │  ├─ sidebar.tsx
+│  │  ├─ user-profile.tsx
+│  │  └─ ui/
+│  ├─ lib/
+│  │  ├─ navigation.ts
+│  │  ├─ notifications.ts
+│  │  ├─ tools.ts
+│  │  ├─ utils.ts
+│  │  └─ websocket.ts
+```
+
+---
+
+## 💡 Future Improvements
+
+- Full backend support for groups and events
+- Image/video uploads for posts
+- Advanced search & filters
+- Mobile app version
+- Docker setup for easier deployment
+
+---
+
+## 📝 License
+
+MIT License
+
+---
