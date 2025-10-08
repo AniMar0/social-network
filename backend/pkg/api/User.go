@@ -2,6 +2,7 @@ package backend
 
 import (
 	tools "SOCIAL-NETWORK/pkg"
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -27,7 +28,7 @@ func (S *Server) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	user.Email = tools.ToLower(user.Email)
-	err, found := S.UserFound(user)
+	err, found := S.UserFound(user, r.Context())
 	if err != nil {
 		fmt.Println(err)
 		tools.SendJSONError(w, "Internal Server Error", http.StatusInternalServerError)
@@ -48,7 +49,7 @@ func (S *Server) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		user.Url = user.Nickname
 	}
 
-	if err := S.AddUser(user); err != nil {
+	if err := S.AddUser(user, r.Context()); err != nil {
 		fmt.Println(err)
 		tools.SendJSONError(w, "Internal Server Error", http.StatusInternalServerError)
 		return
@@ -182,7 +183,7 @@ func (S *Server) MeHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(userData)
 }
 
-func (S *Server) AddUser(user User) error {
+func (S *Server) AddUser(user User, ctx context.Context) error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
@@ -206,7 +207,7 @@ func (S *Server) AddUser(user User) error {
 
 	query := `INSERT INTO users (first_name, last_name, birthdate, age, avatar, nickname, about_me,email,password,gender, url)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-	_, err = S.db.Exec(query,
+	_, err = S.db.ExecContext(ctx, query,
 		html.EscapeString(user.FirstName),
 		html.EscapeString(user.LastName),
 		html.EscapeString(user.DateOfBirth),
@@ -266,7 +267,7 @@ func (S *Server) GetUserData(url string, id int) (UserData, error) {
 	if err != nil {
 		return UserData{}, err
 	}
-	
+
 	user.FollowersCount, _ = S.GetFollowersCount(user.Url)
 
 	user.FollowingCount, _ = S.GetFollowingCount(user.Url)

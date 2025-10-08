@@ -2,6 +2,7 @@ package backend
 
 import (
 	tools "SOCIAL-NETWORK/pkg"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -162,7 +163,7 @@ func (S *Server) UpdateProfileHandler(w http.ResponseWriter, r *http.Request) {
 		"user":    user,
 	})
 }
-func (S *Server) UserFound(user User) (error, bool) {
+func (S *Server) UserFound(user User, cnx context.Context) (error, bool) {
 	var exists int
 	var query string
 	var args []interface{}
@@ -177,7 +178,7 @@ func (S *Server) UserFound(user User) (error, bool) {
 		args = []interface{}{user.Email}
 	}
 
-	err := S.db.QueryRow(query, args...).Scan(&exists)
+	err := S.db.QueryRowContext(cnx, query, args...).Scan(&exists)
 	if err != nil {
 		return err, false
 	}
