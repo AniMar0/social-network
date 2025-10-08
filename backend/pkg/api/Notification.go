@@ -13,7 +13,7 @@ func (S *Server) GetNotificationsHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	rows, err := S.db.Query(`
+	rows, err := S.db.QueryContext(r.Context(), `
 		SELECT n.id, n.type, n.content, n.is_read, n.created_at,
 		       u.id, u.first_name, u.last_name, u.avatar
 		FROM notifications n
