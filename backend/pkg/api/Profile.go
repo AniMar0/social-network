@@ -146,7 +146,7 @@ func (S *Server) UpdateProfileHandler(w http.ResponseWriter, r *http.Request) {
 	if user.Nickname != nil {
 		user.Url = *user.Nickname
 	}
-	_, err = S.db.Exec(`
+	_, err = S.db.ExecContext(r.Context(), `
         UPDATE users
         SET first_name = ?, last_name = ?, nickname = ?, email = ?, birthdate = ?, avatar = ?, about_me = ?, is_private = ?, url = ?
 		WHERE id = ?
