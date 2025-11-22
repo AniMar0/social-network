@@ -463,8 +463,8 @@ export function AuthForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md mx-auto shadow-lg">
+    <div className="min-h-screen flex items-center justify-center glass-page p-6">
+      <Card className="w-full max-w-md mx-auto shadow-lg glass-card">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-2xl font-bold text-balance">
             {isForgotPassword ? "Reset Password" : "Welcome to Social Network"}
@@ -496,7 +496,7 @@ export function AuthForm() {
                         setErrors((prev) => ({ ...prev, email: undefined }));
                       }
                     }}
-                    className={cn(errors.email && "border-destructive")}
+                    className={cn("glass-input", errors.email && "border-destructive")}
                     required
                   />
                   {errors.email && (
@@ -520,7 +520,7 @@ export function AuthForm() {
 
                 <Button
                   type="submit"
-                  className="w-full cursor-pointer"
+                  className="w-full cursor-pointer glass-button text-white"
                   disabled={isLoading}
                 >
                   {isLoading ? "Sending..." : "Send Reset Instructions"}
@@ -545,7 +545,7 @@ export function AuthForm() {
               onValueChange={handleModeSwitch}
             >
               {/* Tab navigation for switching between login and register */}
-              <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsList className="grid w-full grid-cols-2 mb-6 glass-tablist">
                 <TabsTrigger value="login" className="text-sm cursor-pointer">
                   Sign In
                 </TabsTrigger>
@@ -571,7 +571,7 @@ export function AuthForm() {
                       onChange={(e) =>
                         handleInputChange("email", e.target.value)
                       }
-                      className={cn(errors.email && "border-destructive")}
+                      className={cn("glass-input", errors.email && "border-destructive")}
                       required
                     />
                     {errors.email && (
@@ -592,6 +592,7 @@ export function AuthForm() {
                           handleInputChange("password", e.target.value)
                         }
                         className={cn(
+                          "glass-input",
                           errors.password && "border-destructive",
                           "pr-10"
                         )}
@@ -628,7 +629,7 @@ export function AuthForm() {
                   {/* Submit Button */}
                   <Button
                     type="submit"
-                    className="w-full cursor-pointer"
+                    className="w-full cursor-pointer glass-button text-white"
                     disabled={isLoading}
                   >
                     {isLoading ? "Signing in..." : "Sign In"}
@@ -704,7 +705,7 @@ export function AuthForm() {
                       onChange={(e) =>
                         handleInputChange("email", e.target.value)
                       }
-                      className={cn(errors.email && "border-destructive")}
+                      className={cn("glass-input", errors.email && "border-destructive")}
                       required
                     />
                     {errors.email && (
@@ -723,7 +724,7 @@ export function AuthForm() {
                         onChange={(e) =>
                           handleInputChange("firstName", e.target.value)
                         }
-                        className={cn(errors.firstName && "border-destructive")}
+                        className={cn("glass-input", errors.firstName && "border-destructive")}
                         required
                       />
                       {errors.firstName && (
@@ -741,7 +742,7 @@ export function AuthForm() {
                         onChange={(e) =>
                           handleInputChange("lastName", e.target.value)
                         }
-                        className={cn(errors.lastName && "border-destructive")}
+                        className={cn("glass-input", errors.lastName && "border-destructive")}
                         required
                       />
                       {errors.lastName && (
@@ -758,7 +759,7 @@ export function AuthForm() {
                       value={formData.gender}
                       onValueChange={(val) => handleInputChange("gender", val)}
                     >
-                      <SelectTrigger className="w-[180px]">
+                      <SelectTrigger className="w-[180px] glass-input">
                         <SelectValue placeholder="Select Your Gender" />
                       </SelectTrigger>
                       <SelectContent>
@@ -778,6 +779,7 @@ export function AuthForm() {
                       onChange={(e) =>
                         handleInputChange("nickname", e.target.value)
                       }
+                      className="glass-input"
                     />
                   </div>
 
@@ -835,6 +837,7 @@ export function AuthForm() {
                         handleInputChange("aboutMe", e.target.value)
                       }
                       rows={3}
+                      className="glass-input"
                     />
                   </div>
 
@@ -851,6 +854,7 @@ export function AuthForm() {
                           handleInputChange("password", e.target.value)
                         }
                         className={cn(
+                          "glass-input",
                           errors.password && "border-destructive",
                           "pr-10"
                         )}
@@ -927,7 +931,7 @@ export function AuthForm() {
                   {/* Submit Button */}
                   <Button
                     type="submit"
-                    className="w-full cursor-pointer"
+                    className="w-full cursor-pointer glass-button text-white"
                     disabled={isLoading}
                   >
                     {isLoading ? "Creating Account..." : "Create Account"}

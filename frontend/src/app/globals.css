@@ -270,3 +270,60 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  /* Glassmorphism utilities */
+  .glass-page {
+    background-image:
+      radial-gradient(1200px 600px at -10% -10%, oklch(0.72 0.12 290 / 0.25), transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, oklch(0.72 0.12 250 / 0.20), transparent 60%),
+      linear-gradient(180deg, var(--background), oklch(0.94 0.01 286));
+  }
+
+  .glass-card {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    background: oklch(1 0 0 / 0.08);
+    border: 1px solid oklch(1 0 0 / 0.18);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15), inset 0 1px 0 oklch(1 0 0 / 0.2);
+    border-radius: var(--radius-xl);
+  }
+
+  .dark .glass-card {
+    background: oklch(0 0 0 / 0.18);
+    border-color: oklch(1 0 0 / 0.12);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 oklch(1 0 0 / 0.06);
+  }
+
+  .glass-input {
+    background: oklch(1 0 0 / 0.06);
+    border: 1px solid oklch(1 0 0 / 0.16);
+  }
+
+  .dark .glass-input {
+    background: oklch(0 0 0 / 0.24);
+    border-color: oklch(1 0 0 / 0.12);
+  }
+
+  .glass-tablist {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: oklch(1 0 0 / 0.06);
+    border: 1px solid oklch(1 0 0 / 0.12);
+    border-radius: 9999px;
+  }
+
+  .glass-button {
+    background-image: linear-gradient(135deg, oklch(0.72 0.16 290 / 0.9), oklch(0.62 0.18 260 / 0.9));
+    box-shadow: 0 8px 20px oklch(0.62 0.18 260 / 0.35);
+    border: 1px solid oklch(1 0 0 / 0.2);
+  }
+
+  .glass-button:hover {
+    box-shadow: 0 10px 28px oklch(0.62 0.18 260 / 0.45);
+  }
+
+  .glass-muted {
+    color: var(--muted-foreground);
+  }
+}
