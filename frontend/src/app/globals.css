@@ -329,47 +329,53 @@
 }
 
 @layer utilities {
-  /* Auth-only color palette overrides */
-  .auth-theme .glass-page {
-    /* Use provided palette for ambient background accents */
+  /* Auth-only palette + higher transparency (scoped) */
+  .auth-scope .glass-page {
     background-image:
-      radial-gradient(1200px 600px at -10% -10%, rgba(193, 229, 159, 0.35), transparent 60%),
-      radial-gradient(900px 500px at 110% 10%, rgba(163, 215, 138, 0.30), transparent 60%),
-      linear-gradient(180deg, var(--background), rgba(255, 147, 126, 0.10));
+      radial-gradient(1200px 600px at -10% -10%, rgba(193, 229, 159, 0.30), transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, rgba(163, 215, 138, 0.25), transparent 60%),
+      linear-gradient(180deg, var(--background), rgba(255, 147, 126, 0.08));
   }
 
-  .auth-theme .glass-button {
+  .auth-scope .glass-card {
+    background: oklch(1 0 0 / 0.06);
+    border-color: oklch(1 0 0 / 0.16);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12), inset 0 1px 0 oklch(1 0 0 / 0.18);
+  }
+
+  .dark .auth-scope .glass-card {
+    background: oklch(0 0 0 / 0.14);
+    border-color: oklch(1 0 0 / 0.10);
+    box-shadow: 0 10px 36px rgba(0, 0, 0, 0.45), inset 0 1px 0 oklch(1 0 0 / 0.06);
+  }
+
+  .auth-scope .glass-input {
+    background: oklch(1 0 0 / 0.04);
+    border-color: oklch(1 0 0 / 0.14);
+  }
+
+  .dark .auth-scope .glass-input {
+    background: oklch(0 0 0 / 0.18);
+    border-color: oklch(1 0 0 / 0.10);
+  }
+
+  .auth-scope .glass-button {
     background-image: linear-gradient(135deg, #FF5555, #FF937E);
-    box-shadow: 0 8px 20px rgba(255, 85, 85, 0.35);
-    border-color: rgba(255, 255, 255, 0.25);
+    box-shadow: 0 8px 20px rgba(255, 85, 85, 0.30);
+    border-color: rgba(255, 255, 255, 0.22);
   }
 
-  .auth-theme .glass-button:hover {
-    box-shadow: 0 12px 32px rgba(255, 85, 85, 0.45);
-  }
-
-  .dark .auth-theme .glass-page {
-    background-image:
-      radial-gradient(1200px 600px at -10% -10%, rgba(193, 229, 159, 0.16), transparent 60%),
-      radial-gradient(900px 500px at 110% 10%, rgba(163, 215, 138, 0.14), transparent 60%),
-      linear-gradient(180deg, var(--background), rgba(255, 85, 85, 0.08));
-  }
-}
-
-@layer utilities {
-  /* Auth tabs active state using palette */
-  .auth-theme [role="tab"][data-state="active"] {
-    background: rgba(255, 255, 255, 0.18);
-    border: 1px solid rgba(255, 147, 126, 0.45);
+  .auth-scope [role="tab"][data-state="active"] {
+    background: rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(255, 147, 126, 0.40);
     color: #FF5555;
   }
 
-  /* Input focus accents */
-  .auth-theme .glass-input:focus,
-  .auth-theme .glass-input:focus-visible {
-    outline: 2px solid rgba(255, 147, 126, 0.55);
+  .auth-scope .glass-input:focus,
+  .auth-scope .glass-input:focus-visible {
+    outline: 2px solid rgba(255, 147, 126, 0.50);
     outline-offset: 2px;
-    border-color: rgba(255, 147, 126, 0.6);
-    box-shadow: 0 0 0 3px rgba(255, 85, 85, 0.20);
+    border-color: rgba(255, 147, 126, 0.55);
+    box-shadow: 0 0 0 3px rgba(255, 85, 85, 0.18);
   }
 }

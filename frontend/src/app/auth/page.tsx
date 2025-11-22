@@ -49,14 +49,14 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <div className="auth-theme min-h-screen glass-page flex items-center justify-center p-6">
+      <div className="auth-scope min-h-screen glass-page flex items-center justify-center p-6">
         <div>Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="auth-theme min-h-screen glass-page flex items-center justify-center p-6">
+    <div className="auth-scope min-h-screen glass-page flex items-center justify-center p-6">
       <AuthForm />
     </div>
   );
