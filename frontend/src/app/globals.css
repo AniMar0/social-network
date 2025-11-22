@@ -327,3 +327,49 @@
     color: var(--muted-foreground);
   }
 }
+
+@layer utilities {
+  /* Auth-only color palette overrides */
+  .auth-theme .glass-page {
+    /* Use provided palette for ambient background accents */
+    background-image:
+      radial-gradient(1200px 600px at -10% -10%, rgba(193, 229, 159, 0.35), transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, rgba(163, 215, 138, 0.30), transparent 60%),
+      linear-gradient(180deg, var(--background), rgba(255, 147, 126, 0.10));
+  }
+
+  .auth-theme .glass-button {
+    background-image: linear-gradient(135deg, #FF5555, #FF937E);
+    box-shadow: 0 8px 20px rgba(255, 85, 85, 0.35);
+    border-color: rgba(255, 255, 255, 0.25);
+  }
+
+  .auth-theme .glass-button:hover {
+    box-shadow: 0 12px 32px rgba(255, 85, 85, 0.45);
+  }
+
+  .dark .auth-theme .glass-page {
+    background-image:
+      radial-gradient(1200px 600px at -10% -10%, rgba(193, 229, 159, 0.16), transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, rgba(163, 215, 138, 0.14), transparent 60%),
+      linear-gradient(180deg, var(--background), rgba(255, 85, 85, 0.08));
+  }
+}
+
+@layer utilities {
+  /* Auth tabs active state using palette */
+  .auth-theme [role="tab"][data-state="active"] {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 147, 126, 0.45);
+    color: #FF5555;
+  }
+
+  /* Input focus accents */
+  .auth-theme .glass-input:focus,
+  .auth-theme .glass-input:focus-visible {
+    outline: 2px solid rgba(255, 147, 126, 0.55);
+    outline-offset: 2px;
+    border-color: rgba(255, 147, 126, 0.6);
+    box-shadow: 0 0 0 3px rgba(255, 85, 85, 0.20);
+  }
+}
