@@ -47,6 +47,7 @@ type LoginUser struct {
 type Post struct {
 	ID                int      `json:"id"`
 	UserID            int      `json:"-"`
+	GroupID           int      `json:"groupId,omitempty"`
 	Content           string   `json:"content"`
 	Image             *string  `json:"image,omitempty"`
 	Privacy           string   `json:"privacy"`
@@ -123,7 +124,7 @@ type Follower struct {
 
 type Comment struct {
 	ID              string `json:"id"`
-	ParentCommentID int   `json:"parentCommentId,omitempty"`
+	ParentCommentID int    `json:"parentCommentId,omitempty"`
 	Author          struct {
 		Name     string `json:"name,omitempty"`
 		Username string `json:"username,omitempty"`
@@ -134,4 +135,46 @@ type Comment struct {
 	Likes     int       `json:"likes"`
 	IsLiked   bool      `json:"isLiked"`
 	Replies   []Comment `json:"replies"`
+}
+
+type Group struct {
+	ID          int    `json:"id"`
+	CreatorID   int    `json:"creatorId"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	CreatedAt   string `json:"createdAt"`
+	IsMember    bool   `json:"isMember,omitempty"`
+	IsCreator   bool   `json:"isCreator,omitempty"`
+}
+
+type GroupMember struct {
+	GroupID  int    `json:"groupId"`
+	UserID   int    `json:"userId"`
+	JoinedAt string `json:"joinedAt"`
+	User     User   `json:"user,omitempty"`
+}
+
+type GroupRequest struct {
+	ID          int    `json:"id"`
+	GroupID     int    `json:"groupId"`
+	UserID      int    `json:"userId"`
+	RequesterID int    `json:"requesterId"`
+	Type        string `json:"type"` // 'invite' or 'request'
+	Status      string `json:"status"`
+	CreatedAt   string `json:"createdAt"`
+	User        User   `json:"user,omitempty"`      // The user involved
+	Requester   User   `json:"requester,omitempty"` // The one who made the request
+	Group       Group  `json:"group,omitempty"`
+}
+
+type GroupEvent struct {
+	ID            int    `json:"id"`
+	GroupID       int    `json:"groupId"`
+	Title         string `json:"title"`
+	Description   string `json:"description"`
+	EventDatetime string `json:"eventDatetime"`
+	CreatedAt     string `json:"createdAt"`
+	GoingCount    int    `json:"goingCount"`
+	NotGoingCount int    `json:"notGoingCount"`
+	UserStatus    string `json:"userStatus,omitempty"` // 'going', 'not-going', or empty
 }

@@ -101,6 +101,25 @@ func (S *Server) initRoutes() {
 	S.mux.HandleFunc("/api/upoad-file", S.UploadFileHandler)
 	S.mux.HandleFunc("/api/set-seen-chat/", S.SeenMessageHandler)
 	S.mux.HandleFunc("/api/unsend-message/", S.UnsendMessageHandler)
+
+	// Group handlers
+	S.mux.HandleFunc("/api/groups/create", S.CreateGroupHandler)
+	S.mux.HandleFunc("/api/groups", S.GetGroupsHandler)
+	S.mux.HandleFunc("/api/groups/", S.GetGroupHandler)
+	S.mux.HandleFunc("/api/groups/update", S.UpdateGroupHandler)
+	S.mux.HandleFunc("/api/groups/delete/", S.DeleteGroupHandler)
+	S.mux.HandleFunc("/api/groups/join", S.JoinGroupRequestHandler)
+	S.mux.HandleFunc("/api/groups/invite", S.InviteGroupMemberHandler)
+	S.mux.HandleFunc("/api/groups/requests/accept/", S.AcceptGroupRequestHandler)
+	S.mux.HandleFunc("/api/groups/requests/decline/", S.DeclineGroupRequestHandler)
+	S.mux.HandleFunc("/api/groups/requests", S.GetGroupRequestsHandler)
+	S.mux.HandleFunc("/api/groups/posts/create", S.CreateGroupPostHandler)
+	S.mux.HandleFunc("/api/groups/posts/", S.GetGroupPostsHandler)
+	S.mux.HandleFunc("/api/groups/events/create", S.CreateGroupEventHandler)
+	S.mux.HandleFunc("/api/groups/events/", S.GetGroupEventsHandler)
+	S.mux.HandleFunc("/api/groups/events/respond", S.RespondToGroupEventHandler)
+	S.mux.HandleFunc("/api/groups/chat/", S.GetGroupChatHandler)
+	S.mux.HandleFunc("/api/groups/chat/send", S.SendGroupMessageHandler)
 }
 
 func (S *Server) initWebSocket() {

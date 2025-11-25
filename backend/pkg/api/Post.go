@@ -196,7 +196,7 @@ func (S *Server) GetUserPosts(userID int, r *http.Request) ([]Post, error) {
 		EXISTS(SELECT 1 FROM likes l WHERE l.post_id = p.id AND l.user_id = ?) as is_liked
 	FROM posts p
 	JOIN users u ON p.user_id = u.id
-	WHERE p.user_id = ?
+	WHERE p.user_id = ? AND p.group_id IS NULL
 	ORDER BY p.created_at DESC
 `, currentUserID, userID)
 
@@ -311,7 +311,7 @@ func (S *Server) GetPostFromID(postID int, r *http.Request) (Post, error) {
 
 	row := S.db.QueryRow(`
 	SELECT 
-		p.id, p.content, p.image, p.created_at, p.privacy,
+		p.id, p.content, p.image, p.created_at, p.privacy, p.group_id,
 		u.id, u.first_name, u.last_name, u.nickname, u.avatar, u.is_private,
 		(SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id) as like_count,
 		(SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id AND c.parent_comment_id IS NULL) as comment_count,
@@ -325,9 +325,10 @@ func (S *Server) GetPostFromID(postID int, r *http.Request) (Post, error) {
 	var authorID int
 	var firstName, lastName, nickname, avatar sql.NullString
 	var isPrivate bool
+	var groupID sql.NullInt64
 
 	err := row.Scan(
-		&post.ID, &post.Content, &post.Image, &post.CreatedAt, &post.Privacy,
+		&post.ID, &post.Content, &post.Image, &post.CreatedAt, &post.Privacy, &groupID,
 		&authorID, &firstName, &lastName, &nickname, &avatar, &isPrivate,
 		&post.Likes, &post.Comments, &post.IsLiked,
 	)
@@ -336,6 +337,10 @@ func (S *Server) GetPostFromID(postID int, r *http.Request) (Post, error) {
 			return Post{}, nil // post not found
 		}
 		return Post{}, err
+	}
+
+	if groupID.Valid {
+		post.GroupID = int(groupID.Int64)
 	}
 
 	// privacy check
