@@ -56,14 +56,15 @@ interface Group {
   title: string;
   description: string;
   creatorId: string;
-  creatorName: string;
-  memberCount: number;
-  isPrivate: boolean;
+  creatorName?: string;
+  memberCount?: number;
+  isPrivate?: boolean;
   createdAt: string;
-  avatar: string;
-  isOwner: boolean;
-  isMember: boolean;
-  hasPendingRequest: boolean;
+  avatar?: string;
+  isOwner?: boolean;
+  isMember?: boolean;
+  hasPendingRequest?: boolean;
+  isCreator?: boolean;
 }
 
 interface GroupMember {
@@ -77,9 +78,11 @@ interface GroupMember {
 
 interface GroupPost {
   id: string;
-  authorId: string;
-  authorName: string;
-  authorAvatar: string;
+  author: {
+    name: string;
+    username: string;
+    avatar: string;
+  };
   content: string;
   image?: string;
   createdAt: string;
@@ -92,14 +95,13 @@ interface GroupEvent {
   id: string;
   title: string;
   description: string;
-  creatorId: string;
-  creatorName: string;
-  date: string;
-  time: string;
+  creatorId?: string;
+  creatorName?: string;
+  eventDatetime: string;
   location?: string;
   goingCount: number;
   notGoingCount: number;
-  userResponse: "going" | "not-going" | null;
+  userStatus: "going" | "not-going" | null;
   createdAt: string;
 }
 
@@ -108,125 +110,15 @@ interface GroupsPageProps {
   onNewPost?: () => void;
 }
 
-// Sample data
-const sampleGroups: Group[] = [
-  {
-    id: "1",
-    title: "Tech Enthusiasts",
-    description:
-      "A community for technology lovers to share ideas and discuss latest trends.",
-    creatorId: "user1",
-    creatorName: "John Doe",
-    memberCount: 245,
-    isPrivate: false,
-    createdAt: "2024-01-15",
-    avatar: "https://i.imgur.com/aSlIJks.png",
-    isOwner: false,
-    isMember: true,
-    hasPendingRequest: false,
-  },
-  {
-    id: "2",
-    title: "Photography Club",
-    description:
-      "Share your best shots and learn photography techniques from fellow photographers.",
-    creatorId: "user2",
-    creatorName: "Jane Smith",
-    memberCount: 189,
-    isPrivate: true,
-    createdAt: "2024-02-01",
-    avatar: "https://i.imgur.com/aSlIJks.png",
-    isOwner: true,
-    isMember: true,
-    hasPendingRequest: false,
-  },
-  {
-    id: "3",
-    title: "Book Club",
-    description: "Monthly book discussions and reading recommendations.",
-    creatorId: "user3",
-    creatorName: "Mike Johnson",
-    memberCount: 78,
-    isPrivate: false,
-    createdAt: "2024-01-20",
-    avatar: "https://i.imgur.com/aSlIJks.png",
-    isOwner: false,
-    isMember: false,
-    hasPendingRequest: true,
-  },
-];
-
-const sampleGroupPosts: GroupPost[] = [
-  {
-    id: "1",
-    authorId: "user1",
-    authorName: "John Doe",
-    authorAvatar: "https://i.imgur.com/aSlIJks.png",
-    content:
-      "What do you think about the latest AI developments? Excited to hear your thoughts!",
-    createdAt: "2024-03-15T10:30:00Z",
-    likes: 15,
-    comments: 8,
-    isLiked: false,
-  },
-  {
-    id: "2",
-    authorId: "user2",
-    authorName: "Jane Smith",
-    authorAvatar: "https://i.imgur.com/aSlIJks.png",
-    content:
-      "Just finished reading 'The Design of Everyday Things'. Highly recommend it for UX designers!",
-    image: "https://i.imgur.com/aSlIJks.png",
-    createdAt: "2024-03-14T15:45:00Z",
-    likes: 23,
-    comments: 12,
-    isLiked: true,
-  },
-];
-
-const sampleGroupEvents: GroupEvent[] = [
-  {
-    id: "1",
-    title: "Tech Meetup 2024",
-    description:
-      "Monthly meetup to discuss latest technology trends and network with fellow developers.",
-    creatorId: "user1",
-    creatorName: "John Doe",
-    date: "2024-04-15",
-    time: "18:00",
-    location: "Tech Hub Downtown",
-    goingCount: 25,
-    notGoingCount: 5,
-    userResponse: "going",
-    createdAt: "2024-03-10T09:00:00Z",
-  },
-  {
-    id: "2",
-    title: "Photography Workshop",
-    description:
-      "Learn advanced photography techniques with professional photographers.",
-    creatorId: "user2",
-    creatorName: "Jane Smith",
-    date: "2024-04-20",
-    time: "14:00",
-    location: "City Park",
-    goingCount: 18,
-    notGoingCount: 3,
-    userResponse: null,
-    createdAt: "2024-03-12T11:30:00Z",
-  },
-];
-
 export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
   const notificationCount = useNotificationCount();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [activeTab, setActiveTab] = useState("browse");
   const [searchQuery, setSearchQuery] = useState("");
-  const [groups, setGroups] = useState<Group[]>(sampleGroups);
-  const [groupPosts, setGroupPosts] = useState<GroupPost[]>(sampleGroupPosts);
-  const [groupEvents, setGroupEvents] =
-    useState<GroupEvent[]>(sampleGroupEvents);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [groupPosts, setGroupPosts] = useState<GroupPost[]>([]);
+  const [groupEvents, setGroupEvents] = useState<GroupEvent[]>([]);
 
   // Create group dialog state
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
@@ -250,6 +142,67 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
   // Group chat state
   const [isGroupChatOpen, setIsGroupChatOpen] = useState(false);
 
+  useEffect(() => {
+    fetchGroups();
+  }, []);
+
+  useEffect(() => {
+    if (selectedGroup) {
+      fetchGroupPosts(selectedGroup.id);
+      fetchGroupEvents(selectedGroup.id);
+    }
+  }, [selectedGroup]);
+
+  const fetchGroups = async () => {
+    try {
+      const res = await fetch("http://localhost:8080/api/groups", {
+        credentials: "include",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        // Map backend data to frontend interface if needed
+        // Assuming backend returns array of groups
+        setGroups(data || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch groups:", error);
+    }
+  };
+
+  const fetchGroupPosts = async (groupId: string) => {
+    try {
+      const res = await fetch(
+        `http://localhost:8080/api/groups/posts/${groupId}`,
+        {
+          credentials: "include",
+        }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setGroupPosts(data || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch group posts:", error);
+    }
+  };
+
+  const fetchGroupEvents = async (groupId: string) => {
+    try {
+      const res = await fetch(
+        `http://localhost:8080/api/groups/events/${groupId}`,
+        {
+          credentials: "include",
+        }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setGroupEvents(data || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch group events:", error);
+    }
+  };
+
   const handleNewPost = () => {
     onNewPost?.();
     console.log("New post clicked");
@@ -265,63 +218,84 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
       group.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleCreateGroup = () => {
+  const handleCreateGroup = async () => {
     if (newGroupTitle.trim() && newGroupDescription.trim()) {
-      const newGroup: Group = {
-        id: Date.now().toString(),
-        title: newGroupTitle,
-        description: newGroupDescription,
-        creatorId: "currentUser",
-        creatorName: "Current User",
-        memberCount: 1,
-        isPrivate: newGroupPrivacy === "private",
-        createdAt: new Date().toISOString(),
-        avatar: "https://i.imgur.com/aSlIJks.png",
-        isOwner: true,
-        isMember: true,
-        hasPendingRequest: false,
-      };
+      try {
+        const res = await fetch("http://localhost:8080/api/groups/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: newGroupTitle,
+            description: newGroupDescription,
+          }),
+          credentials: "include",
+        });
 
-      setGroups([newGroup, ...groups]);
-      setNewGroupTitle("");
-      setNewGroupDescription("");
-      setNewGroupPrivacy("public");
-      setIsCreateGroupOpen(false);
-      console.log("Created new group:", newGroup);
+        if (res.ok) {
+          const newGroup = await res.json();
+          setGroups([newGroup, ...groups]);
+          setNewGroupTitle("");
+          setNewGroupDescription("");
+          setNewGroupPrivacy("public");
+          setIsCreateGroupOpen(false);
+        }
+      } catch (error) {
+        console.error("Failed to create group:", error);
+      }
     }
   };
 
-  const handleJoinGroup = (groupId: string) => {
-    setGroups(
-      groups.map((group) =>
-        group.id === groupId ? { ...group, hasPendingRequest: true } : group
-      )
-    );
-    console.log("Requested to join group:", groupId);
+  const handleJoinGroup = async (groupId: string) => {
+    try {
+      const res = await fetch("http://localhost:8080/api/groups/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ groupId: parseInt(groupId) }),
+        credentials: "include",
+      });
+
+      if (res.ok) {
+        setGroups(
+          groups.map((group) =>
+            group.id === groupId ? { ...group, hasPendingRequest: true } : group
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Failed to join group:", error);
+    }
   };
 
-  const handleCreatePost = () => {
+  const handleCreatePost = async () => {
     if (newPostContent.trim() && selectedGroup) {
-      const newPost: GroupPost = {
-        id: Date.now().toString(),
-        authorId: "currentUser",
-        authorName: "Current User",
-        authorAvatar: "https://i.imgur.com/aSlIJks.png",
-        content: newPostContent,
-        createdAt: new Date().toISOString(),
-        likes: 0,
-        comments: 0,
-        isLiked: false,
-      };
+      try {
+        const res = await fetch(
+          "http://localhost:8080/api/groups/posts/create",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              groupId: parseInt(selectedGroup.id),
+              content: newPostContent,
+              privacy: "public", // Group posts are public within group
+            }),
+            credentials: "include",
+          }
+        );
 
-      setGroupPosts([newPost, ...groupPosts]);
-      setNewPostContent("");
-      setIsCreatePostOpen(false);
-      console.log("Created new group post:", newPost);
+        if (res.ok) {
+          const newPost = await res.json();
+          setGroupPosts([newPost, ...groupPosts]);
+          setNewPostContent("");
+          setIsCreatePostOpen(false);
+        }
+      } catch (error) {
+        console.error("Failed to create post:", error);
+      }
     }
   };
 
-  const handleCreateEvent = () => {
+  const handleCreateEvent = async () => {
     if (
       newEventTitle.trim() &&
       newEventDescription.trim() &&
@@ -329,55 +303,83 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
       newEventTime &&
       selectedGroup
     ) {
-      const newEvent: GroupEvent = {
-        id: Date.now().toString(),
-        title: newEventTitle,
-        description: newEventDescription,
-        creatorId: "currentUser",
-        creatorName: "Current User",
-        date: newEventDate.toISOString().split("T")[0], // Convert Date to YYYY-MM-DD string
-        time: newEventTime,
-        location: newEventLocation,
-        goingCount: 0,
-        notGoingCount: 0,
-        userResponse: null,
-        createdAt: new Date().toISOString(),
-      };
+      const eventDatetime = `${
+        newEventDate.toISOString().split("T")[0]
+      }T${newEventTime}:00Z`;
 
-      setGroupEvents([newEvent, ...groupEvents]);
-      setNewEventTitle("");
-      setNewEventDescription("");
-      setNewEventDate(undefined);
-      setNewEventTime("");
-      setNewEventLocation("");
-      setIsCreateEventOpen(false);
-      console.log("Created new event:", newEvent);
+      try {
+        const res = await fetch(
+          "http://localhost:8080/api/groups/events/create",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              groupId: parseInt(selectedGroup.id),
+              title: newEventTitle,
+              description: newEventDescription,
+              eventDatetime: eventDatetime,
+            }),
+            credentials: "include",
+          }
+        );
+
+        if (res.ok) {
+          const newEvent = await res.json();
+          setGroupEvents([...groupEvents, newEvent]);
+          setNewEventTitle("");
+          setNewEventDescription("");
+          setNewEventDate(undefined);
+          setNewEventTime("");
+          setNewEventLocation("");
+          setIsCreateEventOpen(false);
+        }
+      } catch (error) {
+        console.error("Failed to create event:", error);
+      }
     }
   };
 
-  const handleEventResponse = (
+  const handleEventResponse = async (
     eventId: string,
     response: "going" | "not-going"
   ) => {
-    setGroupEvents(
-      groupEvents.map((event) => {
-        if (event.id === eventId) {
-          const oldResponse = event.userResponse;
-          const newEvent = { ...event, userResponse: response };
-
-          // Update counts
-          if (oldResponse === "going") newEvent.goingCount--;
-          else if (oldResponse === "not-going") newEvent.notGoingCount--;
-
-          if (response === "going") newEvent.goingCount++;
-          else if (response === "not-going") newEvent.notGoingCount++;
-
-          return newEvent;
+    try {
+      const res = await fetch(
+        "http://localhost:8080/api/groups/events/respond",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            eventId: parseInt(eventId),
+            status: response,
+          }),
+          credentials: "include",
         }
-        return event;
-      })
-    );
-    console.log("Updated event response:", eventId, response);
+      );
+
+      if (res.ok) {
+        setGroupEvents(
+          groupEvents.map((event) => {
+            if (event.id === eventId) {
+              const oldResponse = event.userStatus;
+              const newEvent = { ...event, userStatus: response };
+
+              // Update counts
+              if (oldResponse === "going") newEvent.goingCount--;
+              else if (oldResponse === "not-going") newEvent.notGoingCount--;
+
+              if (response === "going") newEvent.goingCount++;
+              else if (response === "not-going") newEvent.notGoingCount++;
+
+              return newEvent;
+            }
+            return event;
+          })
+        );
+      }
+    } catch (error) {
+      console.error("Failed to respond to event:", error);
+    }
   };
 
   return (
@@ -764,17 +766,17 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                               <div className="flex items-start gap-3">
                                 <Avatar className="h-10 w-10">
                                   <AvatarImage
-                                    src={post.authorAvatar}
-                                    alt={post.authorName}
+                                    src={post.author.avatar}
+                                    alt={post.author.name}
                                   />
                                   <AvatarFallback>
-                                    {post.authorName.slice(0, 2).toUpperCase()}
+                                    {post.author.name.slice(0, 2).toUpperCase()}
                                   </AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2 mb-2">
                                     <span className="font-semibold">
-                                      {post.authorName}
+                                      {post.author.name}
                                     </span>
                                     <span className="text-sm text-muted-foreground">
                                       {new Date(
@@ -970,11 +972,15 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                                   <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
                                     <div className="flex items-center gap-1">
                                       <CalendarIcon className="h-4 w-4" />
-                                      {new Date(event.date).toLocaleString()}
+                                      {new Date(
+                                        event.eventDatetime
+                                      ).toLocaleDateString()}
                                     </div>
                                     <div className="flex items-center gap-1">
                                       <Clock className="h-4 w-4" />
-                                      {event.time}
+                                      {new Date(
+                                        event.eventDatetime
+                                      ).toLocaleTimeString()}
                                     </div>
                                     {event.location && (
                                       <div className="flex items-center gap-1">
@@ -995,7 +1001,7 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                                 <div className="flex flex-col gap-2">
                                   <Button
                                     variant={
-                                      event.userResponse === "going"
+                                      event.userStatus === "going"
                                         ? "default"
                                         : "outline"
                                     }
@@ -1010,7 +1016,7 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                                   </Button>
                                   <Button
                                     variant={
-                                      event.userResponse === "not-going"
+                                      event.userStatus === "not-going"
                                         ? "destructive"
                                         : "outline"
                                     }
