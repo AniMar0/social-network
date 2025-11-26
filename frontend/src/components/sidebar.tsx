@@ -65,7 +65,10 @@ function SidebarNavigation({
 
   const handleLogout = async (event: React.MouseEvent) => {
     event.preventDefault();
-    await fetch(`${siteConfig.domain}/api/logout`, { method: "POST" });
+    await fetch(`${siteConfig.domain}/api/logout`, {
+      method: "POST",
+      credentials: "include",
+    });
     closeWebSocket();
     localStorage.setItem("logout", Date.now().toString());
     window.location.href = "/auth"; // نقدر نستعمل replace هنا

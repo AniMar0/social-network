@@ -32,6 +32,7 @@ func (S *Server) UploadPostHandler(w http.ResponseWriter, r *http.Request) {
 
 	out, err := os.Create(postPath)
 	if err != nil {
+		fmt.Println("Error creating file:", err)
 		http.Error(w, "Cannot save post", http.StatusInternalServerError)
 		return
 	}

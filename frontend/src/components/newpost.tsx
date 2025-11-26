@@ -182,11 +182,20 @@ export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
           body: avatarForm,
           credentials: "include",
         });
+
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error("Upload failed:", errorText);
+          throw new Error(errorText || "Failed to upload image");
+        }
+
         const data = await res.json();
         console.log(data.postUrl);
         postData.image = data.postUrl;
       } catch (err) {
-        console.error(err);
+        console.error("Error uploading image:", err);
+        // Don't proceed with post creation if image upload failed
+        return;
       }
     }
 
