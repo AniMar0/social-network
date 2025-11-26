@@ -62,7 +62,7 @@ export function GroupChat({
       if (res.ok) {
         const data = await res.json();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const formattedMessages: GroupChatMessage[] = data.map((msg: any) => ({
+        const formattedMessages: GroupChatMessage[] = data?.map((msg: any) => ({
           id: msg.id.toString(),
           content: msg.content,
           authorId: msg.senderId.toString(),
@@ -146,7 +146,7 @@ export function GroupChat({
             isOwn: true,
           };
 
-          setMessages((prev) => [...prev, sentMsg]);
+          setMessages((prev) => [...(prev || []), sentMsg]);
           setNewMessage("");
           setShowEmojiPicker(false);
         }
@@ -218,7 +218,7 @@ export function GroupChat({
 
         {/* Messages Area */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gradient-to-b from-background/30 to-background/50">
-          {messages.map((message) => (
+          {messages?.map((message) => (
             <div
               key={message.id}
               className={`flex gap-3 ${

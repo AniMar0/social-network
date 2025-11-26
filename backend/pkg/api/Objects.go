@@ -178,3 +178,13 @@ type GroupEvent struct {
 	NotGoingCount int    `json:"notGoingCount"`
 	UserStatus    string `json:"userStatus,omitempty"` // 'going', 'not-going', or empty
 }
+
+type GroupMemberResponse struct {
+	UserId    int     `json:"userId"`
+	Url       string  `json:"url"`
+	FirstName string  `json:"firstName"`
+	LastName  string  `json:"lastName"`
+	Nickname  *string `json:"nickname,omitempty"`
+	AvatarUrl *string `json:"avatar,omitempty"`
+	IsPrivate bool    `json:"isPrivate"`
+}

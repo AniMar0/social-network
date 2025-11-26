@@ -908,3 +908,50 @@ func (S *Server) SendGroupMessageHandler(w http.ResponseWriter, r *http.Request)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(messagePayload)
 }
+
+func (S *Server) GetGroupMembersHandler(w http.ResponseWriter, r *http.Request) {
+	groupIDStr := r.URL.Path[len("/api/groups/members/"):]
+	groupID := tools.StringToInt(groupIDStr)
+
+	fmt.Println("Getting members for group ID:", groupID)
+	userID, _, err := S.CheckSession(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Check membership
+	var count int
+	S.db.QueryRow("SELECT COUNT(*) FROM group_members WHERE group_id = ? AND user_id = ?", groupID, userID).Scan(&count)
+	if count == 0 {
+		http.Error(w, "Not a member", http.StatusForbidden)
+		return
+	}
+
+	rows, err := S.db.Query(`
+		SELECT u.id, u.first_name, u.last_name, u.nickname, u.avatar, u.is_private, u.url
+		FROM group_members gm
+		JOIN users u ON gm.user_id = u.id
+		WHERE gm.group_id = ?
+	`, groupID)
+
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	fmt.Println("Rows fetched for group members")
+
+	var members []GroupMemberResponse
+	for rows.Next() {
+		var u GroupMemberResponse
+		if err := rows.Scan(&u.UserId, &u.FirstName, &u.LastName, &u.Nickname, &u.AvatarUrl, &u.IsPrivate, &u.Url); err != nil {
+			continue
+		}
+		members = append(members, u)
+	}
+	fmt.Println("Members:", members)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(members)
+}

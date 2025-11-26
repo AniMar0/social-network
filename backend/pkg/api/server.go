@@ -120,6 +120,7 @@ func (S *Server) initRoutes() {
 	S.mux.HandleFunc("/api/groups/events/respond", S.RespondToGroupEventHandler)
 	S.mux.HandleFunc("/api/groups/chat/", S.GetGroupChatHandler)
 	S.mux.HandleFunc("/api/groups/chat/send", S.SendGroupMessageHandler)
+	S.mux.HandleFunc("/api/groups/members/", S.GetGroupMembersHandler)
 }
 
 func (S *Server) initWebSocket() {

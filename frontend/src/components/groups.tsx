@@ -45,6 +45,7 @@ import {
   Clock,
   MapPin,
   ChevronDownIcon,
+  Group,
 } from "lucide-react";
 import { useNotificationCount } from "@/lib/notifications";
 import { GroupChat } from "./group-chat";
@@ -99,6 +100,15 @@ interface GroupsPageProps {
   onNewPost?: () => void;
 }
 
+interface GroupMember {
+  url: number;
+  firstName: string;
+  lastName: string;
+  nickname?: string;
+  avatar?: string;
+  isPrivate: boolean;
+}
+
 export function GroupsPage({ onNewPost }: GroupsPageProps) {
   const notificationCount = useNotificationCount();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -108,6 +118,7 @@ export function GroupsPage({ onNewPost }: GroupsPageProps) {
   const [groups, setGroups] = useState<Group[]>([]);
   const [groupPosts, setGroupPosts] = useState<GroupPost[]>([]);
   const [groupEvents, setGroupEvents] = useState<GroupEvent[]>([]);
+  const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
 
   // Create group dialog state
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
@@ -368,6 +379,25 @@ export function GroupsPage({ onNewPost }: GroupsPageProps) {
       }
     } catch (error) {
       console.error("Failed to respond to event:", error);
+    }
+  };
+
+  const GetGroupMembers = async () => {
+    console.log("Fetching group members...");
+    if (!selectedGroup) return;
+    console.log("Selected group ID:", selectedGroup.id);
+    try {
+      const res = await fetch(`/api/groups/members/${selectedGroup.id}`, {
+        method: "GET",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        throw new Error("Network response was not ok");
+      }
+      const members = await res.json();
+      setGroupMembers(members);
+    } catch (error) {
+      console.error("Failed to fetch group members", error);
     }
   };
 
@@ -755,7 +785,11 @@ export function GroupsPage({ onNewPost }: GroupsPageProps) {
                       <TabsTrigger value="events" className="rounded-lg px-6">
                         Events
                       </TabsTrigger>
-                      <TabsTrigger value="members" className="rounded-lg px-6">
+                      <TabsTrigger
+                        value="members"
+                        className="rounded-lg px-6"
+                        onClick={GetGroupMembers}
+                      >
                         Members
                       </TabsTrigger>
                     </TabsList>
@@ -1170,9 +1204,40 @@ export function GroupsPage({ onNewPost }: GroupsPageProps) {
                       {/* Members would be loaded from API */}
                       <div className="text-center text-muted-foreground py-16 glass-card rounded-2xl border-dashed border-2 border-border/50">
                         <Users className="h-16 w-16 mx-auto mb-4 opacity-20" />
-                        <p className="text-lg font-medium">
-                          Members list will be loaded from the server
-                        </p>
+                        {groupMembers?.map((member) => (
+                          <div
+                            key={member.url}
+                            className="flex items-center gap-4 mb-4"
+                          >
+                            <Avatar className="h-10 w-10 ring-2 ring-primary/10">
+                              <AvatarImage
+                                src={`http://localhost:8080/${member.avatar}` || undefined}
+                                alt={member.firstName + " " + member.lastName}
+                              />
+                              <AvatarFallback>
+                                {(
+                                  member.firstName.charAt(0) +
+                                  member.lastName.charAt(0)
+                                ).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="text-left">
+                              <p className="font-medium text-foreground">
+                                {member.firstName} {member.lastName}{" "}
+                                {member.nickname && (
+                                  <span className="text-sm text-muted-foreground">
+                                    ({member.nickname})
+                                  </span>
+                                )}
+                              </p>
+                              {member.isPrivate && (
+                                <Badge className="bg-muted/30 text-muted-foreground">
+                                  Private Account
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </TabsContent>
                   </Tabs>
