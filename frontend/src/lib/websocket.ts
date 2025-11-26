@@ -1,5 +1,6 @@
 "use client";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type MessageHandler = (data: any) => void;
 let ws: WebSocket | null = null;
 const listeners: Set<MessageHandler> = new Set();

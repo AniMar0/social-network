@@ -240,7 +240,7 @@ export function AuthForm() {
               try {
                 const errorData = JSON.parse(text);
                 throw new Error(errorData.error || "Login failed");
-              } catch (jsonError) {
+              } catch {
                 // If JSON parsing fails, check if text looks like JSON and extract error
                 if (text.includes('"error"')) {
                   // Try to extract error message from malformed JSON
@@ -327,7 +327,7 @@ export function AuthForm() {
               try {
                 const errorData = JSON.parse(text);
                 throw new Error(errorData.error || "Registration failed");
-              } catch (jsonError) {
+              } catch {
                 // If JSON parsing fails, use the plain text
                 throw new Error(text || "Registration failed");
               }
@@ -337,7 +337,7 @@ export function AuthForm() {
             try {
               const data = await res.json();
               return data;
-            } catch (jsonError) {
+            } catch {
               // If JSON parsing fails, assume success and return a success message
               console.log("Registration successful but no JSON response");
               return { message: "Registration successful" };
@@ -384,7 +384,7 @@ export function AuthForm() {
 
       // Simulate API call delay
       await new Promise((resolve) => setTimeout(resolve, 1000));
-    } catch (error) {
+    } catch {
       setErrors({ general: "An error occurred. Please try again." });
     } finally {
       setIsLoading(false);
@@ -423,7 +423,7 @@ export function AuthForm() {
       setErrors({
         general: "Password reset instructions have been sent to your email.",
       });
-    } catch (error) {
+    } catch {
       setErrors({ general: "An error occurred. Please try again." });
     } finally {
       setIsLoading(false);
@@ -496,7 +496,10 @@ export function AuthForm() {
                         setErrors((prev) => ({ ...prev, email: undefined }));
                       }
                     }}
-                    className={cn("glass-input", errors.email && "border-destructive")}
+                    className={cn(
+                      "glass-input",
+                      errors.email && "border-destructive"
+                    )}
                     required
                   />
                   {errors.email && (
@@ -571,7 +574,10 @@ export function AuthForm() {
                       onChange={(e) =>
                         handleInputChange("email", e.target.value)
                       }
-                      className={cn("glass-input", errors.email && "border-destructive")}
+                      className={cn(
+                        "glass-input",
+                        errors.email && "border-destructive"
+                      )}
                       required
                     />
                     {errors.email && (
@@ -705,7 +711,10 @@ export function AuthForm() {
                       onChange={(e) =>
                         handleInputChange("email", e.target.value)
                       }
-                      className={cn("glass-input", errors.email && "border-destructive")}
+                      className={cn(
+                        "glass-input",
+                        errors.email && "border-destructive"
+                      )}
                       required
                     />
                     {errors.email && (
@@ -724,7 +733,10 @@ export function AuthForm() {
                         onChange={(e) =>
                           handleInputChange("firstName", e.target.value)
                         }
-                        className={cn("glass-input", errors.firstName && "border-destructive")}
+                        className={cn(
+                          "glass-input",
+                          errors.firstName && "border-destructive"
+                        )}
                         required
                       />
                       {errors.firstName && (
@@ -742,7 +754,10 @@ export function AuthForm() {
                         onChange={(e) =>
                           handleInputChange("lastName", e.target.value)
                         }
-                        className={cn("glass-input", errors.lastName && "border-destructive")}
+                        className={cn(
+                          "glass-input",
+                          errors.lastName && "border-destructive"
+                        )}
                         required
                       />
                       {errors.lastName && (

@@ -10,7 +10,6 @@ import { initWebSocket, closeWebSocket } from "@/lib/websocket";
 export default function HomePage() {
   const [isNewPostModalOpen, setIsNewPostModalOpen] = useState(false);
   const [userLoggedIn, setUserLoggedIn] = useState(false);
-  const [userId, setUserId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -21,7 +20,6 @@ export default function HomePage() {
         const { loggedIn, user } = await authUtils.checkAuth();
 
         if (loggedIn) {
-          setUserId(user.id);
           setUserLoggedIn(true);
           initWebSocket(user.id); // init WS once when user is logged in
         } else {
@@ -68,6 +66,7 @@ export default function HomePage() {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handlePostSubmit = (postData: any) => {
     console.log("New post submitted:", postData);
     setIsNewPostModalOpen(false);

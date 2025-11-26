@@ -29,7 +29,6 @@ import {
 import EmojiPicker, { Theme } from "emoji-picker-react";
 import GifPicker from "gif-picker-react";
 import { authUtils } from "@/lib/navigation";
-import { is } from "date-fns/locale";
 import { siteConfig } from "@/config/site.config";
 
 interface Follower {
@@ -56,6 +55,7 @@ interface PostData {
 let postFile: File;
 
 export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [content, setContent] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -224,23 +224,6 @@ export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
     }
   };
 
-  const getPrivacyLabel = (type: string) => {
-    switch (type) {
-      case "public":
-        return "Public - Everyone can see";
-      case "almost-private":
-        return "Followers - Only followers can see";
-      case "private":
-        return `Private - ${
-          selectedFollowers.length > 0
-            ? `${selectedFollowers.length} selected followers`
-            : "Select followers to see this post"
-        }`;
-      default:
-        return "Public - Everyone can see";
-    }
-  };
-
   if (!currentUser)
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -250,174 +233,144 @@ export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[600px] w-full">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold">
+      <DialogContent className="sm:max-w-[600px] w-full glass-card border-0 p-0 overflow-hidden shadow-2xl">
+        <DialogHeader className="p-6 border-b border-border/40 bg-white/5">
+          <DialogTitle className="text-xl font-bold bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
             Create New Post
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="p-6 space-y-6">
           {/* User Info */}
-          <div className="flex items-center gap-3">
-            <Avatar className="h-12 w-12">
+          <div className="flex items-center gap-4">
+            <Avatar className="h-12 w-12 ring-2 ring-primary/20">
               <AvatarImage
                 src={`${siteConfig.domain}/${currentUser.avatar}`}
                 alt={currentUser.fullName}
               />
-              <AvatarFallback className="bg-muted text-foreground">
+              <AvatarFallback className="bg-primary/10 text-primary font-bold">
                 {currentUser.firstName?.charAt(0)}
               </AvatarFallback>
             </Avatar>
             <div>
-              <h3 className="font-semibold text-foreground">
+              <h3 className="font-bold text-foreground">
                 {currentUser.firstName + " " + currentUser.lastName}
               </h3>
-              <p className="text-sm text-muted-foreground">
-                {currentUser.nickname}
-              </p>
+              <div className="flex items-center gap-2 mt-1">
+                <Select
+                  value={privacy}
+                  onValueChange={(v: "public" | "almost-private" | "private") =>
+                    handlePrivacyChange(v)
+                  }
+                >
+                  <SelectTrigger className="h-7 text-xs bg-muted/50 border-0 rounded-full px-3 hover:bg-muted transition-colors">
+                    <div className="flex items-center gap-1.5">
+                      {getPrivacyIcon(privacy)}
+                      <SelectValue />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="public">Public</SelectItem>
+                    <SelectItem value="almost-private">Followers</SelectItem>
+                    <SelectItem value="private">Private</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
           {/* Textarea */}
-          <Textarea
-            placeholder="What's on your mind?"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="min-h-[120px] resize-none border-0 text-lg placeholder:text-muted-foreground focus-visible:ring-0"
-            maxLength={500}
-          />
-          <div className="text-right">
-            <span
-              className={`text-sm ${
-                content.length > 450 ? "text-red-500" : "text-muted-foreground"
-              }`}
-            >
-              {content.length}/500
-            </span>
+          <div className="relative">
+            <Textarea
+              placeholder="What's happening?"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              className="min-h-[150px] resize-none border-0 bg-transparent text-lg placeholder:text-muted-foreground/70 focus-visible:ring-0 p-0 leading-relaxed"
+              maxLength={500}
+            />
+            <div className="absolute bottom-0 right-0">
+              <span
+                className={`text-xs font-medium ${
+                  content.length > 450
+                    ? "text-red-500"
+                    : "text-muted-foreground/60"
+                }`}
+              >
+                {content.length}/500
+              </span>
+            </div>
           </div>
 
           {/* Image Preview */}
           {selectedImage && (
-            <div className="relative">
+            <div className="relative group rounded-xl overflow-hidden border border-border/40">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={selectedImage}
                 alt="Selected"
-                className="w-full max-h-64 object-cover rounded-lg"
+                className="w-full max-h-80 object-cover"
               />
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setSelectedImage(null)}
-                className="absolute top-2 right-2"
-              >
-                <X className="h-4 w-4" />
-              </Button>
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setSelectedImage(null)}
+                  className="rounded-full"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Remove
+                </Button>
+              </div>
             </div>
           )}
 
           {/* Emoji & GIF */}
           {showEmojiPicker && (
-            <EmojiPicker
-              onEmojiClick={(e) => handleEmojiSelect(e.emoji)}
-              theme={Theme.DARK}
-            />
+            <div className="relative z-10">
+              <div className="absolute bottom-full left-0 mb-2 shadow-2xl rounded-xl overflow-hidden">
+                <EmojiPicker
+                  onEmojiClick={(e) => handleEmojiSelect(e.emoji)}
+                  theme={Theme.DARK}
+                  width={350}
+                  height={400}
+                />
+              </div>
+            </div>
           )}
           {showGifPicker && (
-            <GifPicker
-              onGifClick={(g) => handleGifSelect(g.url)}
-              tenorApiKey="AIzaSyB78CUkLJjdlA67853bVqpcwjJaywRAlaQ"
-              categoryHeight={100}
-              theme={Theme.DARK}
-            />
-          )}
-
-          {/* Media Buttons */}
-          <div className="flex items-center justify-between pt-4 border-t border-border">
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => fileInputRef.current?.click()}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <ImageIcon className="h-5 w-5" />
-              </Button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-              />
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setShowEmojiPicker(!showEmojiPicker);
-                  setShowGifPicker(false);
-                }}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <Smile className="h-5 w-5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setShowGifPicker(!showGifPicker);
-                  setShowEmojiPicker(false);
-                }}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <ImagePlay className="h-5 w-5" />
-              </Button>
+            <div className="relative z-10">
+              <div className="absolute bottom-full left-0 mb-2 shadow-2xl rounded-xl overflow-hidden bg-card">
+                <GifPicker
+                  onGifClick={(g) => handleGifSelect(g.url)}
+                  tenorApiKey="AIzaSyB78CUkLJjdlA67853bVqpcwjJaywRAlaQ"
+                  width={350}
+                  theme={Theme.DARK}
+                />
+              </div>
             </div>
-
-            {/* Privacy */}
-            <Select
-              value={privacy}
-              onValueChange={(v: "public" | "almost-private" | "private") =>
-                handlePrivacyChange(v)
-              }
-            >
-              <SelectTrigger className="w-48 flex items-center gap-2">
-                {getPrivacyIcon(privacy)}
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="public">Public</SelectItem>
-                <SelectItem value="almost-private">Followers</SelectItem>
-                <SelectItem value="private">Private</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <p className="text-sm text-muted-foreground">
-            {getPrivacyLabel(privacy)}
-          </p>
+          )}
 
           {/* Follower Selection for Private Posts */}
           {showFollowerSelection && (
-            <div className="border border-border rounded-lg p-4 space-y-4">
+            <div className="border border-border/40 rounded-xl p-4 space-y-4 bg-muted/20">
               <div className="flex items-center justify-between">
-                <h4 className="font-medium text-foreground">
+                <h4 className="font-medium text-foreground text-sm">
                   Select Followers
                 </h4>
                 <div className="flex gap-2">
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
                     onClick={selectAllFollowers}
-                    className="text-xs"
+                    className="text-xs h-7 hover:bg-primary/10 hover:text-primary"
                   >
                     Select All
                   </Button>
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
                     onClick={deselectAllFollowers}
-                    className="text-xs"
+                    className="text-xs h-7 hover:bg-destructive/10 hover:text-destructive"
                   >
                     Clear All
                   </Button>
@@ -429,16 +382,16 @@ export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
                 selected
               </div>
 
-              <div className="max-h-48 overflow-y-auto space-y-2">
+              <div className="max-h-48 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
                 {followers.length > 0 ? (
                   followers.map((follower) => (
                     <div
                       key={follower.id}
                       onClick={() => toggleFollowerSelection(follower.id)}
-                      className={`flex items-center gap-3 p-2 rounded-md cursor-pointer transition-colors ${
+                      className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-all ${
                         selectedFollowers.includes(follower.id)
-                          ? "bg-primary/20 border border-primary/30"
-                          : "bg-muted/50 hover:bg-muted"
+                          ? "bg-primary/15 border border-primary/20"
+                          : "hover:bg-white/5 border border-transparent"
                       }`}
                     >
                       <Avatar className="h-8 w-8">
@@ -460,12 +413,16 @@ export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
                         </p>
                       </div>
                       <div
-                        className={`w-4 h-4 rounded-full border-2 ${
+                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
                           selectedFollowers.includes(follower.id)
                             ? "bg-primary border-primary"
-                            : "border-muted-foreground"
+                            : "border-muted-foreground/50"
                         }`}
-                      />
+                      >
+                        {selectedFollowers.includes(follower.id) && (
+                          <div className="w-2 h-2 bg-white rounded-full" />
+                        )}
+                      </div>
                     </div>
                   ))
                 ) : (
@@ -477,21 +434,67 @@ export function NewPostModal({ isOpen, onClose, onPost }: NewPostModalProps) {
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-3 pt-4">
-            <Button variant="outline" onClick={handleClose}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handlePost}
-              disabled={
-                (!content.trim() && !selectedImage) ||
-                (privacy === "private" && selectedFollowers.length === 0)
-              }
-              className="bg-primary hover:bg-primary/90"
-            >
-              Post
-            </Button>
+          {/* Footer Actions */}
+          <div className="flex items-center justify-between pt-4 border-t border-border/40">
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => fileInputRef.current?.click()}
+                className="text-primary hover:text-primary hover:bg-primary/10 rounded-full h-10 w-10"
+              >
+                <ImageIcon className="h-5 w-5" />
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setShowEmojiPicker(!showEmojiPicker);
+                  setShowGifPicker(false);
+                }}
+                className="text-primary hover:text-primary hover:bg-primary/10 rounded-full h-10 w-10"
+              >
+                <Smile className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setShowGifPicker(!showGifPicker);
+                  setShowEmojiPicker(false);
+                }}
+                className="text-primary hover:text-primary hover:bg-primary/10 rounded-full h-10 w-10"
+              >
+                <ImagePlay className="h-5 w-5" />
+              </Button>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                variant="ghost"
+                onClick={handleClose}
+                className="hover:bg-white/5"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handlePost}
+                disabled={
+                  (!content.trim() && !selectedImage) ||
+                  (privacy === "private" && selectedFollowers.length === 0)
+                }
+                className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-6 font-semibold shadow-lg shadow-primary/25"
+              >
+                Post
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>

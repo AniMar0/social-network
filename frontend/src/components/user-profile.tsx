@@ -3,7 +3,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -14,7 +13,6 @@ import { SidebarNavigation } from "./sidebar";
 import {
   Heart,
   MessageCircle,
-  Share2,
   Mail,
   Calendar,
   Users,
@@ -74,11 +72,9 @@ function UserProfile({
   userData,
   posts = [],
   onNewPost,
-  onNavigate,
 }: UserProfileProps) {
   // Get notification count for sidebar
   const notificationCount = useNotificationCount();
-  const router = useRouter();
   // State for profile data (can be updated by settings dialog)
   const [profileData, setProfileData] = useState(userData);
   // State for following/unfollowing this user
@@ -202,14 +198,11 @@ function UserProfile({
   // TODO: Call backend to like/unlike post
   const handleLikePost = async (postId: string) => {
     try {
-      const res = await fetch(
-        `${siteConfig.domain}/api/like/${postId}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-        }
-      );
+      const res = await fetch(`${siteConfig.domain}/api/like/${postId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
 
       const data = await res.json();
       const isLiked = data.liked ?? false;
@@ -546,20 +539,6 @@ function UserProfile({
     }
   };
 
-  const handleNavigation = (itemId: string) => {
-    // If parent provides navigation handler, use it
-    if (onNavigate) {
-      onNavigate(itemId);
-      console.log("Navigating via parent handler:", itemId);
-    } else {
-      // Fallback navigation for standalone usage
-      console.log("Using fallback navigation:", itemId);
-      // This component can be used independently, so provide basic routing
-      // Note: You may want to use Next.js router here if this component
-      // is used in pages without proper navigation handlers
-    }
-  };
-
   const handleNewPost = () => {
     onNewPost?.();
     console.log("Opening new post dialog");
@@ -582,132 +561,167 @@ function UserProfile({
       />
 
       {/* Main content with left margin for sidebar */}
-      <main className="flex-1 lg:ml-64">
+      <main className="flex-1 lg:ml-72 w-full">
         {/* Profile Header */}
-        <div className="bg-card border-b border-border">
-          <div className="max-w-4xl mx-auto p-6 relative">
-            <div className="flex flex-col md:flex-row gap-6 items-start">
-              {/* Settings button (top-right) - only for profile owner */}
-              {isOwnProfile && (
-                <div className="absolute right-6 top-6">
-                  <ProfileSettings
-                    userData={profileData}
-                    onSave={handleProfileUpdate}
-                  />
-                </div>
-              )}
-              {/* Avatar */}
-              {/* User avatar (profile picture) */}
-              <Avatar className="h-32 w-32 border-4 border-primary/20 flex-shrink-0">
-                <AvatarImage
-                  src={
-                    `${siteConfig.domain}/${profileData.avatar}` ||
-                    `${siteConfig.domain}/uploads/default.jpg`
-                  }
-                  alt={`${profileData.firstName} ${profileData.lastName}`}
-                />
-                <AvatarFallback className="text-2xl bg-muted text-foreground font-semibold">
-                  {profileData.firstName[0]}
-                  {profileData.lastName[0]}
-                </AvatarFallback>
-              </Avatar>
+        <div className="relative">
+          {/* Cover Image Placeholder - could be added to user model later */}
+          <div className="h-64 w-full bg-gradient-to-r from-primary/20 via-purple-500/20 to-blue-500/20 relative overflow-hidden">
+            <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-20"></div>
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background"></div>
+          </div>
 
-              {/* User Info */}
-              {/* User info, bio, stats, and actions */}
-              <div className="flex-1 space-y-4">
-                {/* Name and nickname */}
-                <div>
-                  <h1 className="text-3xl font-bold text-foreground">
-                    {profileData.firstName} {profileData.lastName}
-                  </h1>
-                  {profileData.nickname && (
-                    <p className="text-lg text-muted-foreground">
-                      @{profileData.nickname}
+          <div className="max-w-5xl mx-auto px-6 -mt-32 relative z-10">
+            <div className="glass-card p-8 rounded-3xl border border-border/50 shadow-2xl backdrop-blur-xl">
+              <div className="flex flex-col md:flex-row gap-8 items-start">
+                {/* Settings button (top-right) - only for profile owner */}
+                {isOwnProfile && (
+                  <div className="absolute right-6 top-6">
+                    <ProfileSettings
+                      userData={profileData}
+                      onSave={handleProfileUpdate}
+                    />
+                  </div>
+                )}
+
+                {/* Avatar */}
+                <div className="relative group">
+                  <div className="absolute -inset-1 bg-gradient-to-r from-primary to-purple-600 rounded-full blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
+                  <Avatar className="h-40 w-40 border-4 border-background relative">
+                    <AvatarImage
+                      src={
+                        `${siteConfig.domain}/${profileData.avatar}` ||
+                        `${siteConfig.domain}/uploads/default.jpg`
+                      }
+                      alt={`${profileData.firstName} ${profileData.lastName}`}
+                      className="object-cover"
+                    />
+                    <AvatarFallback className="text-4xl bg-muted text-foreground font-bold">
+                      {profileData.firstName[0]}
+                      {profileData.lastName[0]}
+                    </AvatarFallback>
+                  </Avatar>
+                </div>
+
+                {/* User Info */}
+                <div className="flex-1 space-y-5 pt-2">
+                  {/* Name and nickname */}
+                  <div>
+                    <h1 className="text-4xl font-bold text-foreground tracking-tight">
+                      {profileData.firstName} {profileData.lastName}
+                    </h1>
+                    {profileData.nickname && (
+                      <p className="text-lg text-muted-foreground font-medium">
+                        @{profileData.nickname}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Bio */}
+                  {profileData.aboutMe && (
+                    <p className="text-foreground/90 leading-relaxed max-w-2xl text-lg">
+                      {profileData.aboutMe}
                     </p>
                   )}
-                </div>
 
-                {/* Bio */}
-                {/* About me / bio */}
-                {profileData.aboutMe && (
-                  <p className="text-foreground leading-relaxed max-w-2xl">
-                    {profileData.aboutMe}
-                  </p>
-                )}
-
-                {/* Contact Info */}
-                {/* Contact info (email, birthdate) */}
-                <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-2">
-                    <Mail className="h-4 w-4" />
-                    {profileData.email}
+                  {/* Contact Info */}
+                  <div className="flex flex-wrap gap-6 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2 bg-muted/30 px-3 py-1.5 rounded-full border border-border/50">
+                      <Mail className="h-4 w-4 text-primary" />
+                      {profileData.email}
+                    </div>
+                    <div className="flex items-center gap-2 bg-muted/30 px-3 py-1.5 rounded-full border border-border/50">
+                      <Calendar className="h-4 w-4 text-primary" />
+                      Born{" "}
+                      {new Date(profileData.dateOfBirth).toLocaleDateString()}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    {new Date(profileData.dateOfBirth).toLocaleDateString()}
+
+                  {/* Stats */}
+                  <div className="flex gap-8 py-2">
+                    <div className="text-center md:text-left">
+                      <span className="block text-2xl font-bold text-foreground">
+                        {profileData.followersCount}
+                      </span>
+                      <span className="text-sm text-muted-foreground font-medium">
+                        Followers
+                      </span>
+                    </div>
+                    <div className="text-center md:text-left">
+                      <span className="block text-2xl font-bold text-foreground">
+                        {profileData.followingCount}
+                      </span>
+                      <span className="text-sm text-muted-foreground font-medium">
+                        Following
+                      </span>
+                    </div>
+                    <div className="text-center md:text-left">
+                      <span className="block text-2xl font-bold text-foreground">
+                        {posts.length}
+                      </span>
+                      <span className="text-sm text-muted-foreground font-medium">
+                        Posts
+                      </span>
+                    </div>
                   </div>
-                </div>
 
-                {/* Stats */}
-                {/* Follower/following stats */}
-                <div className="flex gap-6 text-sm">
-                  <span className="text-foreground">
-                    <strong>{profileData.followersCount}</strong> Followers
-                  </span>
-                  <span className="text-foreground">
-                    <strong>{profileData.followingCount}</strong> Following
-                  </span>
-                </div>
-
-                {/* Action Buttons (follow/message); settings moved to top-right */}
-                {!isOwnProfile && (
-                  <div className="flex gap-3">
-                    {messageDialogOpen && (
+                  {/* Action Buttons */}
+                  {!isOwnProfile && (
+                    <div className="flex gap-4 pt-2">
+                      {messageDialogOpen && (
+                        <Button
+                          variant="default"
+                          className="flex items-center gap-2 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/25 rounded-full px-6"
+                          onClick={handleMessage}
+                        >
+                          <MessageSquare className="h-4 w-4" />
+                          Message
+                        </Button>
+                      )}
                       <Button
-                        variant="default"
-                        className="flex items-center gap-2 cursor-pointer"
-                        onClick={handleMessage}
+                        onClick={handleFollowToggle}
+                        variant={getFollowButtonVariant()}
+                        className={`flex items-center gap-2 cursor-pointer rounded-full px-6 ${
+                          followingState
+                            ? "border-primary/50 text-primary hover:bg-primary/10"
+                            : ""
+                        }`}
+                        disabled={followRequestStatus === "declined"}
                       >
-                        <MessageSquare className="h-4 w-4" />
-                        Message
+                        <Users className="h-4 w-4" />
+                        {getFollowButtonText()}
                       </Button>
-                    )}
-                    <Button
-                      onClick={handleFollowToggle}
-                      variant={getFollowButtonVariant()}
-                      className="flex items-center gap-2 cursor-pointer"
-                      disabled={followRequestStatus === "declined"}
-                    >
-                      <Users className="h-4 w-4" />
-                      {getFollowButtonText()}
-                    </Button>
-                  </div>
-                )}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Posts Section (user's posts or private message) */}
-        <div className="max-w-4xl mx-auto p-6">
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold text-foreground border-b border-primary pb-2">
+        {/* Posts Section */}
+        <div className="max-w-3xl mx-auto px-6 py-12">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+              <span className="bg-primary/20 p-2 rounded-lg text-primary">
+                <ImagePlay className="h-5 w-5" />
+              </span>
               Posts
             </h2>
+            {/* Filter or view options could go here */}
           </div>
 
           {canViewPosts ? (
-            <div className="space-y-6">
-              {/* List of posts if any */}
+            <div className="space-y-8">
               {posts.length > 0 ? (
                 postsState.map((post) => (
-                  // Single post card
-                  <Card key={post.id} className="bg-card border-border">
-                    <CardContent className="p-6">
+                  <Card
+                    key={post.id}
+                    className="glass-card border-0 overflow-hidden hover:shadow-lg transition-all duration-300"
+                  >
+                    <CardContent className="p-0">
                       {/* Post Header */}
-                      {/* Post header: avatar, name, date */}
-                      <div className="flex items-center gap-3 mb-4">
-                        <Avatar className="h-10 w-10">
+                      <div className="p-5 flex items-center gap-4 border-b border-border/40 bg-white/5">
+                        <Avatar className="h-10 w-10 ring-2 ring-primary/20">
                           <AvatarImage
                             src={
                               `${siteConfig.domain}/${profileData.avatar}` ||
@@ -715,93 +729,88 @@ function UserProfile({
                             }
                             alt={`${profileData.firstName} ${profileData.lastName}`}
                           />
-                          <AvatarFallback className="bg-muted text-foreground text-sm font-semibold">
+                          <AvatarFallback className="bg-primary/10 text-primary font-bold">
                             {profileData.firstName[0]}
                             {profileData.lastName[0]}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="font-semibold text-foreground">
+                          <p className="font-bold text-foreground">
                             {profileData.firstName} {profileData.lastName}
                           </p>
-                          <p className="text-sm text-muted-foreground">
-                            {new Date(post.createdAt).toLocaleDateString()}
+                          <p className="text-xs text-muted-foreground font-medium">
+                            {new Date(post.createdAt).toLocaleDateString(
+                              undefined,
+                              { dateStyle: "long" }
+                            )}
                           </p>
                         </div>
                       </div>
 
                       {/* Post Content */}
-                      {/* Post content and image */}
-                      <div className="space-y-4">
-                        <p className="text-foreground leading-relaxed">
+                      <div className="p-5 space-y-4">
+                        <p className="text-foreground/90 leading-relaxed text-[15px] whitespace-pre-wrap">
                           {post.content}
                         </p>
 
-                        {/* Post Image */}
-                        {/* Post image if present */}
                         {post.image && (
-                          <div className="rounded-lg overflow-hidden">
+                          <div className="rounded-xl overflow-hidden bg-black/5 border border-border/20">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={
                                 post.image.startsWith("http")
-                                  ? post.image // external URL
-                                  : `${siteConfig.domain}/${post.image}` // internal URL
+                                  ? post.image
+                                  : `${siteConfig.domain}/${post.image}`
                               }
                               alt="Post content"
-                              className="w-full h-auto max-h-96 object-cover"
+                              className="w-full h-auto max-h-[500px] object-contain"
                             />
                           </div>
                         )}
+                      </div>
 
-                        {/* Post Actions */}
-                        {/* Post actions: like, comment, share */}
-                        <div className="flex items-center gap-6 pt-2 border-t border-border">
-                          {/* Like button */}
-                          <button
-                            onClick={() => handleLikePost(post.id)}
-                            className={`flex items-center gap-2 text-sm hover:text-primary transition-colors ${
-                              post.isLiked
-                                ? "text-primary"
-                                : "text-muted-foreground"
+                      {/* Post Actions */}
+                      <div className="px-5 py-3 flex items-center gap-6 border-t border-border/40 bg-muted/20">
+                        <button
+                          onClick={() => handleLikePost(post.id)}
+                          className={`flex items-center gap-2 text-sm font-medium transition-colors px-3 py-1.5 rounded-full hover:bg-red-500/10 ${
+                            post.isLiked
+                              ? "text-red-500"
+                              : "text-muted-foreground hover:text-red-500"
+                          }`}
+                        >
+                          <Heart
+                            className={`h-5 w-5 ${
+                              post.isLiked ? "fill-current" : ""
                             }`}
-                          >
-                            <Heart
-                              className={`h-4 w-4 ${
-                                post.isLiked ? "fill-current" : ""
-                              }`}
-                            />
-                            {post.likes}
-                          </button>
-                          {/* Comment button */}
-                          <button
-                            onClick={() => toggleComments(post.id)}
-                            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
-                          >
-                            <MessageCircle className="h-4 w-4" />
-                            {post.comments}
-                          </button>
-                          {/* Share button */}
-                          {/* <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
-                            <Share2 className="h-4 w-4" />
-                            Share
-                          </button> */}
-                        </div>
+                          />
+                          {post.likes}
+                        </button>
+                        <button
+                          onClick={() => toggleComments(post.id)}
+                          className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-blue-400 hover:bg-blue-400/10 px-3 py-1.5 rounded-full transition-colors"
+                        >
+                          <MessageCircle className="h-5 w-5" />
+                          {post.comments}
+                        </button>
+                      </div>
 
-                        {/* Comments Section */}
-                        {showComments[post.id] && (
-                          <div className="mt-4 pt-4 border-t border-border">
-                            {/* Comment Input */}
-                            <div className="flex items-center gap-3 mb-4">
-                              <Avatar className="h-8 w-8">
-                                <AvatarImage
-                                  src={`${siteConfig.domain}/${profileData.avatar}`}
-                                  alt="You"
-                                />
-                                <AvatarFallback className="bg-muted text-foreground text-xs">
-                                  You
-                                </AvatarFallback>
-                              </Avatar>
-                              <div className="flex-1 flex items-center gap-2">
+                      {/* Comments Section */}
+                      {showComments[post.id] && (
+                        <div className="bg-muted/30 border-t border-border/40 p-5 animate-in slide-in-from-top-2">
+                          {/* Comment Input */}
+                          <div className="flex items-start gap-3 mb-6">
+                            <Avatar className="h-8 w-8 mt-1">
+                              <AvatarImage
+                                src={`${siteConfig.domain}/${profileData.avatar}`}
+                                alt="You"
+                              />
+                              <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                                You
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 space-y-2">
+                              <div className="relative">
                                 <Input
                                   placeholder={
                                     replyingTo[post.id]
@@ -823,42 +832,47 @@ function UserProfile({
                                       );
                                     }
                                   }}
-                                  className="flex-1"
+                                  className="pr-20 bg-background/50 border-border/60 focus-visible:ring-primary/30"
                                 />
-                                <Button
-                                  size="sm"
-                                  variant={"outline"}
-                                  onClick={() => {
-                                    setShowGifPicker((prev) => ({
-                                      ...prev,
-                                      [post.id]: !prev[post.id],
-                                    }));
-                                    setShowEmojiPicker((prev) => ({
-                                      ...prev,
-                                      [post.id]: false,
-                                    }));
-                                  }}
-                                  className="h-8 w-8 p-0 flex items-center justify-center cursor-pointer"
-                                >
-                                  <ImagePlay className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant={"outline"}
-                                  onClick={() => {
-                                    setShowEmojiPicker((prev) => ({
-                                      ...prev,
-                                      [post.id]: !prev[post.id],
-                                    }));
-                                    setShowGifPicker((prev) => ({
-                                      ...prev,
-                                      [post.id]: false,
-                                    }));
-                                  }}
-                                  className="h-8 w-8 p-0 flex items-center justify-center cursor-pointer"
-                                >
-                                  <Smile className="h-4 w-4" />
-                                </Button>
+                                <div className="absolute right-1 top-1 flex items-center gap-1">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => {
+                                      setShowEmojiPicker((prev) => ({
+                                        ...prev,
+                                        [post.id]: !prev[post.id],
+                                      }));
+                                      setShowGifPicker((prev) => ({
+                                        ...prev,
+                                        [post.id]: false,
+                                      }));
+                                    }}
+                                    className="h-8 w-8 p-0 text-muted-foreground hover:text-primary rounded-full"
+                                  >
+                                    <Smile className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => {
+                                      setShowGifPicker((prev) => ({
+                                        ...prev,
+                                        [post.id]: !prev[post.id],
+                                      }));
+                                      setShowEmojiPicker((prev) => ({
+                                        ...prev,
+                                        [post.id]: false,
+                                      }));
+                                    }}
+                                    className="h-8 w-8 p-0 text-muted-foreground hover:text-primary rounded-full"
+                                  >
+                                    <ImagePlay className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+
+                              <div className="flex justify-end">
                                 <Button
                                   size="sm"
                                   onClick={() =>
@@ -868,115 +882,145 @@ function UserProfile({
                                     )
                                   }
                                   disabled={!newComment[post.id]?.trim()}
-                                  className="h-8 w-8 p-0 flex items-center justify-center cursor-pointer"
+                                  className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-4 h-7 text-xs"
                                 >
-                                  <Send className="h-4 w-4" />
+                                  <Send className="h-3 w-3 mr-2" />
+                                  {replyingTo[post.id] ? "Reply" : "Comment"}
                                 </Button>
                               </div>
                             </div>
+                          </div>
 
-                            {/* Emoji & GIF Pickers for this post */}
-                            {showEmojiPicker[post.id] && (
-                              <div className="mb-4">
+                          {/* Emoji & GIF Pickers */}
+                          {showEmojiPicker[post.id] && (
+                            <div className="mb-4 relative z-10">
+                              <div className="absolute top-0 left-0 shadow-2xl rounded-xl overflow-hidden">
                                 <EmojiPicker
                                   onEmojiClick={(e) =>
                                     handleEmojiSelect(e.emoji, post.id)
                                   }
                                   theme={Theme.DARK}
+                                  width={300}
+                                  height={350}
                                 />
                               </div>
-                            )}
-                            {showGifPicker[post.id] && (
-                              <div className="mb-4">
+                            </div>
+                          )}
+                          {showGifPicker[post.id] && (
+                            <div className="mb-4 relative z-10">
+                              <div className="absolute top-0 left-0 shadow-2xl rounded-xl overflow-hidden bg-card">
                                 <GifPicker
                                   onGifClick={(g) =>
                                     handleGifSelect(g.url, post.id)
                                   }
                                   tenorApiKey="AIzaSyB78CUkLJjdlA67853bVqpcwjJaywRAlaQ"
-                                  categoryHeight={100}
+                                  width={300}
                                   theme={Theme.DARK}
                                 />
                               </div>
-                            )}
+                            </div>
+                          )}
 
-                            {/* Cancel Reply Button */}
-                            {replyingTo[post.id] && (
-                              <div className="mb-3">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    setReplyingTo((prev) => ({
-                                      ...prev,
-                                      [post.id]: null,
-                                    }))
-                                  }
-                                  className="text-xs"
-                                >
-                                  Cancel Reply
-                                </Button>
+                          {/* Cancel Reply Button */}
+                          {replyingTo[post.id] && (
+                            <div className="mb-3 flex items-center justify-between bg-primary/5 p-2 rounded-lg border border-primary/10">
+                              <span className="text-xs text-primary font-medium">
+                                Replying to comment...
+                              </span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  setReplyingTo((prev) => ({
+                                    ...prev,
+                                    [post.id]: null,
+                                  }))
+                                }
+                                className="h-6 text-xs text-muted-foreground hover:text-destructive"
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          )}
+
+                          {/* Comments List */}
+                          <div className="space-y-4 mt-6">
+                            {post.commentsList &&
+                            post.commentsList.length > 0 ? (
+                              post.commentsList.map((comment) =>
+                                renderComment(comment, post.id)
+                              )
+                            ) : (
+                              <div className="text-center py-8 bg-muted/30 rounded-xl border border-dashed border-border/50">
+                                <MessageCircle className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
+                                <p className="text-sm text-muted-foreground">
+                                  No comments yet. Be the first to share your
+                                  thoughts!
+                                </p>
                               </div>
                             )}
-
-                            {/* Comments List */}
-                            <div className="space-y-2">
-                              {post.commentsList &&
-                              post.commentsList.length > 0 ? (
-                                post.commentsList.map((comment) =>
-                                  renderComment(comment, post.id)
-                                )
-                              ) : (
-                                <p className="text-sm text-muted-foreground text-center py-4">
-                                  No comments yet. Be the first to comment!
-                                </p>
-                              )}
-                            </div>
                           </div>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 ))
               ) : (
                 // No posts fallback
-                <Card className="bg-card border-border">
-                  <CardContent className="p-12 text-center">
-                    <p className="text-muted-foreground">No posts yet</p>
-                  </CardContent>
-                </Card>
+                <div className="glass-card p-12 text-center rounded-3xl border-dashed border-2 border-border/50">
+                  <div className="bg-muted/30 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <ImagePlay className="h-10 w-10 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-xl font-bold text-foreground mb-2">
+                    No posts yet
+                  </h3>
+                  <p className="text-muted-foreground">
+                    {isOwnProfile
+                      ? "Share your first post with the world!"
+                      : "This user hasn't posted anything yet."}
+                  </p>
+                  {isOwnProfile && (
+                    <Button
+                      onClick={handleNewPost}
+                      className="mt-6 rounded-full"
+                    >
+                      Create Post
+                    </Button>
+                  )}
+                </div>
               )}
             </div>
           ) : (
             // Private profile fallback (locked)
-            <Card className="bg-card border-border">
-              <CardContent className="p-12 text-center">
-                <Lock className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-xl font-semibold text-foreground mb-2">
-                  This profile is private
-                </h3>
-                <p className="text-muted-foreground mb-6">
-                  {followRequestStatus === "pending"
-                    ? `Your follow request to ${profileData.firstName} is pending approval.`
-                    : followRequestStatus === "declined"
-                    ? `Your follow request to ${profileData.firstName} was declined.`
-                    : `Follow ${profileData.firstName} to see their posts and activity.`}
-                </p>
-                {/* Show follow button if not own profile */}
-                {!isOwnProfile && (
-                  <div className="flex justify-center">
-                    <Button
-                      onClick={handleFollowToggle}
-                      variant={getFollowButtonVariant()}
-                      className="flex items-center gap-2 cursor-pointer"
-                      disabled={followRequestStatus === "declined"}
-                    >
-                      <Users className="h-4 w-4" />
-                      {getFollowButtonText()}
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <div className="glass-card p-16 text-center rounded-3xl border border-border/50 shadow-xl">
+              <div className="bg-muted/30 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Lock className="h-12 w-12 text-muted-foreground" />
+              </div>
+              <h3 className="text-2xl font-bold text-foreground mb-3">
+                This profile is private
+              </h3>
+              <p className="text-muted-foreground mb-8 max-w-md mx-auto text-lg">
+                {followRequestStatus === "pending"
+                  ? `Your follow request to ${profileData.firstName} is pending approval.`
+                  : followRequestStatus === "declined"
+                  ? `Your follow request to ${profileData.firstName} was declined.`
+                  : `Follow ${profileData.firstName} to see their posts and activity.`}
+              </p>
+              {/* Show follow button if not own profile */}
+              {!isOwnProfile && (
+                <div className="flex justify-center">
+                  <Button
+                    onClick={handleFollowToggle}
+                    variant={getFollowButtonVariant()}
+                    className="flex items-center gap-2 cursor-pointer rounded-full px-8 py-6 text-lg"
+                    disabled={followRequestStatus === "declined"}
+                  >
+                    <Users className="h-5 w-5" />
+                    {getFollowButtonText()}
+                  </Button>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </main>

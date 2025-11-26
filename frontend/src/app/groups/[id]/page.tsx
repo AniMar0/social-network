@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { GroupsPage } from "@/components/groups";
 import { NewPostModal } from "@/components/newpost";
 import { authUtils } from "@/lib/navigation";
@@ -11,9 +11,9 @@ export default function GroupPage() {
   const [userLoggedIn, setUserLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const params = useParams();
-  
-  const groupId = params.id as string;
+  // const params = useParams();
+
+  // const groupId = params.id as string;
 
   // Check authentication
   useEffect(() => {
@@ -39,32 +39,7 @@ export default function GroupPage() {
 
   const handleNewPost = () => setIsNewPostModalOpen(true);
 
-  const handleNavigate = async (itemId: string) => {
-    switch (itemId) {
-      case "home":
-        router.push("/");
-        break;
-      case "explore":
-        router.push("/explore");
-        break;
-      case "notifications":
-        router.push("/notifications");
-        break;
-      case "messages":
-        router.push("/messages");
-        break;
-      case "groups":
-        router.push("/groups");
-        break;
-      case "profile":
-        const user = await authUtils.CurrentUser();
-        router.push(`/profile/${user.url}`);
-        break;
-      default:
-        router.push("/");
-    }
-  };
-
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handlePostSubmit = (postData: any) => {
     console.log("New post submitted:", postData);
     setIsNewPostModalOpen(false);
@@ -82,7 +57,7 @@ export default function GroupPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <GroupsPage onNewPost={handleNewPost} onNavigate={handleNavigate} />
+      <GroupsPage onNewPost={handleNewPost} />
 
       <NewPostModal
         isOpen={isNewPostModalOpen}

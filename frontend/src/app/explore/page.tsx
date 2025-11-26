@@ -77,6 +77,7 @@ export default function Explore() {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handlePostSubmit = (postData: any) => {
     console.log("New post submitted:", postData);
     // TODO: Send the post to the backend

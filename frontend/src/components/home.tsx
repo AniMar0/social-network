@@ -14,12 +14,12 @@ import {
   Send,
   ImagePlay,
   Smile,
+  Search,
 } from "lucide-react";
 import { useNotificationCount } from "@/lib/notifications";
 import EmojiPicker, { Theme } from "emoji-picker-react";
 import GifPicker from "gif-picker-react";
 import { getWebSocket } from "@/lib/websocket";
-import { ca } from "date-fns/locale";
 import { siteConfig } from "@/config/site.config";
 
 interface Comment {
@@ -60,7 +60,7 @@ interface HomeFeedProps {
   onNavigate?: (itemId: string) => void;
 }
 
-function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
+function HomeFeed({ onNewPost }: HomeFeedProps) {
   // Get notification count for sidebar
   const notificationCount = useNotificationCount();
   const [postsState, setPostsState] = useState<Post[]>([]);
@@ -103,6 +103,7 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
     };
   }, []);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleWsEvent = (data: any) => {
     switch (data.channel) {
       case "new-post":
@@ -341,12 +342,6 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
     console.log("New Post button clicked from HomeFeed");
   };
 
-  const handleNavigation = (itemId: string) => {
-    // bubble up navigation to parent if provided
-    onNavigate?.(itemId);
-    console.log("Navigating from HomeFeed to:", itemId);
-  };
-
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
@@ -433,27 +428,30 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
       />
 
       {/* Main Content */}
-      <div className="flex-1 lg:ml-64 min-w-0">
-        <div className="max-w-2xl mx-auto">
+      <div className="flex-1 lg:ml-72 min-w-0 flex justify-center">
+        <div className="w-full max-w-2xl px-4 pb-20 lg:pb-8">
           {/* Header */}
-          <div className="sticky top-0 bg-background/80 backdrop-blur-sm border-b border-border p-4 z-10">
-            <h2 className="text-xl font-bold text-foreground lg:ml-0 ml-12">
-              Home
+          <div className="sticky top-0 z-20 pt-6 pb-4 backdrop-blur-xl bg-background/50 border-b border-border/40 mb-6 -mx-4 px-4 flex items-center justify-between">
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent lg:ml-0 ml-12">
+              Home Feed
             </h2>
+            <div className="flex gap-2">
+              {/* Placeholder for filters or other header actions */}
+            </div>
           </div>
 
           {/* Posts Feed */}
-          <div className="p-4 space-y-4">
+          <div className="space-y-6">
             {postsState.map((post) => (
               <Card
                 key={post.id}
-                className="border border-border w-full max-w-3xl mx-auto"
+                className="glass-card border-0 overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-primary/5"
               >
-                <CardContent className="p-6">
+                <CardContent className="p-0">
                   {/* Post Header */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-12 w-12">
+                  <div className="p-5 flex items-start justify-between">
+                    <div className="flex items-center gap-4">
+                      <Avatar className="h-12 w-12 ring-2 ring-primary/20 transition-transform hover:scale-105 cursor-pointer">
                         <AvatarImage
                           src={
                             `${siteConfig.domain}/${post.author.avatar}` ||
@@ -461,7 +459,7 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
                           }
                           alt={post.author.name}
                         />
-                        <AvatarFallback className="bg-muted text-foreground">
+                        <AvatarFallback className="bg-primary/10 text-primary font-bold">
                           {post.author.name
                             .split(" ")
                             .map((n) => n[0])
@@ -470,183 +468,226 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
                       </Avatar>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-foreground">
+                          <h3 className="font-bold text-foreground hover:text-primary transition-colors cursor-pointer">
                             {post.author.name}
                           </h3>
+                          {/* Optional: Add verified badge here */}
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          {post.author.username} •{" "}
-                          {new Date(post.createdAt).toLocaleString()}
+                        <p className="text-xs text-muted-foreground font-medium">
+                          @{post.author.username} •{" "}
+                          {new Date(post.createdAt).toLocaleString(undefined, {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          })}
                         </p>
                       </div>
                     </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground hover:text-foreground rounded-full"
+                    >
+                      <MoreHorizontal className="h-5 w-5" />
+                    </Button>
                   </div>
 
                   {/* Post Content */}
-                  <div className="mb-4">
-                    <p className="text-foreground leading-relaxed">
+                  <div className="px-5 pb-3">
+                    <p className="text-foreground/90 leading-relaxed text-[15px] whitespace-pre-wrap">
                       {post.content}
                     </p>
-                    {post.image && (
-                      <div className="mt-3 rounded-lg overflow-hidden">
-                        <img
-                          src={
-                            post.image.startsWith("http")
-                              ? post.image // external URL
-                              : `${siteConfig.domain}/${post.image}` // internal URL
-                          }
-                          alt="Post content"
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    )}
                   </div>
 
+                  {post.image && (
+                    <div className="mt-2 w-full bg-black/5">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={
+                          post.image.startsWith("http")
+                            ? post.image // external URL
+                            : `${siteConfig.domain}/${post.image}` // internal URL
+                        }
+                        alt="Post content"
+                        className="w-full h-auto max-h-[600px] object-contain"
+                        loading="lazy"
+                      />
+                    </div>
+                  )}
+
                   {/* Post Actions */}
-                  <div className="flex items-center justify-between pt-4 border-t border-border">
-                    <div className="flex items-center gap-6">
+                  <div className="px-5 py-3 flex items-center justify-between border-t border-border/40 bg-white/5">
+                    <div className="flex items-center gap-1">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleLike(post.id)}
-                        className={`flex items-center gap-2 cursor-pointer ${
+                        className={`flex items-center gap-2 rounded-full px-4 hover:bg-red-500/10 transition-colors ${
                           post.isLiked
                             ? "text-red-500"
-                            : "text-muted-foreground"
+                            : "text-muted-foreground hover:text-red-500"
                         }`}
                       >
                         <Heart
-                          className={`h-4 w-4 ${
+                          className={`h-5 w-5 transition-transform active:scale-75 ${
                             post.isLiked ? "fill-current" : ""
                           }`}
                         />
-                        <span>{post.likes}</span>
+                        <span className="font-medium">{post.likes}</span>
                       </Button>
+
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => toggleComments(post.id)}
-                        className="flex items-center gap-2 text-muted-foreground cursor-pointer"
+                        className="flex items-center gap-2 rounded-full px-4 text-muted-foreground hover:text-blue-400 hover:bg-blue-400/10 transition-colors"
                       >
-                        <MessageCircle className="h-4 w-4" />
-                        <span>{post.comments}</span>
+                        <MessageCircle className="h-5 w-5" />
+                        <span className="font-medium">{post.comments}</span>
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="flex items-center gap-2 rounded-full px-4 text-muted-foreground hover:text-green-400 hover:bg-green-400/10 transition-colors"
+                      >
+                        <Share className="h-5 w-5" />
+                        <span className="font-medium">{post.shares}</span>
                       </Button>
                     </div>
                   </div>
 
                   {/* Comments Section */}
                   {showComments[post.id] && (
-                    <div className="mt-4 pt-4 border-t border-border">
+                    <div className="bg-muted/30 border-t border-border/40 p-5 animate-in slide-in-from-top-2 duration-200">
                       {/* Comment Input */}
-                      <div className="flex items-center gap-3 mb-4">
-                        <Avatar className="h-8 w-8">
+                      <div className="flex items-start gap-3 mb-6">
+                        <Avatar className="h-9 w-9 mt-1">
                           <AvatarImage
-                            src={`${siteConfig.domain}/${post.author.avatar}`}
+                            src={`${siteConfig.domain}/${post.author.avatar}`} // Ideally current user avatar
                             alt="You"
                           />
-                          <AvatarFallback className="bg-muted text-foreground text-xs">
+                          <AvatarFallback className="bg-primary/10 text-primary text-xs">
                             You
                           </AvatarFallback>
                         </Avatar>
-                        <div className="flex-1 flex items-center gap-2">
-                          <Input
-                            placeholder={
-                              replyingTo[post.id]
-                                ? "Write a reply..."
-                                : "Write a comment..."
-                            }
-                            value={newComment[post.id] || ""}
-                            onChange={(e) =>
-                              setNewComment((prev) => ({
-                                ...prev,
-                                [post.id]: e.target.value,
-                              }))
-                            }
-                            onKeyPress={(e) => {
-                              if (e.key === "Enter") {
+                        <div className="flex-1 space-y-2">
+                          <div className="relative">
+                            <Input
+                              placeholder={
+                                replyingTo[post.id]
+                                  ? "Write a reply..."
+                                  : "Write a comment..."
+                              }
+                              value={newComment[post.id] || ""}
+                              onChange={(e) =>
+                                setNewComment((prev) => ({
+                                  ...prev,
+                                  [post.id]: e.target.value,
+                                }))
+                              }
+                              onKeyPress={(e) => {
+                                if (e.key === "Enter") {
+                                  handleCommentSubmit(
+                                    post.id,
+                                    replyingTo[post.id] || undefined
+                                  );
+                                }
+                              }}
+                              className="pr-24 bg-background/50 border-border/60 focus-visible:ring-primary/30 min-h-[44px]"
+                            />
+                            <div className="absolute right-1 top-1 flex items-center gap-1">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  setShowEmojiPicker((prev) => ({
+                                    ...prev,
+                                    [post.id]: !prev[post.id],
+                                  }));
+                                  setShowGifPicker((prev) => ({
+                                    ...prev,
+                                    [post.id]: false,
+                                  }));
+                                }}
+                                className="h-8 w-8 p-0 text-muted-foreground hover:text-primary rounded-full"
+                              >
+                                <Smile className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  setShowGifPicker((prev) => ({
+                                    ...prev,
+                                    [post.id]: !prev[post.id],
+                                  }));
+                                  setShowEmojiPicker((prev) => ({
+                                    ...prev,
+                                    [post.id]: false,
+                                  }));
+                                }}
+                                className="h-8 w-8 p-0 text-muted-foreground hover:text-primary rounded-full"
+                              >
+                                <ImagePlay className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+
+                          <div className="flex justify-end">
+                            <Button
+                              size="sm"
+                              onClick={() =>
                                 handleCommentSubmit(
                                   post.id,
                                   replyingTo[post.id] || undefined
-                                );
+                                )
                               }
-                            }}
-                            className="flex-1"
-                          />
-                          <Button
-                            size="sm"
-                            variant={"outline"}
-                            onClick={() => {
-                              setShowGifPicker((prev) => ({
-                                ...prev,
-                                [post.id]: !prev[post.id],
-                              }));
-                              setShowEmojiPicker((prev) => ({
-                                ...prev,
-                                [post.id]: false,
-                              }));
-                            }}
-                            className="h-8 w-8 p-0 flex items-center justify-center cursor-pointer"
-                          >
-                            <ImagePlay className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant={"outline"}
-                            onClick={() => {
-                              setShowEmojiPicker((prev) => ({
-                                ...prev,
-                                [post.id]: !prev[post.id],
-                              }));
-                              setShowGifPicker((prev) => ({
-                                ...prev,
-                                [post.id]: false,
-                              }));
-                            }}
-                            className="h-8 w-8 p-0 flex items-center justify-center cursor-pointer"
-                          >
-                            <Smile className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={() =>
-                              handleCommentSubmit(
-                                post.id,
-                                replyingTo[post.id] || undefined
-                              )
-                            }
-                            disabled={!newComment[post.id]?.trim()}
-                            className="h-8 w-8 p-0 flex items-center justify-center cursor-pointer"
-                          >
-                            <Send className="h-4 w-4" />
-                          </Button>
+                              disabled={!newComment[post.id]?.trim()}
+                              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-4 h-8 text-xs font-medium"
+                            >
+                              <Send className="h-3 w-3 mr-2" />
+                              {replyingTo[post.id] ? "Reply" : "Comment"}
+                            </Button>
+                          </div>
                         </div>
                       </div>
 
                       {/* Emoji & GIF Pickers for this post */}
                       {showEmojiPicker[post.id] && (
-                        <div className="mb-4">
-                          <EmojiPicker
-                            onEmojiClick={(e) =>
-                              handleEmojiSelect(e.emoji, post.id)
-                            }
-                            theme={Theme.DARK}
-                          />
+                        <div className="mb-4 relative z-10">
+                          <div className="absolute top-0 left-0 shadow-2xl rounded-xl overflow-hidden">
+                            <EmojiPicker
+                              onEmojiClick={(e) =>
+                                handleEmojiSelect(e.emoji, post.id)
+                              }
+                              theme={Theme.DARK}
+                              width={300}
+                              height={400}
+                            />
+                          </div>
                         </div>
                       )}
                       {showGifPicker[post.id] && (
-                        <div className="mb-4">
-                          <GifPicker
-                            onGifClick={(g) => handleGifSelect(g.url, post.id)}
-                            tenorApiKey="AIzaSyB78CUkLJjdlA67853bVqpcwjJaywRAlaQ"
-                            categoryHeight={100}
-                            theme={Theme.DARK}
-                          />
+                        <div className="mb-4 relative z-10">
+                          <div className="absolute top-0 left-0 shadow-2xl rounded-xl overflow-hidden bg-card">
+                            <GifPicker
+                              onGifClick={(g) =>
+                                handleGifSelect(g.url, post.id)
+                              }
+                              tenorApiKey="AIzaSyB78CUkLJjdlA67853bVqpcwjJaywRAlaQ"
+                              width={300}
+                              theme={Theme.DARK}
+                            />
+                          </div>
                         </div>
                       )}
 
                       {/* Cancel Reply Button */}
                       {replyingTo[post.id] && (
-                        <div className="mb-3">
+                        <div className="mb-3 flex items-center justify-between bg-primary/5 p-2 rounded-lg border border-primary/10">
+                          <span className="text-xs text-primary font-medium">
+                            Replying to comment...
+                          </span>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -656,24 +697,28 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
                                 [post.id]: null,
                               }))
                             }
-                            className="text-xs text-muted-foreground"
+                            className="h-6 text-xs text-muted-foreground hover:text-destructive"
                           >
-                            Cancel Reply
+                            Cancel
                           </Button>
                         </div>
                       )}
 
                       {/* Comments List */}
-                      <div className="space-y-2">
+                      <div className="space-y-4 mt-6">
                         {post.commentsList &&
                           post.commentsList.map((comment) =>
                             renderComment(comment, post.id)
                           )}
                         {(!post.commentsList ||
                           post.commentsList.length === 0) && (
-                          <p className="text-sm text-muted-foreground text-center py-4">
-                            No comments yet. Be the first to comment!
-                          </p>
+                          <div className="text-center py-8 bg-muted/30 rounded-xl border border-dashed border-border/50">
+                            <MessageCircle className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
+                            <p className="text-sm text-muted-foreground">
+                              No comments yet. Be the first to share your
+                              thoughts!
+                            </p>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -681,6 +726,88 @@ function HomeFeed({ onNewPost, onNavigate }: HomeFeedProps) {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Right Sidebar (Trending/Suggestions) - Hidden on mobile/tablet */}
+      <div className="hidden xl:block w-80 p-6 fixed right-0 top-0 h-screen overflow-y-auto border-l border-border/40 bg-background/20 backdrop-blur-sm">
+        <div className="space-y-6 mt-4">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search..."
+              className="pl-9 bg-muted/50 border-border/50 rounded-full focus-visible:ring-primary/30"
+            />
+          </div>
+
+          {/* Trending Topics */}
+          <div className="glass-card p-5 rounded-2xl border border-border/50">
+            <h3 className="font-bold text-lg mb-4 text-foreground">
+              Trending for you
+            </h3>
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="flex justify-between items-start group cursor-pointer"
+                >
+                  <div>
+                    <p className="text-xs text-muted-foreground">
+                      Trending in Tech
+                    </p>
+                    <p className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors">
+                      #WebDevelopment
+                    </p>
+                    <p className="text-xs text-muted-foreground">52.4K posts</p>
+                  </div>
+                  <MoreHorizontal className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+              ))}
+            </div>
+            <Button
+              variant="ghost"
+              className="w-full mt-4 text-primary text-sm hover:bg-primary/10"
+            >
+              Show more
+            </Button>
+          </div>
+
+          {/* Who to follow */}
+          <div className="glass-card p-5 rounded-2xl border border-border/50">
+            <h3 className="font-bold text-lg mb-4 text-foreground">
+              Who to follow
+            </h3>
+            <div className="space-y-4">
+              {[1, 2].map((i) => (
+                <div key={i} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback className="bg-secondary text-secondary-foreground">
+                        U{i}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="overflow-hidden">
+                      <p className="font-semibold text-sm truncate">User {i}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        @user{i}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    className="bg-white text-black hover:bg-white/90 rounded-full h-8 px-4 text-xs font-bold"
+                  >
+                    Follow
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="text-xs text-muted-foreground px-2">
+            <p>© 2025 Social Network. All rights reserved.</p>
           </div>
         </div>
       </div>

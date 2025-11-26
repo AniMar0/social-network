@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -67,15 +66,6 @@ interface Group {
   isCreator?: boolean;
 }
 
-interface GroupMember {
-  id: string;
-  name: string;
-  username: string;
-  avatar: string;
-  role: "creator" | "member";
-  joinedAt: string;
-}
-
 interface GroupPost {
   id: string;
   author: {
@@ -106,11 +96,10 @@ interface GroupEvent {
 }
 
 interface GroupsPageProps {
-  onNavigate?: (page: string) => void;
   onNewPost?: () => void;
 }
 
-export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
+export function GroupsPage({ onNewPost }: GroupsPageProps) {
   const notificationCount = useNotificationCount();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
@@ -392,32 +381,47 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
         onMobileMenuToggle={toggleMobileMenu}
       />
 
-      <div className="flex-1 lg:ml-64 min-w-0">
-        <div className="max-w-6xl mx-auto">
+      <div className="flex-1 lg:ml-72 min-w-0">
+        <div className="max-w-6xl mx-auto py-8 px-4">
           {/* Header */}
-          <div className="p-6 border-b border-border bg-card">
-            <div className="flex items-center justify-between mb-4">
-              <h1 className="text-2xl font-bold text-foreground lg:ml-0 ml-12">
-                Groups
-              </h1>
+          <div className="glass-card rounded-2xl p-6 mb-8 flex flex-col md:flex-row items-center justify-between gap-4 sticky top-4 z-10 backdrop-blur-xl border border-border/50 shadow-lg">
+            <div className="flex items-center gap-3 w-full md:w-auto">
+              <div className="bg-primary/20 p-2.5 rounded-xl">
+                <Users className="h-6 w-6 text-primary" />
+              </div>
+              <h1 className="text-2xl font-bold text-foreground">Groups</h1>
+            </div>
+
+            <div className="flex items-center gap-3 w-full md:w-auto">
+              <div className="relative flex-1 md:w-64">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search groups..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 bg-background/50 border-border/50 focus-visible:ring-primary/30 rounded-xl"
+                />
+              </div>
 
               <Dialog
                 open={isCreateGroupOpen}
                 onOpenChange={setIsCreateGroupOpen}
               >
                 <DialogTrigger asChild>
-                  <Button className="bg-primary hover:bg-primary/90 cursor-pointer">
+                  <Button className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 rounded-xl">
                     <Plus className="h-4 w-4 mr-2" />
                     Create Group
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="glass-panel border-border/50 sm:max-w-[500px]">
                   <DialogHeader>
-                    <DialogTitle>Create New Group</DialogTitle>
+                    <DialogTitle className="text-2xl font-bold">
+                      Create New Group
+                    </DialogTitle>
                   </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="title" className="p-2">
+                  <div className="space-y-5 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="title" className="text-base font-medium">
                         Group Title
                       </Label>
                       <Input
@@ -425,10 +429,14 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                         value={newGroupTitle}
                         onChange={(e) => setNewGroupTitle(e.target.value)}
                         placeholder="Enter group title"
+                        className="bg-background/50 border-border/50 h-11"
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="description" className="p-2">
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="description"
+                        className="text-base font-medium"
+                      >
                         Description
                       </Label>
                       <Textarea
@@ -436,18 +444,22 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                         value={newGroupDescription}
                         onChange={(e) => setNewGroupDescription(e.target.value)}
                         placeholder="Describe your group"
-                        rows={3}
+                        rows={4}
+                        className="bg-background/50 border-border/50 resize-none"
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="privacy" className="p-2">
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="privacy"
+                        className="text-base font-medium"
+                      >
                         Privacy
                       </Label>
                       <Select
                         value={newGroupPrivacy}
                         onValueChange={setNewGroupPrivacy}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="bg-background/50 border-border/50 h-11">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -456,17 +468,17 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-3 pt-2">
                       <Button
                         onClick={handleCreateGroup}
-                        className="flex-1 cursor-pointer"
+                        className="flex-1 bg-primary hover:bg-primary/90 h-11 rounded-xl"
                       >
                         Create Group
                       </Button>
                       <Button
                         variant="outline"
                         onClick={() => setIsCreateGroupOpen(false)}
-                        className="flex-1 cursor-pointer hover:bg-destructive/10"
+                        className="flex-1 h-11 rounded-xl hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
                       >
                         Cancel
                       </Button>
@@ -475,78 +487,91 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                 </DialogContent>
               </Dialog>
             </div>
-
-            {/* Search Bar */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search groups..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
           </div>
 
           {/* Main Content */}
-          <div className="p-6">
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-2 ">
-                <TabsTrigger value="browse" className="cursor-pointer">
+          <div className="space-y-6">
+            <Tabs
+              value={activeTab}
+              onValueChange={setActiveTab}
+              className="w-full"
+            >
+              <TabsList className="grid w-full max-w-md grid-cols-2 bg-muted/30 p-1 rounded-xl mb-8">
+                <TabsTrigger
+                  value="browse"
+                  className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
+                >
                   Browse Groups
                 </TabsTrigger>
-                <TabsTrigger value="my-groups" className="cursor-pointer">
+                <TabsTrigger
+                  value="my-groups"
+                  className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
+                >
                   My Groups
                 </TabsTrigger>
               </TabsList>
 
               {/* Browse Groups Tab */}
-              <TabsContent value="browse" className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <TabsContent
+                value="browse"
+                className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500"
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filteredGroups.map((group) => (
-                    <Card
+                    <div
                       key={group.id}
-                      className="hover:shadow-md transition-shadow"
+                      className="glass-card rounded-2xl overflow-hidden border border-border/40 hover:border-primary/30 hover:shadow-lg transition-all duration-300 group flex flex-col h-full"
                     >
-                      <CardHeader className="pb-2">
-                        <div className="flex items-start gap-3">
-                          <Avatar className="h-12 w-12">
-                            <AvatarImage src={group.avatar} alt={group.title} />
-                            <AvatarFallback>
+                      <div className="h-24 bg-gradient-to-r from-primary/20 to-purple-500/20 relative">
+                        <div className="absolute -bottom-8 left-6">
+                          <Avatar className="h-16 w-16 ring-4 ring-background shadow-md">
+                            <AvatarImage
+                              src={group.avatar}
+                              alt={group.title}
+                              className="object-cover"
+                            />
+                            <AvatarFallback className="bg-primary/10 text-primary font-bold text-lg">
                               {group.title.slice(0, 2).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <CardTitle className="text-lg truncate">
-                              {group.title}
-                            </CardTitle>
-                            <div className="flex items-center gap-2 mt-1">
-                              <Badge
-                                variant={
-                                  group.isPrivate ? "secondary" : "outline"
-                                }
-                              >
-                                {group.isPrivate ? "Private" : "Public"}
-                              </Badge>
-                              <span className="text-sm text-muted-foreground">
-                                {group.memberCount} members
-                              </span>
-                            </div>
-                          </div>
                         </div>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                      </div>
+                      <div className="p-6 pt-10 flex-1 flex flex-col">
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="text-xl font-bold text-foreground truncate pr-2">
+                            {group.title}
+                          </h3>
+                          <Badge
+                            variant={group.isPrivate ? "secondary" : "outline"}
+                            className="bg-background/50 backdrop-blur-sm"
+                          >
+                            {group.isPrivate ? "Private" : "Public"}
+                          </Badge>
+                        </div>
+
+                        <p className="text-sm text-muted-foreground mb-4 line-clamp-2 flex-1">
                           {group.description}
                         </p>
-                        <div className="flex gap-2">
+
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground mb-6">
+                          <span className="flex items-center gap-1">
+                            <Users className="h-3.5 w-3.5" />
+                            {group.memberCount} members
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3.5 w-3.5" />
+                            {new Date(group.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+
+                        <div className="mt-auto">
                           {group.isMember ? (
                             <Button
                               onClick={() => {
                                 setSelectedGroup(group);
                                 setActiveTab("group-view");
                               }}
-                              className="flex-1 cursor-pointer"
+                              className="w-full bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 rounded-xl"
                             >
                               View Group
                             </Button>
@@ -554,15 +579,14 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                             <Button
                               variant="outline"
                               disabled
-                              className="flex-1"
+                              className="w-full rounded-xl opacity-70"
                             >
                               Request Pending
                             </Button>
                           ) : (
                             <Button
                               onClick={() => handleJoinGroup(group.id)}
-                              variant="outline"
-                              className="flex-1"
+                              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-md shadow-primary/20"
                             >
                               <UserPlus className="h-4 w-4 mr-2" />
                               {group.isPrivate
@@ -571,54 +595,51 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                             </Button>
                           )}
                         </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </TabsContent>
 
               {/* My Groups Tab */}
-              <TabsContent value="my-groups" className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <TabsContent
+                value="my-groups"
+                className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500"
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {groups
                     .filter((group) => group.isMember)
                     .map((group) => (
-                      <Card
+                      <div
                         key={group.id}
-                        className="hover:shadow-md transition-shadow"
+                        className="glass-card rounded-2xl overflow-hidden border border-border/40 hover:border-primary/30 hover:shadow-lg transition-all duration-300 group flex flex-col h-full"
                       >
-                        <CardHeader className="pb-2">
-                          <div className="flex items-start gap-3">
-                            <Avatar className="h-12 w-12">
+                        <div className="h-24 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 relative">
+                          <div className="absolute top-4 right-4">
+                            {group.isOwner && (
+                              <Badge className="bg-primary text-primary-foreground shadow-sm">
+                                Owner
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="absolute -bottom-8 left-6">
+                            <Avatar className="h-16 w-16 ring-4 ring-background shadow-md">
                               <AvatarImage
                                 src={group.avatar}
                                 alt={group.title}
+                                className="object-cover"
                               />
-                              <AvatarFallback>
+                              <AvatarFallback className="bg-primary/10 text-primary font-bold text-lg">
                                 {group.title.slice(0, 2).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
-                            <div className="flex-1 min-w-0">
-                              <CardTitle className="text-lg truncate">
-                                {group.title}
-                              </CardTitle>
-                              <div className="flex items-center gap-2 mt-1">
-                                {group.isOwner && (
-                                  <Badge variant="default">Owner</Badge>
-                                )}
-                                <Badge
-                                  variant={
-                                    group.isPrivate ? "secondary" : "outline"
-                                  }
-                                >
-                                  {group.isPrivate ? "Private" : "Public"}
-                                </Badge>
-                              </div>
-                            </div>
                           </div>
-                        </CardHeader>
-                        <CardContent className="pt-0">
-                          <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                        </div>
+                        <div className="p-6 pt-10 flex-1 flex flex-col">
+                          <h3 className="text-xl font-bold text-foreground truncate mb-2">
+                            {group.title}
+                          </h3>
+                          <p className="text-sm text-muted-foreground mb-4 line-clamp-2 flex-1">
                             {group.description}
                           </p>
                           <Button
@@ -626,59 +647,87 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                               setSelectedGroup(group);
                               setActiveTab("group-view");
                             }}
-                            className="w-full cursor-pointer"
+                            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-md shadow-primary/20 mt-auto"
                           >
                             Open Group
                           </Button>
-                        </CardContent>
-                      </Card>
+                        </div>
+                      </div>
                     ))}
                 </div>
               </TabsContent>
 
               {/* Group View Tab */}
               {selectedGroup && (
-                <TabsContent value="group-view" className="space-y-4">
+                <TabsContent
+                  value="group-view"
+                  className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500"
+                >
                   {/* Group Header */}
-                  <Card>
-                    <CardHeader>
-                      <div className="flex items-start gap-4">
-                        <Avatar className="h-16 w-16">
+                  <div className="glass-card rounded-3xl overflow-hidden border border-border/50 shadow-xl">
+                    <div className="h-48 bg-gradient-to-r from-primary/30 via-purple-500/20 to-blue-500/20 relative">
+                      <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-20"></div>
+                    </div>
+                    <div className="px-8 pb-8 relative">
+                      <div className="flex flex-col md:flex-row gap-6 items-start -mt-12">
+                        <Avatar className="h-32 w-32 ring-4 ring-background shadow-2xl rounded-2xl">
                           <AvatarImage
                             src={selectedGroup.avatar}
                             alt={selectedGroup.title}
+                            className="object-cover"
                           />
-                          <AvatarFallback className="text-lg">
+                          <AvatarFallback className="text-3xl bg-muted font-bold">
                             {selectedGroup.title.slice(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h2 className="text-2xl font-bold">
-                              {selectedGroup.title}
-                            </h2>
-                            {selectedGroup.isOwner && (
-                              <Badge variant="default">Owner</Badge>
-                            )}
+
+                        <div className="flex-1 pt-14 md:pt-12 space-y-4">
+                          <div>
+                            <div className="flex items-center gap-3 mb-1">
+                              <h2 className="text-3xl font-bold text-foreground">
+                                {selectedGroup.title}
+                              </h2>
+                              {selectedGroup.isOwner && (
+                                <Badge className="bg-primary text-primary-foreground">
+                                  Owner
+                                </Badge>
+                              )}
+                              <Badge
+                                variant="outline"
+                                className="border-primary/30 text-primary bg-primary/5"
+                              >
+                                {selectedGroup.isPrivate
+                                  ? "Private Group"
+                                  : "Public Group"}
+                              </Badge>
+                            </div>
+                            <p className="text-lg text-muted-foreground max-w-2xl leading-relaxed">
+                              {selectedGroup.description}
+                            </p>
                           </div>
-                          <p className="text-muted-foreground mb-3">
-                            {selectedGroup.description}
-                          </p>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <span>{selectedGroup.memberCount} members</span>
-                            <span>
+
+                          <div className="flex flex-wrap gap-6 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-2 bg-muted/30 px-3 py-1.5 rounded-full border border-border/50">
+                              <Users className="h-4 w-4 text-primary" />
+                              <span className="font-medium text-foreground">
+                                {selectedGroup.memberCount}
+                              </span>{" "}
+                              members
+                            </div>
+                            <div className="flex items-center gap-2 bg-muted/30 px-3 py-1.5 rounded-full border border-border/50">
+                              <CalendarIcon className="h-4 w-4 text-primary" />
                               Created{" "}
                               {new Date(
                                 selectedGroup.createdAt
-                              ).toLocaleString()}
-                            </span>
+                              ).toLocaleDateString()}
+                            </div>
                           </div>
                         </div>
-                        <div className="flex gap-2">
+
+                        <div className="flex flex-col sm:flex-row gap-3 pt-14 md:pt-12 w-full md:w-auto">
                           <Button
-                            variant="outline"
                             onClick={() => setIsGroupChatOpen(true)}
-                            className="flex-1 cursor-pointer"
+                            className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 rounded-xl px-6"
                           >
                             <MessageSquare className="h-4 w-4 mr-2" />
                             Group Chat
@@ -686,7 +735,7 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                           {selectedGroup.isOwner && (
                             <Button
                               variant="outline"
-                              className="flex-1 cursor-pointer"
+                              className="rounded-xl border-border/50 hover:bg-muted/50"
                             >
                               <Settings className="h-4 w-4 mr-2" />
                               Settings
@@ -694,62 +743,67 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                           )}
                         </div>
                       </div>
-                    </CardHeader>
-                  </Card>
+                    </div>
+                  </div>
 
                   {/* Group Content Tabs */}
                   <Tabs defaultValue="posts" className="w-full">
-                    <TabsList>
-                      <TabsTrigger value="posts" className="cursor-pointer">
+                    <TabsList className="bg-muted/30 p-1 rounded-xl mb-6 inline-flex">
+                      <TabsTrigger value="posts" className="rounded-lg px-6">
                         Posts
                       </TabsTrigger>
-                      <TabsTrigger value="events" className="cursor-pointer">
+                      <TabsTrigger value="events" className="rounded-lg px-6">
                         Events
                       </TabsTrigger>
-                      <TabsTrigger value="members" className="cursor-pointer">
+                      <TabsTrigger value="members" className="rounded-lg px-6">
                         Members
                       </TabsTrigger>
                     </TabsList>
 
                     {/* Posts Tab */}
-                    <TabsContent value="posts" className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <h3 className="text-lg font-semibold">Group Posts</h3>
+                    <TabsContent value="posts" className="space-y-6">
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-xl font-bold flex items-center gap-2">
+                          <span className="bg-primary/10 p-1.5 rounded-lg text-primary">
+                            <MessageCircle className="h-5 w-5" />
+                          </span>
+                          Group Posts
+                        </h3>
                         <Dialog
                           open={isCreatePostOpen}
                           onOpenChange={setIsCreatePostOpen}
                         >
                           <DialogTrigger asChild>
-                            <Button className="cursor-pointer">
+                            <Button className="rounded-xl shadow-md">
                               <Plus className="h-4 w-4 mr-2" />
                               Create Post
                             </Button>
-                            {/* TODO add image upload, emoji picker and gif picker to the groups posts anzidhom menbe3d */}
                           </DialogTrigger>
-                          <DialogContent>
+                          <DialogContent className="glass-panel border-border/50">
                             <DialogHeader>
                               <DialogTitle>Create Group Post</DialogTitle>
                             </DialogHeader>
-                            <div className="space-y-4">
+                            <div className="space-y-4 py-4">
                               <Textarea
                                 value={newPostContent}
                                 onChange={(e) =>
                                   setNewPostContent(e.target.value)
                                 }
                                 placeholder="What's on your mind?"
-                                rows={4}
+                                rows={5}
+                                className="bg-background/50 border-border/50 resize-none text-lg"
                               />
-                              <div className="flex gap-2">
+                              <div className="flex gap-3">
                                 <Button
                                   onClick={handleCreatePost}
-                                  className="flex-1 cursor-pointer"
+                                  className="flex-1 rounded-xl"
                                 >
                                   Post
                                 </Button>
                                 <Button
                                   variant="outline"
                                   onClick={() => setIsCreatePostOpen(false)}
-                                  className="cursor-pointer hover:bg-destructive/10"
+                                  className="flex-1 rounded-xl"
                                 >
                                   Cancel
                                 </Button>
@@ -759,92 +813,122 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                         </Dialog>
                       </div>
 
-                      <div className="space-y-4">
+                      <div className="space-y-6">
                         {groupPosts.map((post) => (
-                          <Card key={post.id}>
-                            <CardContent className="pt-6">
-                              <div className="flex items-start gap-3">
-                                <Avatar className="h-10 w-10">
-                                  <AvatarImage
-                                    src={post.author.avatar}
-                                    alt={post.author.name}
-                                  />
-                                  <AvatarFallback>
-                                    {post.author.name.slice(0, 2).toUpperCase()}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <span className="font-semibold">
-                                      {post.author.name}
-                                    </span>
-                                    <span className="text-sm text-muted-foreground">
-                                      {new Date(
-                                        post.createdAt
-                                      ).toLocaleString()}
-                                    </span>
-                                  </div>
-                                  <p className="text-foreground mb-3">
-                                    {post.content}
-                                  </p>
-                                  {post.image && (
-                                    <img
-                                      src={post.image}
-                                      alt="Post image"
-                                      className="rounded-lg max-w-full h-auto mb-3"
-                                    />
+                          <div
+                            key={post.id}
+                            className="glass-card rounded-2xl p-0 overflow-hidden border border-border/40 hover:shadow-md transition-all"
+                          >
+                            <div className="p-5 flex items-center gap-4 border-b border-border/40 bg-white/5">
+                              <Avatar className="h-10 w-10 ring-2 ring-primary/10">
+                                <AvatarImage
+                                  src={post.author.avatar}
+                                  alt={post.author.name}
+                                />
+                                <AvatarFallback>
+                                  {post.author.name.slice(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-bold text-foreground">
+                                  {post.author.name}
+                                </p>
+                                <p className="text-xs text-muted-foreground font-medium">
+                                  {new Date(post.createdAt).toLocaleString(
+                                    undefined,
+                                    { dateStyle: "medium", timeStyle: "short" }
                                   )}
-                                  <div className="flex items-center gap-4">
-                                    <Button variant="ghost" size="sm">
-                                      <Heart
-                                        className={`h-4 w-4 mr-1 ${
-                                          post.isLiked
-                                            ? "fill-current text-red-500"
-                                            : ""
-                                        }`}
-                                      />
-                                      {post.likes}
-                                    </Button>
-                                    <Button variant="ghost" size="sm">
-                                      <MessageCircle className="h-4 w-4 mr-1" />
-                                      {post.comments}
-                                    </Button>
-                                    <Button variant="ghost" size="sm">
-                                      <Share2 className="h-4 w-4 mr-1" />
-                                      Share
-                                    </Button>
-                                  </div>
-                                </div>
+                                </p>
                               </div>
-                            </CardContent>
-                          </Card>
+                            </div>
+
+                            <div className="p-5 space-y-4">
+                              <p className="text-foreground/90 leading-relaxed whitespace-pre-wrap">
+                                {post.content}
+                              </p>
+                              {post.image && (
+                                <div className="rounded-xl overflow-hidden bg-black/5 border border-border/20">
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img
+                                    src={post.image}
+                                    alt="Post image"
+                                    className="w-full h-auto max-h-[500px] object-contain"
+                                  />
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="px-5 py-3 flex items-center gap-4 border-t border-border/40 bg-muted/20">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="rounded-full hover:bg-red-500/10 hover:text-red-500 transition-colors"
+                              >
+                                <Heart
+                                  className={`h-4 w-4 mr-2 ${
+                                    post.isLiked
+                                      ? "fill-current text-red-500"
+                                      : ""
+                                  }`}
+                                />
+                                {post.likes}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="rounded-full hover:bg-blue-500/10 hover:text-blue-500 transition-colors"
+                              >
+                                <MessageCircle className="h-4 w-4 mr-2" />
+                                {post.comments}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="rounded-full hover:bg-green-500/10 hover:text-green-500 transition-colors ml-auto"
+                              >
+                                <Share2 className="h-4 w-4 mr-2" />
+                                Share
+                              </Button>
+                            </div>
+                          </div>
                         ))}
+                        {groupPosts.length === 0 && (
+                          <div className="text-center py-12 glass-card rounded-2xl border-dashed border-2 border-border/50">
+                            <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+                            <p className="text-muted-foreground">
+                              No posts yet. Be the first to post!
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </TabsContent>
 
                     {/* Events Tab */}
-                    <TabsContent value="events" className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <h3 className="text-lg font-semibold">Group Events</h3>
+                    <TabsContent value="events" className="space-y-6">
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-xl font-bold flex items-center gap-2">
+                          <span className="bg-primary/10 p-1.5 rounded-lg text-primary">
+                            <CalendarIcon className="h-5 w-5" />
+                          </span>
+                          Group Events
+                        </h3>
                         <Dialog
                           open={isCreateEventOpen}
                           onOpenChange={setIsCreateEventOpen}
                         >
                           <DialogTrigger asChild>
-                            <Button className="cursor-pointer">
+                            <Button className="rounded-xl shadow-md">
                               <Plus className="h-4 w-4 mr-2" />
                               Create Event
                             </Button>
                           </DialogTrigger>
-                          <DialogContent>
+                          <DialogContent className="glass-panel border-border/50 sm:max-w-[500px]">
                             <DialogHeader>
                               <DialogTitle>Create Group Event</DialogTitle>
                             </DialogHeader>
-                            <div className="space-y-4">
-                              <div>
-                                <Label htmlFor="event-title" className="p-2">
-                                  Event Title
-                                </Label>
+                            <div className="space-y-4 py-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="event-title">Event Title</Label>
                                 <Input
                                   id="event-title"
                                   value={newEventTitle}
@@ -852,13 +936,11 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                                     setNewEventTitle(e.target.value)
                                   }
                                   placeholder="Enter event title"
+                                  className="bg-background/50 border-border/50"
                                 />
                               </div>
-                              <div>
-                                <Label
-                                  htmlFor="event-description"
-                                  className="p-2"
-                                >
+                              <div className="space-y-2">
+                                <Label htmlFor="event-description">
                                   Description
                                 </Label>
                                 <Textarea
@@ -869,13 +951,12 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                                   }
                                   placeholder="Describe your event"
                                   rows={3}
+                                  className="bg-background/50 border-border/50 resize-none"
                                 />
                               </div>
-                              <div className="flex gap-4">
-                                <div className="flex flex-col gap-3">
-                                  <Label htmlFor="date-picker" className="px-1">
-                                    Date
-                                  </Label>
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                  <Label>Date</Label>
                                   <Popover
                                     open={datePickerOpen}
                                     onOpenChange={setDatePickerOpen}
@@ -883,49 +964,44 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                                     <PopoverTrigger asChild>
                                       <Button
                                         variant="outline"
-                                        id="date-picker"
-                                        className="w-32 justify-between font-normal"
+                                        className="w-full justify-between font-normal bg-background/50 border-border/50"
                                       >
                                         {newEventDate
-                                          ? newEventDate.toLocaleString()
+                                          ? newEventDate.toLocaleDateString()
                                           : "Select date"}
-                                        <ChevronDownIcon />
+                                        <ChevronDownIcon className="h-4 w-4 opacity-50" />
                                       </Button>
                                     </PopoverTrigger>
                                     <PopoverContent
-                                      className="w-auto overflow-hidden p-0"
+                                      className="w-auto p-0"
                                       align="start"
                                     >
                                       <Calendar
                                         mode="single"
                                         selected={newEventDate}
-                                        captionLayout="dropdown"
                                         onSelect={(date) => {
                                           setNewEventDate(date);
                                           setDatePickerOpen(false);
                                         }}
+                                        initialFocus
                                       />
                                     </PopoverContent>
                                   </Popover>
                                 </div>
-                                <div className="flex flex-col gap-3">
-                                  <Label htmlFor="time-picker" className="px-1">
-                                    Time
-                                  </Label>
+                                <div className="space-y-2">
+                                  <Label>Time</Label>
                                   <Input
                                     type="time"
-                                    id="time-picker"
-                                    step="1"
                                     value={newEventTime}
                                     onChange={(e) =>
                                       setNewEventTime(e.target.value)
                                     }
-                                    className="bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+                                    className="bg-background/50 border-border/50"
                                   />
                                 </div>
                               </div>
-                              <div>
-                                <Label htmlFor="event-location" className="p-2">
+                              <div className="space-y-2">
+                                <Label htmlFor="event-location">
                                   Location (Optional)
                                 </Label>
                                 <Input
@@ -935,19 +1011,20 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                                     setNewEventLocation(e.target.value)
                                   }
                                   placeholder="Enter event location"
+                                  className="bg-background/50 border-border/50"
                                 />
                               </div>
-                              <div className="flex gap-2">
+                              <div className="flex gap-3 pt-2">
                                 <Button
                                   onClick={handleCreateEvent}
-                                  className="flex-1 cursor-pointer"
+                                  className="flex-1 rounded-xl"
                                 >
                                   Create Event
                                 </Button>
                                 <Button
                                   variant="outline"
                                   onClick={() => setIsCreateEventOpen(false)}
-                                  className="cursor-pointer hover:bg-destructive/10"
+                                  className="flex-1 rounded-xl"
                                 >
                                   Cancel
                                 </Button>
@@ -959,43 +1036,50 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
 
                       <div className="space-y-4">
                         {groupEvents.map((event) => (
-                          <Card key={event.id}>
-                            <CardContent className="pt-6">
-                              <div className="flex justify-between items-start mb-4">
-                                <div className="flex-1">
-                                  <h4 className="font-semibold text-lg mb-2">
+                          <div
+                            key={event.id}
+                            className="glass-card rounded-2xl p-6 border border-border/40 hover:shadow-md transition-all flex flex-col md:flex-row gap-6"
+                          >
+                            <div className="flex-shrink-0 bg-primary/10 rounded-2xl p-4 flex flex-col items-center justify-center min-w-[100px] text-center border border-primary/20">
+                              <span className="text-xs font-bold text-primary uppercase tracking-wider">
+                                {new Date(event.eventDatetime).toLocaleString(
+                                  "default",
+                                  { month: "short" }
+                                )}
+                              </span>
+                              <span className="text-3xl font-bold text-foreground my-1">
+                                {new Date(event.eventDatetime).getDate()}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(event.eventDatetime).toLocaleString(
+                                  "default",
+                                  { weekday: "short" }
+                                )}
+                              </span>
+                            </div>
+
+                            <div className="flex-1">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <h4 className="font-bold text-xl text-foreground mb-2">
                                     {event.title}
                                   </h4>
-                                  <p className="text-muted-foreground mb-3">
-                                    {event.description}
-                                  </p>
-                                  <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
-                                    <div className="flex items-center gap-1">
-                                      <CalendarIcon className="h-4 w-4" />
+                                  <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-4">
+                                    <div className="flex items-center gap-1.5 bg-muted/30 px-2 py-1 rounded-md">
+                                      <Clock className="h-4 w-4 text-primary" />
                                       {new Date(
                                         event.eventDatetime
-                                      ).toLocaleDateString()}
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                      <Clock className="h-4 w-4" />
-                                      {new Date(
-                                        event.eventDatetime
-                                      ).toLocaleTimeString()}
+                                      ).toLocaleTimeString([], {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      })}
                                     </div>
                                     {event.location && (
-                                      <div className="flex items-center gap-1">
-                                        <MapPin className="h-4 w-4" />
+                                      <div className="flex items-center gap-1.5 bg-muted/30 px-2 py-1 rounded-md">
+                                        <MapPin className="h-4 w-4 text-primary" />
                                         {event.location}
                                       </div>
                                     )}
-                                  </div>
-                                  <div className="flex items-center gap-4 text-sm">
-                                    <span className="text-green-600">
-                                      {event.goingCount} going
-                                    </span>
-                                    <span className="text-red-600">
-                                      {event.notGoingCount} not going
-                                    </span>
                                   </div>
                                 </div>
                                 <div className="flex flex-col gap-2">
@@ -1009,10 +1093,13 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                                     onClick={() =>
                                       handleEventResponse(event.id, "going")
                                     }
-                                    className="cursor-pointer"
+                                    className={`rounded-lg ${
+                                      event.userStatus === "going"
+                                        ? "bg-green-600 hover:bg-green-700"
+                                        : "hover:text-green-600 hover:border-green-600/50"
+                                    }`}
                                   >
-                                    <Check className="h-4 w-4 mr-1" />
-                                    Going
+                                    <Check className="h-4 w-4 mr-1" /> Going
                                   </Button>
                                   <Button
                                     variant={
@@ -1024,25 +1111,56 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                                     onClick={() =>
                                       handleEventResponse(event.id, "not-going")
                                     }
-                                    className="cursor-pointer"
+                                    className={`rounded-lg ${
+                                      event.userStatus === "not-going"
+                                        ? ""
+                                        : "hover:text-red-600 hover:border-red-600/50"
+                                    }`}
                                   >
-                                    <X className="h-4 w-4 mr-1" />
-                                    Not Going
+                                    <X className="h-4 w-4 mr-1" /> Not Going
                                   </Button>
                                 </div>
                               </div>
-                            </CardContent>
-                          </Card>
+
+                              <p className="text-foreground/80 mb-4 leading-relaxed">
+                                {event.description}
+                              </p>
+
+                              <div className="flex items-center gap-4 text-sm font-medium pt-4 border-t border-border/30">
+                                <span className="text-green-500 flex items-center gap-1">
+                                  <Check className="h-3 w-3" />{" "}
+                                  {event.goingCount} going
+                                </span>
+                                <span className="text-red-500 flex items-center gap-1">
+                                  <X className="h-3 w-3" />{" "}
+                                  {event.notGoingCount} not going
+                                </span>
+                              </div>
+                            </div>
+                          </div>
                         ))}
+                        {groupEvents.length === 0 && (
+                          <div className="text-center py-12 glass-card rounded-2xl border-dashed border-2 border-border/50">
+                            <CalendarIcon className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+                            <p className="text-muted-foreground">
+                              No upcoming events.
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </TabsContent>
 
                     {/* Members Tab */}
-                    <TabsContent value="members" className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <h3 className="text-lg font-semibold">Group Members</h3>
+                    <TabsContent value="members" className="space-y-6">
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-xl font-bold flex items-center gap-2">
+                          <span className="bg-primary/10 p-1.5 rounded-lg text-primary">
+                            <Users className="h-5 w-5" />
+                          </span>
+                          Group Members
+                        </h3>
                         {selectedGroup.isOwner && (
-                          <Button variant="outline">
+                          <Button variant="outline" className="rounded-xl">
                             <UserPlus className="h-4 w-4 mr-2" />
                             Invite Members
                           </Button>
@@ -1050,9 +1168,11 @@ export function GroupsPage({ onNavigate, onNewPost }: GroupsPageProps) {
                       </div>
 
                       {/* Members would be loaded from API */}
-                      <div className="text-center text-muted-foreground py-8">
-                        <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                        <p>Members list will be loaded from the server</p>
+                      <div className="text-center text-muted-foreground py-16 glass-card rounded-2xl border-dashed border-2 border-border/50">
+                        <Users className="h-16 w-16 mx-auto mb-4 opacity-20" />
+                        <p className="text-lg font-medium">
+                          Members list will be loaded from the server
+                        </p>
                       </div>
                     </TabsContent>
                   </Tabs>

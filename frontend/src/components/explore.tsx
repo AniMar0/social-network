@@ -5,7 +5,7 @@ import { SidebarNavigation } from "./sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, UserPlus, UserCheck } from "lucide-react";
+import { Search, UserPlus, UserCheck, Compass } from "lucide-react";
 import { useNotificationCount } from "@/lib/notifications";
 
 interface User {
@@ -149,7 +149,7 @@ export function ExplorePage({ onNavigate, onNewPost }: ExplorePageProps) {
   const handleUserClick = (user: User) => {
     console.log("Navigating to user profile:", user.username);
     // TODO: Navigate to user profile
-    // onNavigate?.(`/profile/${user.username}`);
+    onNavigate?.(`/profile/${user.username}`);
   };
 
   const handleNewPost = () => {
@@ -171,86 +171,100 @@ export function ExplorePage({ onNavigate, onNewPost }: ExplorePageProps) {
         onMobileMenuToggle={toggleMobileMenu}
       />
 
-      <div className="flex-1 lg:ml-64 min-w-0">
-        <div className="max-w-6xl mx-auto">
+      <div className="flex-1 lg:ml-72 min-w-0">
+        <div className="max-w-6xl mx-auto py-8 px-4">
           {/* Header */}
-          <div className="p-6 border-b border-border bg-card">
-            <h1 className="text-2xl font-bold text-foreground mb-4 lg:ml-0 ml-12">
-              Explore
-            </h1>
+          <div className="glass-card rounded-2xl p-6 mb-8 flex flex-col md:flex-row items-center justify-between gap-4 sticky top-4 z-10 backdrop-blur-xl border border-border/50 shadow-lg">
+            <div className="flex items-center gap-3 w-full md:w-auto">
+              <div className="bg-primary/20 p-2.5 rounded-xl">
+                <Compass className="h-6 w-6 text-primary" />
+              </div>
+              <h1 className="text-2xl font-bold text-foreground">Explore</h1>
+            </div>
 
             {/* Search Bar */}
-            <div className="relative max-w-md">
+            <div className="relative w-full md:w-96">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search people..."
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
-                className="pl-10 bg-muted/50"
+                className="pl-10 bg-background/50 border-border/50 focus-visible:ring-primary/30 rounded-xl h-11"
               />
               {isSearching && (
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
                 </div>
               )}
             </div>
           </div>
 
           {/* Users List */}
-          <div className="flex-1 p-6 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {searchQuery && filteredUsers.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="text-4xl mb-4">🔍</div>
-                <h3 className="text-lg font-medium text-foreground mb-2">
+              <div className="text-center py-16 glass-card rounded-2xl border-dashed border-2 border-border/50">
+                <div className="text-6xl mb-4 opacity-50">🔍</div>
+                <h3 className="text-xl font-bold text-foreground mb-2">
                   No users found
                 </h3>
-                <p className="text-muted-foreground">
-                  Try searching for a different name or username
+                <p className="text-muted-foreground max-w-md mx-auto">
+                  We couldn&apos;t find anyone matching &quot;{searchQuery}
+                  &quot;. Try searching for a different name or username.
                 </p>
               </div>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {filteredUsers.map((user) => (
                   <div
                     key={user.id}
-                    className="bg-card border border-border rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer"
+                    className="glass-card rounded-2xl p-6 hover:shadow-lg hover:border-primary/30 transition-all duration-300 cursor-pointer group flex flex-col items-center text-center relative overflow-hidden"
                     onClick={() => handleUserClick(user)}
                   >
-                    <div className="flex flex-col items-center text-center">
-                      <Avatar className="h-16 w-16 mb-4">
-                        <AvatarImage src={user.avatar} alt={user.name} />
-                        <AvatarFallback className="bg-muted text-foreground text-lg">
+                    <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-b from-primary/10 to-transparent opacity-50 group-hover:opacity-100 transition-opacity"></div>
+
+                    <div className="relative z-10 mb-4">
+                      <Avatar className="h-24 w-24 ring-4 ring-background shadow-xl group-hover:scale-105 transition-transform duration-300">
+                        <AvatarImage
+                          src={user.avatar}
+                          alt={user.name}
+                          className="object-cover"
+                        />
+                        <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
                           {user.name.slice(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
+                    </div>
 
-                      <div className="flex items-center gap-1 mb-1">
-                        <h3 className="font-semibold text-foreground">
-                          {user.name}
-                        </h3>
-                      </div>
-
-                      <p className="text-sm text-muted-foreground mb-3">
+                    <div className="relative z-10 w-full flex-1 flex flex-col">
+                      <h3 className="font-bold text-xl text-foreground mb-1 group-hover:text-primary transition-colors">
+                        {user.name}
+                      </h3>
+                      <p className="text-sm text-primary/80 font-medium mb-3">
                         {user.username}
                       </p>
 
-                      <p className="text-sm text-foreground mb-4 line-clamp-2">
+                      <p className="text-sm text-muted-foreground mb-6 line-clamp-2 flex-1 px-2">
                         {user.bio}
                       </p>
 
-                      <div className="flex items-center gap-4 mb-4 text-sm text-muted-foreground">
-                        <span>
-                          <strong className="text-foreground">
+                      <div className="flex items-center justify-center gap-6 mb-6 text-sm text-muted-foreground bg-muted/30 py-2 rounded-xl w-full">
+                        <div className="flex flex-col">
+                          <strong className="text-foreground text-lg">
                             {user.followers.toLocaleString()}
-                          </strong>{" "}
-                          followers
-                        </span>
-                        <span>
-                          <strong className="text-foreground">
+                          </strong>
+                          <span className="text-xs uppercase tracking-wider opacity-70">
+                            Followers
+                          </span>
+                        </div>
+                        <div className="w-px h-8 bg-border/50"></div>
+                        <div className="flex flex-col">
+                          <strong className="text-foreground text-lg">
                             {user.following.toLocaleString()}
-                          </strong>{" "}
-                          following
-                        </span>
+                          </strong>
+                          <span className="text-xs uppercase tracking-wider opacity-70">
+                            Following
+                          </span>
+                        </div>
                       </div>
 
                       <Button
@@ -259,8 +273,11 @@ export function ExplorePage({ onNavigate, onNewPost }: ExplorePageProps) {
                           handleFollowToggle(user.id);
                         }}
                         variant={user.isFollowing ? "outline" : "default"}
-                        size="sm"
-                        className="w-full"
+                        className={`w-full rounded-xl h-10 font-medium shadow-md transition-all ${
+                          user.isFollowing
+                            ? "border-primary/20 text-primary hover:bg-primary/10 hover:text-primary hover:border-primary/50"
+                            : "bg-primary hover:bg-primary/90 text-primary-foreground shadow-primary/20"
+                        }`}
                       >
                         {user.isFollowing ? (
                           <>

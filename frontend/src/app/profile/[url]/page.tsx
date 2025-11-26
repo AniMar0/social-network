@@ -5,15 +5,18 @@ import { useRouter, useParams } from "next/navigation";
 import UserProfile from "@/components/user-profile";
 import { NewPostModal } from "@/components/newpost";
 import { profileUtils } from "@/lib/navigation";
-import { initWebSocket, closeWebSocket } from "@/lib/websocket";
+import { initWebSocket } from "@/lib/websocket";
 import { siteConfig } from "@/config/site.config";
 export default function UserProfilePage() {
   const [isNewPostModalOpen, setIsNewPostModalOpen] = useState(false);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [userData, setUserData] = useState<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [posts, setPosts] = useState<any>([]);
   const [loading, setLoading] = useState(true);
   const [userLoggedIn, setUserLoggedIn] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [currentUser, setCurrentUser] = useState<any>(null);
 
   const router = useRouter();
@@ -115,6 +118,7 @@ export default function UserProfilePage() {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handlePostSubmit = (postData: any) => {
     console.log("New post submitted:", postData);
     // TODO: Send the post to the backend

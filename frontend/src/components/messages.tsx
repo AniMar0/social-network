@@ -14,6 +14,7 @@ import {
   Smile,
   Send,
   ArrowLeft,
+  MessageSquare,
 } from "lucide-react";
 import { useNotificationCount } from "@/lib/notifications";
 import EmojiPicker, { Theme } from "emoji-picker-react";
@@ -68,17 +69,15 @@ interface UserProfile {
 }
 
 interface MessagesPageProps {
-  onNavigate?: (page: string) => void;
   onNewPost?: () => void;
   onUserProfileClick?: string;
   currentUserId?: string;
 }
 
 export function MessagesPage({
-  onNavigate,
   onNewPost,
   onUserProfileClick,
-  currentUserId,
+  currentUserId = "",
 }: MessagesPageProps) {
   // --- states (kept original names where relevant) ---
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
@@ -103,8 +102,6 @@ export function MessagesPage({
   const typingRef = useRef<NodeJS.Timeout | null>(null); // for other user
   const userTypingRef = useRef<NodeJS.Timeout | null>(null); // for my typing debounce
 
-  const [isOtherUserTyping, setIsOtherUserTyping] = useState(false); // alias to support UI if needed
-
   const router = useRouter();
 
   const [userOnlineStatus, setUserOnlineStatus] = useState<boolean>(true);
@@ -113,7 +110,6 @@ export function MessagesPage({
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const [messagesLoading, setMessagesLoading] = useState(false);
-  const [lastSent, setLastSent] = useState(0);
   const [isUserAtBottom, setIsUserAtBottom] = useState(true);
   const [previousMessageCount, setPreviousMessageCount] = useState(0);
 
@@ -152,7 +148,7 @@ export function MessagesPage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedChat, onUserProfileClick]); // keep dependency minimal; handler uses latest selectedChat via closures
 
-  // Centralized WS events processor
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleWsEvent = (data: any) => {
     switch (data.channel) {
       case "status":
@@ -167,11 +163,11 @@ export function MessagesPage({
         break;
 
       case "typing-start":
-        handleOtherUserTypingStart(data.payload.chat_id, data.payload.user_id);
+        handleOtherUserTypingStart(data.payload.chat_id);
         break;
 
       case "typing-stop":
-        handleOtherUserTypingStop(data.payload.chat_id, data.payload.user_id);
+        handleOtherUserTypingStop(data.payload.chat_id);
         break;
 
       case "chat":
@@ -510,24 +506,21 @@ export function MessagesPage({
   // Other user typing handlers (kept names, simplified)
   // - use typingRef for debounce
   // ===========================
-  const handleOtherUserTypingStart = (chatId: string, userId: string) => {
+  const handleOtherUserTypingStart = (chatId: string) => {
     if (onUserProfileClick && chatId === onUserProfileClick) {
-      setIsOtherUserTyping(true);
       setIsTyping(true);
 
       // reset timeout to clear typing after 3s if no new event
       if (typingRef.current) clearTimeout(typingRef.current);
       typingRef.current = setTimeout(() => {
-        setIsOtherUserTyping(false);
         setIsTyping(false);
         typingRef.current = null;
       }, 3000);
     }
   };
 
-  const handleOtherUserTypingStop = (chatId: string, userId: string) => {
+  const handleOtherUserTypingStop = (chatId: string) => {
     if (onUserProfileClick && chatId === onUserProfileClick) {
-      setIsOtherUserTyping(false);
       setIsTyping(false);
       if (typingRef.current) {
         clearTimeout(typingRef.current);
@@ -653,7 +646,7 @@ export function MessagesPage({
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
-  const handleEmojiSelect = (emoji: any) => {
+  const handleEmojiSelect = (emoji: string) => {
     setNewMessage((prev) => prev + emoji);
     // Don't close emoji picker - let user add multiple emojis
   };
@@ -853,8 +846,10 @@ export function MessagesPage({
     }).catch((err) => console.error(err));
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function formatChatMeta(chat: any) {
-    const hideTime = chat.sender_id == chat.userId || !chat.timestamp;
+    const hideTime =
+      chat.sender_id == parseInt(currentUserId) || !chat.timestamp;
     let message = "";
     let messageType = "";
     switch (chat.lastMessageType) {
@@ -869,7 +864,7 @@ export function MessagesPage({
         messageType = "Message";
         break;
     }
-    switch (hideTime && chat.sender_id == chat.userId) {
+    switch (hideTime && chat.sender_id == parseInt(currentUserId)) {
       case true:
         return (
           <span className="text-sm text-muted-foreground truncate">
@@ -892,7 +887,7 @@ export function MessagesPage({
     }
   }
 
-  // --- JSX kept largely the same, only minor adjustments to use new state names ---
+  // --- JSX Refactored for Glassmorphism ---
   return (
     <div className="flex min-h-screen bg-background">
       {/* Mobile/Desktop Sidebar Navigation */}
@@ -904,493 +899,489 @@ export function MessagesPage({
         onMobileMenuToggle={toggleMobileMenu}
       />
 
-      <div className="flex flex-1 lg:ml-64">
+      <div className="flex flex-1 lg:ml-72 h-screen overflow-hidden">
         {/* Messages Sidebar - Full width on mobile when no chat selected */}
         <div
           className={`${
-            selectedChat ? "hidden lg:block lg:w-80" : "w-full lg:w-80"
-          } border-r border-border bg-card transition-all duration-300`}
+            selectedChat ? "hidden lg:flex lg:w-96" : "w-full lg:flex lg:w-96"
+          } flex-col border-r border-border/40 bg-card/30 backdrop-blur-xl transition-all duration-300 h-full`}
         >
-          <div className="p-3 lg:p-4 border-b border-border">
-            <div className="flex items-center justify-between mb-3 lg:mb-4">
-              <h1 className="text-lg lg:text-xl font-bold text-foreground">
+          <div className="p-5 border-b border-border/40">
+            <div className="flex items-center justify-between mb-6">
+              <h1 className="text-2xl font-bold text-foreground tracking-tight">
                 Messages
               </h1>
-              <div className="flex items-center gap-2"></div>
             </div>
 
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <div className="relative group">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
               <Input
                 placeholder="Search Direct Messages"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-muted/50"
+                className="pl-10 bg-background/50 border-border/50 focus-visible:ring-primary/30 rounded-xl h-11"
               />
             </div>
           </div>
 
-          <div className="p-3 lg:p-4">
-            <div className="flex items-center gap-2 mb-3 lg:mb-4">
-              <span className="font-medium text-foreground">Chat</span>
-            </div>
+          <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
+            {/* Chat List */}
+            {filteredAndSortedChats.map((chat) => (
+              <div
+                key={chat.id}
+                onClick={() => {
+                  if (window.innerWidth >= 1024) {
+                    router.replace(`/messages/${chat.id}`);
+                  }
+                  setSelectedChat(chat);
+                  setSeenChat(chat.id);
+                }}
+                className={`flex items-center gap-4 p-4 rounded-xl cursor-pointer transition-all duration-200 ${
+                  selectedChat?.id === chat.id
+                    ? "bg-primary/15 border border-primary/20 shadow-sm"
+                    : "hover:bg-white/5 border border-transparent hover:border-white/10"
+                }`}
+              >
+                <div className="relative">
+                  <Avatar className="h-12 w-12 ring-2 ring-background">
+                    <AvatarImage
+                      src={`${siteConfig.domain}/${chat.avatar}`}
+                      alt={chat.name}
+                      className="object-cover"
+                    />
+                    <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                      {chat.name.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  {chat.isOnline && (
+                    <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-background shadow-sm" />
+                  )}
+                  {chat.unreadCount > 0 && (
+                    <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center rounded-full px-1 shadow-sm border border-background">
+                      {chat.unreadCount}
+                    </div>
+                  )}
+                </div>
 
-            <div className="space-y-2">
-              {filteredAndSortedChats.map((chat) => (
-                <div
-                  key={chat.id}
-                  onClick={() => {
-                    if (window.innerWidth >= 1024) {
-                      router.replace(`/messages/${chat.id}`);
-                    }
-                    setSelectedChat(chat);
-                    setSeenChat(chat.id);
-                  }}
-                  className={`flex items-center gap-3 p-3 lg:p-3 rounded-lg cursor-pointer transition-colors ${
-                    selectedChat?.id === chat.id
-                      ? "bg-accent text-accent-foreground"
-                      : "hover:bg-muted/50"
-                  } active:bg-muted/70`}
-                >
-                  <div className="relative">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage
-                        src={`${siteConfig.domain}/${chat.avatar}`}
-                        alt={chat.name}
-                      />
-                      <AvatarFallback className="bg-muted text-foreground">
-                        {chat.name.slice(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    {chat.isOnline && (
-                      <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-background" />
-                    )}
-                    {chat.unreadCount > 0 && (
-                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-sm flex items-center justify-center">
-                        <span className="text-xs text-white font-medium">
-                          {chat.unreadCount}
-                        </span>
-                      </div>
-                    )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <span
+                      className={`font-semibold truncate ${
+                        selectedChat?.id === chat.id
+                          ? "text-primary"
+                          : "text-foreground"
+                      }`}
+                    >
+                      {chat.name}
+                    </span>
+                    <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
+                      {!(
+                        !chat.timestamp ||
+                        (chat.sender_id == parseInt(currentUserId) &&
+                          !chat.timestamp)
+                      ) && timeAgo(chat.timestamp, true)}
+                    </span>
                   </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1">
-                      <span className="font-medium text-foreground truncate">
-                        {chat.name}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      {formatChatMeta(chat)}
-                    </div>
+                  <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <div className="truncate pr-2">{formatChatMeta(chat)}</div>
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Chat Area - Full width on mobile when chat selected */}
+        {/* Chat Area */}
         {selectedChat ? (
-          <div className="w-full lg:flex-1 flex flex-col min-w-0">
-            {/* Header with back button for mobile */}
-            <div className="p-3 lg:p-4 border-b border-border bg-card">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 lg:gap-3">
-                  {/* Back button for mobile */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSelectedChat(null)}
-                    className="lg:hidden p-1"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                  </Button>
-                  <Avatar className="h-8 w-8">
+          <div className="w-full lg:flex-1 flex flex-col min-w-0 bg-background/40 backdrop-blur-sm relative">
+            {/* Background Pattern */}
+            <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03] pointer-events-none"></div>
+
+            {/* Chat Header */}
+            <div className="p-4 border-b border-border/40 bg-card/50 backdrop-blur-md flex items-center justify-between z-10 shadow-sm">
+              <div className="flex items-center gap-3 lg:gap-4">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSelectedChat(null)}
+                  className="lg:hidden -ml-2 text-muted-foreground"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+
+                <div className="relative">
+                  <Avatar className="h-10 w-10 lg:h-11 lg:w-11 border border-border/50">
                     <AvatarImage
                       src={`${siteConfig.domain}/${selectedChat.avatar}`}
                       alt={selectedChat.name}
+                      className="object-cover"
                     />
-                    <AvatarFallback className="bg-muted text-foreground">
+                    <AvatarFallback className="bg-primary/10 text-primary font-bold">
                       {selectedChat.name.slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex items-center gap-1">
-                    <span className="font-medium text-foreground text-sm lg:text-base">
-                      {selectedChat.name}
-                    </span>
-                    {userOnlineStatus && (
-                      <div className="w-2 h-2 bg-green-500 rounded-full" />
+                  {userOnlineStatus && (
+                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-background" />
+                  )}
+                </div>
+
+                <div>
+                  <h3 className="font-bold text-foreground text-base lg:text-lg leading-tight">
+                    {selectedChat.name}
+                  </h3>
+                  <p className="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
+                    {userOnlineStatus ? (
+                      <>
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span>
+                        Online
+                      </>
+                    ) : (
+                      "Offline"
                     )}
-                  </div>
+                  </p>
                 </div>
               </div>
             </div>
 
-            {/* Profile - Hide on mobile, show on desktop */}
-            <div className="p-6 border-b border-border bg-card text-center hidden lg:block">
-              <div className="relative inline-block">
-                <Avatar className="h-16 w-16 mx-auto mb-3">
-                  <AvatarImage
-                    src={`${siteConfig.domain}/${selectedChat.avatar}`}
-                    alt={selectedChat.name}
-                  />
-                  <AvatarFallback className="bg-muted text-foreground text-lg">
-                    {selectedChat.name.slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                {userOnlineStatus && (
-                  <div className="absolute bottom-2 right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-background" />
-                )}
-              </div>
-              <h3 className="font-bold text-foreground">{selectedChat.name}</h3>
-              <p className="text-sm text-muted-foreground mb-2">
-                {selectedChat.username}
-              </p>
-              <p className="text-sm text-foreground mb-2">
-                {userProfile.age} years old
-              </p>
-              <p className="text-sm text-muted-foreground mb-3">
-                {userProfile.aboutMe}
-              </p>
-              <div className="text-xs text-muted-foreground space-y-1">
-                <p>
-                  Joined {new Date(userProfile.joinedDate).toLocaleDateString()}{" "}
-                  · {userProfile.followersCount} followers
-                </p>
-              </div>
-            </div>
-
-            {/* Messages */}
+            {/* Messages List */}
             <div
               ref={messagesContainerRef}
               onScroll={checkIfAtBottom}
-              className="flex-1 p-2 lg:p-4 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+              className="flex-1 p-4 lg:p-6 overflow-y-auto custom-scrollbar space-y-6"
             >
               {messagesLoading ? (
                 <div className="flex items-center justify-center h-full">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
-                    <p className="text-sm text-muted-foreground">
-                      Loading messages...
+                  <div className="glass-panel p-6 rounded-2xl flex flex-col items-center gap-3">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <p className="text-sm text-muted-foreground font-medium">
+                      Loading conversation...
                     </p>
                   </div>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <>
+                  {/* Profile Summary at top of chat */}
+                  <div className="flex flex-col items-center justify-center py-8 pb-12 opacity-80 hover:opacity-100 transition-opacity">
+                    <Avatar className="h-24 w-24 mb-4 ring-4 ring-background shadow-xl">
+                      <AvatarImage
+                        src={`${siteConfig.domain}/${selectedChat.avatar}`}
+                      />
+                      <AvatarFallback className="text-2xl bg-muted">
+                        {selectedChat.name.slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <h3 className="text-xl font-bold text-foreground">
+                      {selectedChat.name}
+                    </h3>
+                    <p className="text-muted-foreground text-sm">
+                      @{selectedChat.username}
+                    </p>
+                    <div className="mt-4 text-xs text-muted-foreground bg-muted/30 px-4 py-2 rounded-full border border-border/50">
+                      Joined{" "}
+                      {new Date(userProfile.joinedDate).toLocaleDateString()} ·{" "}
+                      {userProfile.followersCount} followers
+                    </div>
+                  </div>
+
                   {messages &&
-                    messages.map((message) => (
-                      <div
-                        key={message.id}
-                        className={`flex ${
-                          message.isOwn ? "justify-end" : "justify-start"
-                        }`}
-                      >
+                    messages.map((message, index) => {
+                      const isSequence =
+                        index > 0 &&
+                        messages[index - 1].isOwn === message.isOwn;
+                      return (
                         <div
-                          className={`max-w-[280px] sm:max-w-xs lg:max-w-md ${
-                            message.isOwn ? "order-2" : "order-1"
-                          }`}
+                          key={message.id}
+                          className={`flex w-full ${
+                            message.isOwn ? "justify-end" : "justify-start"
+                          } ${isSequence ? "mt-1" : "mt-4"}`}
                         >
-                          <ContextMenu>
-                            <ContextMenuTrigger>
-                              <div
-                                className={`${
-                                  message.isOwn ? "ml-auto" : "mr-auto"
-                                } max-w-[280px] sm:max-w-xs lg:max-w-md`}
+                          <div
+                            className={`flex max-w-[85%] lg:max-w-[70%] ${
+                              message.isOwn ? "flex-row-reverse" : "flex-row"
+                            } items-end gap-2`}
+                          >
+                            {/* Avatar for non-owned messages (only show on last of sequence) */}
+                            {!message.isOwn && (
+                              <Avatar
+                                className={`h-8 w-8 flex-shrink-0 ${
+                                  isSequence ? "opacity-0" : "opacity-100"
+                                }`}
                               >
-                                {message.replyTo && (
+                                <AvatarImage
+                                  src={`${siteConfig.domain}/${selectedChat.avatar}`}
+                                />
+                                <AvatarFallback>
+                                  {selectedChat.name[0]}
+                                </AvatarFallback>
+                              </Avatar>
+                            )}
+
+                            <div
+                              className={`flex flex-col ${
+                                message.isOwn ? "items-end" : "items-start"
+                              }`}
+                            >
+                              <ContextMenu>
+                                <ContextMenuTrigger>
                                   <div
-                                    className={`mb-1 px-3 py-1 rounded-t-sm text-xs border-l-2 ${
-                                      message.isOwn
-                                        ? "bg-blue-400 text-white border-blue-200"
-                                        : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-400"
-                                    }`}
+                                    className={`relative px-4 py-2.5 shadow-sm text-sm lg:text-[15px] leading-relaxed
+                                                ${
+                                                  message.type === "emoji" ||
+                                                  message.type === "image" ||
+                                                  message.type === "gif"
+                                                    ? "bg-transparent shadow-none p-0"
+                                                    : ""
+                                                }
+                                                ${
+                                                  message.isOwn
+                                                    ? "bg-primary text-primary-foreground rounded-2xl rounded-tr-sm"
+                                                    : "bg-card border border-border/50 text-foreground rounded-2xl rounded-tl-sm"
+                                                }
+                                                ${
+                                                  message.replyTo
+                                                    ? "rounded-tl-none rounded-tr-none"
+                                                    : ""
+                                                }
+                                                `}
                                   >
-                                    {(message.isOwn && (
-                                      <div className="opacity-80 font-medium">
-                                        You replied to {selectedChat.name}:
-                                      </div>
-                                    )) || (
-                                      <div className="opacity-80 font-medium">
-                                        {selectedChat.name} replied to you:
+                                    {/* Reply Context */}
+                                    {message.replyTo && (
+                                      <div
+                                        className={`mb-2 px-3 py-2 rounded-lg text-xs bg-black/10 dark:bg-black/20 border-l-2 border-white/30 backdrop-blur-sm`}
+                                      >
+                                        <div className="font-bold opacity-90 mb-0.5">
+                                          {message.isOwn
+                                            ? "You"
+                                            : selectedChat.name}{" "}
+                                          replied:
+                                        </div>
+                                        <div className="opacity-80 truncate max-w-[200px]">
+                                          {renderReplyContent(message.replyTo)}
+                                        </div>
                                       </div>
                                     )}
-                                    <div className="opacity-70 truncate">
-                                      {renderReplyContent(message.replyTo)}
-                                    </div>
-                                  </div>
-                                )}
 
-                                {message.type === "emoji" ? (
-                                  <div
-                                    className={`text-4xl sm:text-6xl cursor-pointer ${
-                                      message.replyTo
-                                        ? "rounded-b-sm"
-                                        : "rounded-sm"
-                                    }`}
-                                  >
-                                    {message.content}
+                                    {/* Content */}
+                                    {message.type === "emoji" ? (
+                                      <div className="text-5xl sm:text-6xl leading-none hover:scale-110 transition-transform cursor-pointer">
+                                        {message.content}
+                                      </div>
+                                    ) : message.type === "gif" ? (
+                                      <div className="rounded-xl overflow-hidden border border-border/50 shadow-md max-w-[280px]">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                          src={message.content}
+                                          alt="GIF"
+                                          className="w-full h-auto"
+                                        />
+                                      </div>
+                                    ) : message.type === "image" ? (
+                                      <div className="rounded-xl overflow-hidden border border-border/50 shadow-md max-w-[280px] group relative">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                          src={`${siteConfig.domain}/${message.content}`}
+                                          alt="Shared image"
+                                          className="w-full h-auto cursor-pointer transition-transform duration-500 group-hover:scale-105"
+                                          onClick={() =>
+                                            window.open(
+                                              message.content,
+                                              "_blank"
+                                            )
+                                          }
+                                        />
+                                      </div>
+                                    ) : (
+                                      <span className="whitespace-pre-wrap break-words">
+                                        {message.content}
+                                      </span>
+                                    )}
                                   </div>
-                                ) : message.type === "gif" ? (
-                                  <div
-                                    className={`overflow-hidden max-w-[250px] sm:max-w-xs cursor-pointer ${
-                                      message.replyTo
-                                        ? "rounded-b-sm"
-                                        : "rounded-sm"
-                                    }`}
-                                  >
-                                    <img
-                                      src={message.content}
-                                      alt="GIF"
-                                      className="w-full h-auto"
-                                    />
-                                  </div>
-                                ) : message.type === "image" ? (
-                                  <div
-                                    className={`overflow-hidden max-w-[250px] sm:max-w-xs cursor-pointer ${
-                                      message.replyTo
-                                        ? "rounded-b-sm"
-                                        : "rounded-sm"
-                                    }`}
-                                  >
-                                    <img
-                                      src={`${siteConfig.domain}/${message.content}`}
-                                      alt="Uploaded image"
-                                      className="w-full h-auto hover:opacity-90 transition-opacity"
+                                </ContextMenuTrigger>
+                                <ContextMenuContent className="glass-panel border-border/50">
+                                  {message.isOwn ? (
+                                    <ContextMenuItem
                                       onClick={() =>
-                                        window.open(message.content, "_blank")
+                                        handleUnsendMessage(message.id)
                                       }
-                                    />
-                                  </div>
-                                ) : (
-                                  <div
-                                    className={`px-3 py-2 sm:px-4 sm:py-2 cursor-pointer text-sm sm:text-base ${
-                                      message.replyTo
-                                        ? "rounded-b-sm"
-                                        : "rounded-sm"
-                                    } ${
-                                      message.isOwn
-                                        ? "bg-blue-500 text-white"
-                                        : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                                    }`}
-                                  >
-                                    {message.content}
-                                  </div>
+                                      className="text-red-500 focus:text-red-500 focus:bg-red-500/10 cursor-pointer"
+                                    >
+                                      Unsend Message
+                                    </ContextMenuItem>
+                                  ) : (
+                                    <ContextMenuItem
+                                      onClick={() =>
+                                        handleReplyToMessage(message)
+                                      }
+                                      className="cursor-pointer"
+                                    >
+                                      Reply
+                                    </ContextMenuItem>
+                                  )}
+                                </ContextMenuContent>
+                              </ContextMenu>
+
+                              {/* Timestamp & Read Status */}
+                              <div
+                                className={`flex items-center gap-1 mt-1 text-[10px] text-muted-foreground font-medium ${
+                                  message.isOwn
+                                    ? "justify-end"
+                                    : "justify-start"
+                                } px-1`}
+                              >
+                                {message.isOwn && message.isRead && (
+                                  <span className="text-primary">Read</span>
                                 )}
+                                <span>{timeAgo(message.timestamp)}</span>
                               </div>
-                            </ContextMenuTrigger>
-                            <ContextMenuContent>
-                              {message.isOwn ? (
-                                <ContextMenuItem
-                                  onClick={() =>
-                                    handleUnsendMessage(message.id)
-                                  }
-                                  className="text-red-600 focus:text-red-600"
-                                >
-                                  Unsend Message
-                                </ContextMenuItem>
-                              ) : (
-                                <ContextMenuItem
-                                  onClick={() => handleReplyToMessage(message)}
-                                  className="text-blue-600 focus:text-blue-600"
-                                >
-                                  Reply to Message
-                                </ContextMenuItem>
-                              )}
-                            </ContextMenuContent>
-                          </ContextMenu>
-                          {message.isRead &&
-                            message.isOwn &&
-                            message === messages[messages.length - 1] && (
-                              <div className="flex items-center gap-2 mt-1 justify-start">
-                                <span className="text-xs text-muted-foreground">
-                                  {message.seen
-                                    ? message.seen
-                                    : timeAgo(message.timestamp)}
-                                </span>
-                              </div>
-                            )}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   <div ref={messagesEndRef} />
-                </div>
+                </>
               )}
             </div>
 
-            {showEmojiPicker && (
-              <div className="p-2 lg:p-0">
-                <EmojiPicker
-                  onEmojiClick={(e) => handleEmojiSelect(e.emoji)}
-                  theme={Theme.DARK}
-                  width="100%"
-                  height={300}
-                />
-              </div>
-            )}
-            {showGifPicker && (
-              <div className="p-2 lg:p-0">
-                <GifPicker
-                  onGifClick={(g) => handleGifSelect(g.url)}
-                  tenorApiKey="AIzaSyB78CUkLJjdlA67853bVqpcwjJaywRAlaQ"
-                  categoryHeight={100}
-                  theme={Theme.DARK}
-                  width="100%"
-                />
-              </div>
-            )}
-
-            {/* Typing indicator (other user) */}
-            {isTyping && selectedChat && (
-              <div className="px-2 lg:px-4 py-2 animate-in fade-in duration-300">
-                <div className="flex items-center gap-2 lg:gap-3">
-                  <Avatar className="h-6 w-6 lg:h-8 lg:w-8">
-                    <AvatarImage
-                      src={`${siteConfig.domain}/${selectedChat.avatar}`}
-                      alt={selectedChat.name}
-                    />
-                    <AvatarFallback className="bg-muted text-foreground text-xs">
-                      {selectedChat.name.slice(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 px-3 py-2 lg:px-4 lg:py-2 rounded-lg">
-                      <div className="flex gap-1">
-                        <div
-                          className="w-1.5 h-1.5 lg:w-2 lg:h-2 bg-gray-400 rounded-full animate-bounce"
-                          style={{ animationDelay: "0ms" }}
-                        ></div>
-                        <div
-                          className="w-1.5 h-1.5 lg:w-2 lg:h-2 bg-gray-400 rounded-full animate-bounce"
-                          style={{ animationDelay: "150ms" }}
-                        ></div>
-                        <div
-                          className="w-1.5 h-1.5 lg:w-2 lg:h-2 bg-gray-400 rounded-full animate-bounce"
-                          style={{ animationDelay: "300ms" }}
-                        ></div>
-                      </div>
-                    </div>
-                    <span className="text-xs text-muted-foreground hidden sm:block">
-                      {selectedChat.name} is typing...
-                    </span>
-                  </div>
+            {/* Input Area */}
+            <div className="p-4 bg-card/50 backdrop-blur-md border-t border-border/40 z-10">
+              {/* Typing Indicator */}
+              {isTyping && (
+                <div className="absolute -top-10 left-6 bg-card/80 backdrop-blur-sm px-4 py-1.5 rounded-full text-xs font-medium text-muted-foreground border border-border/50 shadow-sm animate-in slide-in-from-bottom-2 fade-in">
+                  {selectedChat.name} is typing...
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Reply Preview */}
-            {replyingTo && (
-              <div className="p-3 mx-2 lg:mx-4 bg-muted/50 border-l-4 border-blue-500 rounded-r-lg">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <p className="text-xs text-muted-foreground mb-1">
+              {/* Reply Preview */}
+              {replyingTo && (
+                <div className="mb-3 flex items-center justify-between bg-primary/10 border border-primary/20 p-3 rounded-xl backdrop-blur-sm animate-in slide-in-from-bottom-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-primary mb-0.5">
                       Replying to{" "}
                       {replyingTo.isOwn ? "yourself" : selectedChat?.name}
                     </p>
-                    <p className="text-sm text-foreground truncate max-w-[200px] sm:max-w-md">
-                      {replyingTo.type === "emoji"
-                        ? replyingTo.content
-                        : replyingTo.type === "image"
-                        ? "📷 Image"
-                        : replyingTo.type === "gif"
-                        ? "🎞️ GIF"
-                        : replyingTo.content}
+                    <p className="text-sm text-foreground/80 truncate">
+                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                      {renderReplyContent({
+                        ...replyingTo,
+                        isOwn: replyingTo.isOwn,
+                      } as any)}
                     </p>
                   </div>
                   <Button
                     variant="ghost"
-                    size="sm"
+                    size="icon"
                     onClick={cancelReply}
-                    className="h-6 w-6 p-0 ml-2"
+                    className="h-8 w-8 rounded-full hover:bg-primary/20 text-primary"
                   >
-                    ×
+                    <span className="text-lg">×</span>
                   </Button>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Input */}
-            <div className="p-2 lg:p-4 border-t border-border bg-card">
-              <div className="flex items-center gap-1 lg:gap-2">
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleImageUpload}
-                  accept="image/*"
-                  className="hidden"
-                />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleImageSelect}
-                  title="Upload image"
-                  className="h-8 w-8 lg:h-10 lg:w-10"
-                >
-                  <ImageIcon className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setShowGifPicker(!showGifPicker);
-                    setShowEmojiPicker(false);
-                  }}
-                  className="text-white hover:text-foreground h-8 w-8 lg:h-auto lg:w-auto p-1 lg:p-2"
-                  title="Send GIF"
-                >
-                  <ImagePlay className="h-4 w-4 lg:h-5 lg:w-5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setShowEmojiPicker(!showEmojiPicker);
-                    setShowGifPicker(false);
-                  }}
-                  className="text-white hover:text-foreground h-8 w-8 lg:h-auto lg:w-auto p-1 lg:p-2"
-                  title="Add emoji"
-                >
-                  <Smile className="h-4 w-4 lg:h-5 lg:w-5" />
-                </Button>
-                <div className="flex-1 relative">
+              <div className="flex items-end gap-3 max-w-4xl mx-auto">
+                <div className="flex gap-1 pb-1">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleImageUpload}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleImageSelect}
+                    className="h-10 w-10 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                  >
+                    <ImageIcon className="h-5 w-5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setShowGifPicker(!showGifPicker);
+                      setShowEmojiPicker(false);
+                    }}
+                    className="h-10 w-10 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                  >
+                    <ImagePlay className="h-5 w-5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setShowEmojiPicker(!showEmojiPicker);
+                      setShowGifPicker(false);
+                    }}
+                    className="h-10 w-10 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                  >
+                    <Smile className="h-5 w-5" />
+                  </Button>
+                </div>
+
+                <div className="flex-1 relative bg-muted/40 rounded-2xl border border-border/50 focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20 transition-all">
                   <Input
                     placeholder={
-                      replyingTo
-                        ? `Reply to ${
-                            replyingTo.isOwn ? "yourself" : selectedChat?.name
-                          }...`
-                        : "Start a new message"
+                      replyingTo ? "Type your reply..." : "Type a message..."
                     }
                     value={newMessage}
                     onChange={(e) => handleInputChange(e.target.value)}
                     onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-                    className="pr-10 text-sm lg:text-base"
+                    className="border-0 bg-transparent focus-visible:ring-0 py-3 px-4 min-h-[48px] max-h-32"
                   />
-                  <Button
-                    onClick={handleSendMessage}
-                    size="icon"
-                    variant="ghost"
-                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 lg:h-8 lg:w-8"
-                  >
-                    <Send className="h-3 w-3 lg:h-4 lg:w-4" />
-                  </Button>
                 </div>
+
+                <Button
+                  onClick={handleSendMessage}
+                  size="icon"
+                  className={`h-12 w-12 rounded-full shadow-lg transition-all duration-300 ${
+                    newMessage.trim()
+                      ? "bg-primary hover:bg-primary/90 scale-100"
+                      : "bg-muted text-muted-foreground scale-90 opacity-70"
+                  }`}
+                  disabled={!newMessage.trim()}
+                >
+                  <Send className="h-5 w-5 ml-0.5" />
+                </Button>
               </div>
+
+              {/* Pickers */}
+              {(showEmojiPicker || showGifPicker) && (
+                <div className="absolute bottom-20 left-4 z-50 shadow-2xl rounded-2xl overflow-hidden border border-border/50 animate-in zoom-in-95 duration-200">
+                  {showEmojiPicker && (
+                    <EmojiPicker
+                      onEmojiClick={(e) => handleEmojiSelect(e.emoji)}
+                      theme={Theme.DARK}
+                      width={320}
+                      height={400}
+                    />
+                  )}
+                  {showGifPicker && (
+                    <GifPicker
+                      onGifClick={(g) => handleGifSelect(g.url)}
+                      tenorApiKey="AIzaSyB78CUkLJjdlA67853bVqpcwjJaywRAlaQ"
+                      theme={Theme.DARK}
+                      width={320}
+                    />
+                  )}
+                </div>
+              )}
             </div>
           </div>
         ) : (
-          /* Empty state - show on desktop when no chat selected */
-          <div className="hidden lg:flex lg:flex-1 flex-col min-w-0">
-            <div className="flex flex-1 items-center justify-center bg-muted/20">
-              <div className="text-center p-4">
-                <h3 className="text-lg font-medium text-foreground mb-2">
-                  Select a message
-                </h3>
-                <p className="text-muted-foreground text-sm">
-                  Choose from your existing conversations or start a new one
-                </p>
-              </div>
+          /* Empty State */
+          <div className="hidden lg:flex lg:flex-1 flex-col items-center justify-center bg-background/40 backdrop-blur-sm text-center p-8">
+            <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-6 animate-pulse">
+              <MessageSquare className="h-10 w-10 text-primary" />
             </div>
+            <h2 className="text-3xl font-bold text-foreground mb-3">
+              Your Messages
+            </h2>
+            <p className="text-muted-foreground max-w-md text-lg">
+              Select a conversation from the sidebar or start a new one to
+              connect with your friends.
+            </p>
           </div>
         )}
       </div>

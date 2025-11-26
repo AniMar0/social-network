@@ -5,12 +5,11 @@ import { useRouter } from "next/navigation";
 import { GroupsPage } from "@/components/groups";
 import { NewPostModal } from "@/components/newpost";
 import { authUtils } from "@/lib/navigation";
-import { initWebSocket, closeWebSocket } from "@/lib/websocket";
+import { initWebSocket } from "@/lib/websocket";
 
 export default function Groups() {
   const [isNewPostModalOpen, setIsNewPostModalOpen] = useState(false);
   const [userLoggedIn, setUserLoggedIn] = useState(false);
-  const [userId, setUserId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -21,7 +20,6 @@ export default function Groups() {
         const { loggedIn, user } = await authUtils.checkAuth();
 
         if (loggedIn) {
-          setUserId(user.id);
           setUserLoggedIn(true);
           initWebSocket(user.id);
         } else {
@@ -40,36 +38,7 @@ export default function Groups() {
 
   const handleNewPost = () => setIsNewPostModalOpen(true);
 
-  const handleNavigate = async (itemId: string) => {
-    switch (itemId) {
-      case "home":
-        router.push("/");
-        break;
-      case "explore":
-        router.push("/explore");
-        break;
-      case "notifications":
-        router.push("/notifications");
-        break;
-      case "messages":
-        router.push("/messages");
-        break;
-      case "groups":
-        router.push("/groups");
-        break;
-      case "profile":
-        const user = await authUtils.CurrentUser();
-        router.push(`/profile/${user.url}`);
-        break;
-      case "auth":
-        closeWebSocket();
-        router.push("/auth");
-        break;
-      default:
-        router.push("/");
-    }
-  };
-
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handlePostSubmit = (postData: any) => {
     console.log("New post submitted:", postData);
     setIsNewPostModalOpen(false);
@@ -87,7 +56,7 @@ export default function Groups() {
 
   return (
     <div className="min-h-screen bg-background">
-      <GroupsPage onNewPost={handleNewPost} onNavigate={handleNavigate} />
+      <GroupsPage onNewPost={handleNewPost} />
 
       <NewPostModal
         isOpen={isNewPostModalOpen}

@@ -4,8 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import NotificationsPage from "@/components/notifications";
 import { NewPostModal } from "@/components/newpost";
-import { authUtils } from "@/lib/navigation";
-import { initWebSocket, closeWebSocket } from "@/lib/websocket";
+import { initWebSocket } from "@/lib/websocket";
 import { siteConfig } from "@/config/site.config";
 export default function Notifications() {
   const [isNewPostModalOpen, setIsNewPostModalOpen] = useState(false);
@@ -48,32 +47,7 @@ export default function Notifications() {
     setIsNewPostModalOpen(true);
   };
 
-  const handleNavigate = async (itemId: string) => {
-    switch (itemId) {
-      case "home":
-        router.push("/");
-        break;
-      case "explore":
-        router.push("/explore");
-        break;
-      case "notifications":
-        router.push("/notifications");
-        break;
-      case "messages":
-        router.push("/messages");
-        break;
-      case "profile":
-        const user = await authUtils.CurrentUser();
-        router.push(`/profile/${user.url}`);
-        break;
-      case "auth":
-        router.push("/");
-        break;
-      default:
-        router.push("/");
-    }
-  };
-
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handlePostSubmit = (postData: any) => {
     console.log("New post submitted:", postData);
     // TODO: Send the post to the backend
@@ -94,10 +68,7 @@ export default function Notifications() {
 
   return (
     <div className="min-h-screen bg-background">
-      <NotificationsPage
-        onNewPost={handleNewPost}
-        onNavigate={handleNavigate}
-      />
+      <NotificationsPage onNewPost={handleNewPost} />
 
       <NewPostModal
         isOpen={isNewPostModalOpen}

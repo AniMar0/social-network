@@ -1,7 +1,7 @@
 // Utility functions for managing notifications
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { getWebSocket } from "@/lib/websocket";
 import { siteConfig } from "@/config/site.config";
 export interface Notification {
@@ -33,6 +33,7 @@ export const useNotificationCount = () => {
           credentials: "include",
         });
         const data = await res.json();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const unread = data?.filter((n: any) => !n.isRead).length || 0;
         setCount(unread);
       } catch (err) {

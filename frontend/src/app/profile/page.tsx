@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { authUtils } from "@/lib/navigation";
-import { initWebSocket, closeWebSocket } from "@/lib/websocket";
+import { initWebSocket } from "@/lib/websocket";
 export default function ProfileRedirectPage() {
   const router = useRouter();
 

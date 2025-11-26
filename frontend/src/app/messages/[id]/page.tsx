@@ -6,7 +6,7 @@ import MessagesPage from "@/components/messages";
 import { NewPostModal } from "@/components/newpost";
 import { siteConfig } from "@/config/site.config";
 
-function Messages() {
+export default function Messages() {
   const [isNewPostModalOpen, setIsNewPostModalOpen] = useState(false);
   const [userLoggedIn, setUserLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -15,15 +15,16 @@ function Messages() {
   const params = useParams();
 
   const resiverID = params.id as string;
-  let currentUserId = "";
+
   function isNumberRegex(str: string): boolean {
     return /^[0-9]+$/.test(str);
   }
 
-  if (!isNumberRegex(resiverID) && resiverID !== "chats") {
-    router.push("/404");
-    return;
-  }
+  useEffect(() => {
+    if (!isNumberRegex(resiverID) && resiverID !== "chats") {
+      router.push("/404");
+    }
+  }, [resiverID, router]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -43,7 +44,6 @@ function Messages() {
           router.push("/auth");
           return;
         }
-        currentUserId = data.id;
         setUserLoggedIn(true);
       } catch (err) {
         console.error("Error checking auth:", err);
@@ -56,10 +56,30 @@ function Messages() {
     checkAuth();
   }, [router]);
 
+  useEffect(() => {
+    if (userLoggedIn && resiverID && resiverID !== "chats") {
+      const setSeenChat = (chatId: string) => {
+        fetch(`${siteConfig.domain}/api/set-seen-chat/${chatId}`, {
+          method: "POST",
+          credentials: "include",
+        })
+          .then((res) => {
+            if (!res.ok) throw new Error("Failed to set seen chat");
+          })
+          .then(() => {
+            console.log("Chat seen");
+          })
+          .catch((err) => console.error(err));
+      };
+      setSeenChat(resiverID);
+    }
+  }, [userLoggedIn, resiverID]);
+
   const handleNewPost = () => {
     setIsNewPostModalOpen(true);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handlePostSubmit = (postData: any) => {
     console.log("New post submitted:", postData);
     // TODO: Send the post to the backend
@@ -74,32 +94,13 @@ function Messages() {
     );
   }
 
-  const setSeenChat = (chatId: string) => {
-    fetch(`${siteConfig.domain}/api/set-seen-chat/${chatId}`, {
-      method: "POST",
-      credentials: "include",
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to set seen chat");
-      })
-      .then(() => {
-        console.log("Chat seen");
-      })
-      .catch((err) => console.error(err));
-  };
-  setSeenChat(resiverID);
-
   if (!userLoggedIn) {
     return null; // Will redirect
   }
 
   return (
     <div className="min-h-screen bg-background">
-      <MessagesPage
-        onUserProfileClick={resiverID}
-        onNewPost={handleNewPost}
-        currentUserId={currentUserId}
-      />
+      <MessagesPage onUserProfileClick={resiverID} onNewPost={handleNewPost} />
 
       <NewPostModal
         isOpen={isNewPostModalOpen}
@@ -109,6 +110,3 @@ function Messages() {
     </div>
   );
 }
-
-export { Messages };
-export default Messages;

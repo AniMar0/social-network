@@ -15,7 +15,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Settings, Upload, Save, CalendarIcon } from "lucide-react";
+import {
+  Settings,
+  Upload,
+  Save,
+  CalendarIcon,
+  User,
+  Mail,
+  Lock,
+  FileText,
+} from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { format } from "date-fns";
@@ -179,120 +188,148 @@ export function ProfileSettings({ userData, onSave }: ProfileSettingsProps) {
       <DialogTrigger asChild>
         <Button
           variant="outline"
-          className="flex items-center gap-2 bg-transparent cursor-pointer"
+          className="flex items-center gap-2 bg-background/50 border-border/50 hover:bg-background/80 backdrop-blur-sm rounded-xl shadow-sm"
         >
           <Settings className="h-4 w-4" />
           Settings
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-md w-full bg-card border-border">
-        <div>
-          <DialogHeader>
-            <DialogTitle className="text-foreground">Edit Profile</DialogTitle>
+      <DialogContent className="max-w-md w-full glass-panel border-border/50 shadow-2xl p-0 overflow-hidden">
+        <div className="max-h-[85vh] overflow-y-auto">
+          <DialogHeader className="p-6 pb-2 border-b border-border/40 bg-background/40 backdrop-blur-md sticky top-0 z-10">
+            <DialogTitle className="text-2xl font-bold text-foreground flex items-center gap-2">
+              <Settings className="h-6 w-6 text-primary" />
+              Edit Profile
+            </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-6 py-4">
+          <div className="space-y-6 p-6">
             {/* Avatar Upload Section */}
             <div className="flex flex-col items-center space-y-4">
-              <Avatar className="h-24 w-24 border-4 border-primary/20">
-                <AvatarImage
-                  src={
-                    formData.avatar?.startsWith("blob:")
-                      ? formData.avatar
-                      : formData.avatar
-                      ? `${siteConfig.domain}/${formData.avatar}`
-                      : `${siteConfig.domain}/${userData.avatar}`
-                  }
-                  alt="Profile avatar"
-                />
-                <AvatarFallback className="text-lg bg-muted text-foreground font-semibold">
-                  {formData.firstName[0]}
-                  {formData.lastName[0]}
-                </AvatarFallback>
-              </Avatar>
-
-              <div className="relative">
+              <div className="relative group">
+                <Avatar className="h-28 w-28 border-4 border-background shadow-xl ring-2 ring-primary/20">
+                  <AvatarImage
+                    src={
+                      formData.avatar?.startsWith("blob:")
+                        ? formData.avatar
+                        : formData.avatar
+                        ? `${siteConfig.domain}/${formData.avatar}`
+                        : `${siteConfig.domain}/${userData.avatar}`
+                    }
+                    alt="Profile avatar"
+                    className="object-cover"
+                  />
+                  <AvatarFallback className="text-3xl bg-primary/10 text-primary font-bold">
+                    {formData.firstName[0]}
+                    {formData.lastName[0]}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                  <Upload className="h-8 w-8 text-white" />
+                </div>
                 <input
                   type="file"
                   accept="image/*"
                   onChange={handleAvatarUpload}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                   id="avatar-upload"
+                  title="Change Avatar"
                 />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2 bg-transparent cursor-pointer"
-                >
-                  <Upload className="h-4 w-4" />
-                  Change Avatar
-                </Button>
               </div>
+              <p className="text-sm text-muted-foreground font-medium">
+                Tap to change profile picture
+              </p>
             </div>
 
             {/* Personal Information */}
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="firstName" className="text-foreground">
+                  <Label
+                    htmlFor="firstName"
+                    className="text-foreground font-medium"
+                  >
                     First Name
                   </Label>
-                  <Input
-                    id="firstName"
-                    value={formData.firstName}
-                    onChange={(e) =>
-                      handleInputChange("firstName", e.target.value)
-                    }
-                    className="bg-background border-border"
-                  />
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="firstName"
+                      value={formData.firstName}
+                      onChange={(e) =>
+                        handleInputChange("firstName", e.target.value)
+                      }
+                      className="pl-10 bg-background/50 border-border/50 focus-visible:ring-primary/30 rounded-xl h-11"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="lastName" className="text-foreground">
+                  <Label
+                    htmlFor="lastName"
+                    className="text-foreground font-medium"
+                  >
                     Last Name
                   </Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="lastName"
+                      value={formData.lastName}
+                      onChange={(e) =>
+                        handleInputChange("lastName", e.target.value)
+                      }
+                      className="pl-10 bg-background/50 border-border/50 focus-visible:ring-primary/30 rounded-xl h-11"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label
+                  htmlFor="nickname"
+                  className="text-foreground font-medium"
+                >
+                  Nickname (Optional)
+                </Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground font-bold">
+                    @
+                  </span>
                   <Input
-                    id="lastName"
-                    value={formData.lastName}
+                    id="nickname"
+                    value={formData.nickname || ""}
                     onChange={(e) =>
-                      handleInputChange("lastName", e.target.value)
+                      handleInputChange("nickname", e.target.value)
                     }
-                    className="bg-background border-border"
+                    placeholder="Enter a nickname"
+                    className="pl-8 bg-background/50 border-border/50 focus-visible:ring-primary/30 rounded-xl h-11"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="nickname" className="text-foreground">
-                  Nickname (Optional)
-                </Label>
-                <Input
-                  id="nickname"
-                  value={formData.nickname || ""}
-                  onChange={(e) =>
-                    handleInputChange("nickname", e.target.value)
-                  }
-                  placeholder="Enter a nickname"
-                  className="bg-background border-border"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-foreground">
+                <Label htmlFor="email" className="text-foreground font-medium">
                   Email
                 </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange("email", e.target.value)}
-                  className="bg-background border-border"
-                />
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange("email", e.target.value)}
+                    className="pl-10 bg-background/50 border-border/50 focus-visible:ring-primary/30 rounded-xl h-11"
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="dateOfBirth" className="text-foreground">
+                <Label
+                  htmlFor="dateOfBirth"
+                  className="text-foreground font-medium"
+                >
                   Date of Birth
                 </Label>
                 <Popover>
@@ -300,11 +337,11 @@ export function ProfileSettings({ userData, onSave }: ProfileSettingsProps) {
                     <Button
                       variant="outline"
                       className={cn(
-                        "w-full justify-start text-left font-normal",
+                        "w-full justify-start text-left font-normal bg-background/50 border-border/50 hover:bg-background/80 rounded-xl h-11 pl-3",
                         !formData.dateOfBirth && "text-muted-foreground"
                       )}
                     >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
                       {formData.dateOfBirth ? (
                         format(new Date(formData.dateOfBirth), "PPP")
                       ) : (
@@ -313,7 +350,10 @@ export function ProfileSettings({ userData, onSave }: ProfileSettingsProps) {
                     </Button>
                   </PopoverTrigger>
 
-                  <PopoverContent className="w-auto p-0" align="start">
+                  <PopoverContent
+                    className="w-auto p-0 glass-panel border-border/50"
+                    align="start"
+                  >
                     <Calendar
                       mode="single"
                       selected={
@@ -339,39 +379,53 @@ export function ProfileSettings({ userData, onSave }: ProfileSettingsProps) {
                       }
                       initialFocus
                       captionLayout="dropdown"
+                      className="bg-background/95 backdrop-blur-xl rounded-xl border border-border/50"
                     />
                   </PopoverContent>
                 </Popover>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="aboutMe" className="text-foreground">
+                <Label
+                  htmlFor="aboutMe"
+                  className="text-foreground font-medium"
+                >
                   About Me (Optional)
                 </Label>
-                <Textarea
-                  id="aboutMe"
-                  value={formData.aboutMe || ""}
-                  onChange={(e) => handleInputChange("aboutMe", e.target.value)}
-                  placeholder="Tell us about yourself..."
-                  rows={3}
-                  className="bg-background border-border resize-none"
-                />
+                <div className="relative">
+                  <FileText className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Textarea
+                    id="aboutMe"
+                    value={formData.aboutMe || ""}
+                    onChange={(e) =>
+                      handleInputChange("aboutMe", e.target.value)
+                    }
+                    placeholder="Tell us about yourself..."
+                    rows={3}
+                    className="pl-10 bg-background/50 border-border/50 focus-visible:ring-primary/30 rounded-xl resize-none min-h-[100px]"
+                  />
+                </div>
               </div>
             </div>
 
             {/* Privacy Settings */}
-            <div className="space-y-4 pt-4 border-t border-border">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label
-                    htmlFor="privacy-toggle"
-                    className="text-foreground font-medium"
-                  >
-                    Private Profile
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Only followers can see your posts
-                  </p>
+            <div className="space-y-4 pt-6 border-t border-border/40">
+              <div className="flex items-center justify-between bg-muted/30 p-4 rounded-xl border border-border/30">
+                <div className="flex items-center gap-3">
+                  <div className="bg-primary/10 p-2 rounded-lg">
+                    <Lock className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="space-y-0.5">
+                    <Label
+                      htmlFor="privacy-toggle"
+                      className="text-foreground font-bold text-base"
+                    >
+                      Private Profile
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      Only followers can see your posts
+                    </p>
+                  </div>
                 </div>
                 <Switch
                   id="privacy-toggle"
@@ -384,18 +438,18 @@ export function ProfileSettings({ userData, onSave }: ProfileSettingsProps) {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-3 pt-4">
+            <div className="flex gap-3 pt-4 sticky bottom-0 bg-background/80 backdrop-blur-md pb-2 -mx-6 px-6 border-t border-border/40 mt-4">
               <Button
                 onClick={handleCancel}
                 variant="outline"
-                className="flex-1 bg-transparent cursor-pointer"
+                className="flex-1 rounded-xl h-11 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
                 disabled={isLoading}
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleSave}
-                className="flex-1 flex items-center gap-2 cursor-pointer"
+                className="flex-1 flex items-center gap-2 rounded-xl h-11 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
                 disabled={isLoading}
               >
                 {isLoading ? (
