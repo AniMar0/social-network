@@ -7,17 +7,17 @@ import (
 	"net/url"
 	"path/filepath"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 
 	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/sqlite3"
+	_ "github.com/golang-migrate/migrate/v4/database/sqlite"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 // ConnectAndMigrate opens a SQLite connection and applies migrations
 func ConnectAndMigrate(dbPath string, migrationsDir string) *sql.DB {
 	// Open SQLite connection
-	db, err := sql.Open("sqlite3", dbPath)
+	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
 		log.Fatalf("Error opening database: %v", err)
 	}
@@ -53,7 +53,7 @@ func ConnectAndMigrate(dbPath string, migrationsDir string) *sql.DB {
 	migrationsPath := u.String()
 
 	// Database URL for golang-migrate
-	dbURL := fmt.Sprintf("sqlite3://%s", dbPath)
+	dbURL := fmt.Sprintf("sqlite://%s", dbPath)
 
 	// Initialize migrate instance
 	m, err := migrate.New(migrationsPath, dbURL)
