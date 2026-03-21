@@ -73,11 +73,12 @@ func (S *Server) CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Insert into database
-	res, err := S.db.Exec(`
+	err = S.db.QueryRow(`
         INSERT INTO posts (user_id, content, image, privacy)
-        VALUES ($1, $2, $3, $4)`,
+		VALUES ($1, $2, $3, $4)
+		RETURNING id`,
 		userID, html.EscapeString(post.Content), post.Image, post.Privacy,
-	)
+	).Scan(&post.ID)
 
 	if err != nil {
 		fmt.Println("Error inserting post:", err)
@@ -85,8 +86,6 @@ func (S *Server) CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	lastID, _ := res.LastInsertId()
-	post.ID = int(lastID)
 	post.UserID = userID
 	post.CreatedAt = time.Now().Format(time.RFC3339)
 

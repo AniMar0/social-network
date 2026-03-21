@@ -324,10 +324,10 @@ ORDER BY last_backend_id DESC;
 	`
 
 	rows, err := S.db.Query(query,
-		currentUserID, // 1st ?
-		currentUserID, // 2nd ?
-		currentUserID, // 3rd ?
-		currentUserID, // 4th ?
+		currentUserID,
+		currentUserID,
+		currentUserID,
+		currentUserID,
 		currentUserID,
 		currentUserID, // unread_count
 	)

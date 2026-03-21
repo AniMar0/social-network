@@ -272,7 +272,7 @@ func (S *Server) GetUserData(url string, id int) (UserData, error) {
 
 	user.FollowingCount, _ = S.GetFollowingCount(user.Url)
 
-	// row := S.db.QueryRow(`SELECT COUNT(*) FROM posts WHERE author_id = ?`, user.ID)
+	// row := S.db.QueryRow(`SELECT COUNT(*) FROM posts WHERE author_id = $1`, user.ID)
 	// row.Scan(&user.PostsCount)
 
 	return user, nil

@@ -95,12 +95,19 @@ func (S *Server) LikeCommentHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (S *Server) CreateComment(userID int, content string, postID int, parentCommentID *string) (int, error) {
-	sqlRes, err := S.db.Exec("INSERT INTO comments (user_id, content, post_id, parent_comment_id) VALUES ($1, $2, $3, $4)", userID, content, postID, parentCommentID)
+	var commentID int
+	err := S.db.QueryRow(
+		"INSERT INTO comments (user_id, content, post_id, parent_comment_id) VALUES ($1, $2, $3, $4) RETURNING id",
+		userID,
+		content,
+		postID,
+		parentCommentID,
+	).Scan(&commentID)
 	if err != nil {
 		return 0, err
 	}
-	lastID, _ := sqlRes.LastInsertId()
-	return int(lastID), nil
+
+	return commentID, nil
 }
 
 func (S *Server) GetComments(postID int, r *http.Request) ([]Comment, error) {

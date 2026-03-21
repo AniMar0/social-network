@@ -1,18 +1,20 @@
 package backend
 
 import (
-	"SOCIAL-NETWORK/pkg/db/sqlite"
-	"database/sql"
+	"SOCIAL-NETWORK/internal/db"
 	"log"
 	"net/http"
+	"os"
 	"sync"
+
+	"github.com/joho/godotenv"
 
 	"github.com/gorilla/websocket"
 	"github.com/rs/cors"
 )
 
 type Server struct {
-	db       *sql.DB
+	db       *db.DB
 	mux      *http.ServeMux
 	upgrader websocket.Upgrader
 	Users    map[int][]*Client
@@ -20,7 +22,17 @@ type Server struct {
 }
 
 func (S *Server) Run(addr string) {
-	S.db = sqlite.ConnectAndMigrate("pkg/db/migrations/app.db", "pkg/db/migrations/sqlite")
+	if err := godotenv.Load(); err != nil {
+		log.Printf(".env not loaded, using system environment variables: %v", err)
+	}
+
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		log.Fatal("DATABASE_URL is required")
+	}
+
+	db.RunMigrations(databaseURL)
+	S.db = db.New(db.InitDB())
 	defer S.db.Close()
 
 	S.mux = http.NewServeMux()

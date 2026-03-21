@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // CreateGroupHandler creates a new group
@@ -36,13 +38,17 @@ func (S *Server) CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Insert group
-	res, err := S.db.Exec("INSERT INTO groups (creator_id, title, description) VALUES ($1, $2, $3)", userID, html.EscapeString(group.Title), html.EscapeString(group.Description))
+	var groupID int
+	err = S.db.QueryRow(
+		"INSERT INTO groups (creator_id, title, description) VALUES ($1, $2, $3) RETURNING id",
+		userID,
+		html.EscapeString(group.Title),
+		html.EscapeString(group.Description),
+	).Scan(&groupID)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
-
-	groupID, _ := res.LastInsertId()
 
 	// Add creator as member
 	_, err = S.db.Exec("INSERT INTO group_members (group_id, user_id) VALUES ($1, $2)", groupID, userID)
@@ -51,7 +57,7 @@ func (S *Server) CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	group.ID = int(groupID)
+	group.ID = groupID
 	group.CreatorID = userID
 	group.CreatedAt = time.Now().Format(time.RFC3339)
 	group.IsMember = true
@@ -421,7 +427,7 @@ func (S *Server) GetGroupRequestsHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	groupIDStr := r.URL.Query().Get("groupId")
-	var rows *sql.Rows
+	var rows pgx.Rows
 
 	if groupIDStr != "" {
 		// Get requests for a specific group (Creator only)
@@ -524,11 +530,12 @@ func (S *Server) CreateGroupPostHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Insert into database
-	res, err := S.db.Exec(`
+	err = S.db.QueryRow(`
         INSERT INTO posts (user_id, content, image, privacy, group_id)
-        VALUES ($1, $2, $3, 'public', $4)`, // Group posts are public within the group context, or we can use 'group' privacy if we added it. But schema has 'public' default.
+		VALUES ($1, $2, $3, 'public', $4)
+		RETURNING id`, // Group posts are public within the group context, or we can use 'group' privacy if we added it. But schema has 'public' default.
 		userID, html.EscapeString(post.Content), post.Image, post.GroupID,
-	)
+	).Scan(&post.ID)
 
 	if err != nil {
 		fmt.Println("Error inserting group post:", err)
@@ -536,8 +543,6 @@ func (S *Server) CreateGroupPostHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	lastID, _ := res.LastInsertId()
-	post.ID = int(lastID)
 	post.UserID = userID
 	post.CreatedAt = time.Now().Format(time.RFC3339)
 
@@ -646,14 +651,17 @@ func (S *Server) CreateGroupEventHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	res, err := S.db.Exec("INSERT INTO events (group_id, title, description, event_datetime) VALUES ($1, $2, $3, $4)", event.GroupID, html.EscapeString(event.Title), html.EscapeString(event.Description), event.EventDatetime)
+	err = S.db.QueryRow(
+		"INSERT INTO events (group_id, title, description, event_datetime) VALUES ($1, $2, $3, $4) RETURNING id",
+		event.GroupID,
+		html.EscapeString(event.Title),
+		html.EscapeString(event.Description),
+		event.EventDatetime,
+	).Scan(&event.ID)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
-
-	eventID, _ := res.LastInsertId()
-	event.ID = int(eventID)
 	event.CreatedAt = time.Now().Format(time.RFC3339)
 
 	w.Header().Set("Content-Type", "application/json")
@@ -864,12 +872,17 @@ func (S *Server) SendGroupMessageHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	// Insert message
-	res, err := S.db.Exec("INSERT INTO group_messages (group_id, sender_id, content) VALUES ($1, $2, $3)", msg.GroupID, userID, html.EscapeString(msg.Content))
+	var msgID int
+	err = S.db.QueryRow(
+		"INSERT INTO group_messages (group_id, sender_id, content) VALUES ($1, $2, $3) RETURNING id",
+		msg.GroupID,
+		userID,
+		html.EscapeString(msg.Content),
+	).Scan(&msgID)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
-	msgID, _ := res.LastInsertId()
 
 	// Get sender info
 	var sender User
