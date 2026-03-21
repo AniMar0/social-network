@@ -1,12 +1,12 @@
-CREATE TABLE messages (
-    backend_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+CREATE TABLE IF NOT EXISTS messages (
+    backend_id SERIAL PRIMARY KEY,
     id TEXT NOT NULL UNIQUE,
     chat_id INTEGER NOT NULL,
     sender_id INTEGER NOT NULL,
     content TEXT,
     type TEXT CHECK(type IN ('text', 'emoji', 'gif', 'image')),
     reply_to TEXT,
-    is_read BOOLEAN DEFAULT 0,
+    is_read BOOLEAN DEFAULT FALSE,
     read_at TIMESTAMP DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(chat_id) REFERENCES chats(id),

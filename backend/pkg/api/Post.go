@@ -75,7 +75,7 @@ func (S *Server) CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 	// Insert into database
 	res, err := S.db.Exec(`
         INSERT INTO posts (user_id, content, image, privacy)
-        VALUES (?, ?, ?, ?)`,
+        VALUES ($1, $2, $3, $4)`,
 		userID, html.EscapeString(post.Content), post.Image, post.Privacy,
 	)
 
@@ -94,7 +94,7 @@ func (S *Server) CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 		for _, followerID := range post.SelectedFollowers {
 			_, err = S.db.Exec(`
 				INSERT INTO posts_private (post_id, user_id)
-				VALUES (?, ?)`,
+				VALUES ($1, $2)`,
 				post.ID, followerID,
 			)
 			if err != nil {
@@ -137,7 +137,7 @@ func (S *Server) LikeHandler(w http.ResponseWriter, r *http.Request) {
 	// check if already liked
 	var exists bool
 	err = S.db.QueryRow(
-		"SELECT EXISTS(SELECT 1 FROM likes WHERE user_id=? AND post_id=?)",
+		"SELECT EXISTS(SELECT 1 FROM likes WHERE user_id=$1 AND post_id=$2)",
 		userID, PostID,
 	).Scan(&exists)
 	if err != nil {
@@ -152,24 +152,24 @@ func (S *Server) LikeHandler(w http.ResponseWriter, r *http.Request) {
 
 	if exists {
 		// remove like
-		_, err = S.db.Exec("DELETE FROM likes WHERE user_id=? AND post_id=?", userID, PostID)
+		_, err = S.db.Exec("DELETE FROM likes WHERE user_id=$1 AND post_id=$2", userID, PostID)
 		if err != nil {
 			http.Error(w, "DB Error", http.StatusInternalServerError)
 			return
 		}
-		_, _ = S.db.Exec("UPDATE posts SET likes = likes - 1 WHERE id=?", PostID)
+		_, _ = S.db.Exec("UPDATE posts SET likes = likes - 1 WHERE id=$1", PostID)
 		S.DeleteNotification(tools.IntToString(userID), tools.IntToString(userIDs), "like")
 
 		S.PushNotification("-delete", userIDs, Notification{})
 		json.NewEncoder(w).Encode(map[string]interface{}{"liked": false})
 	} else {
 		// add like
-		_, err = S.db.Exec("INSERT INTO likes (user_id, post_id) VALUES (?, ?)", userID, PostID)
+		_, err = S.db.Exec("INSERT INTO likes (user_id, post_id) VALUES ($1, $2)", userID, PostID)
 		if err != nil {
 			http.Error(w, "DB Error", http.StatusInternalServerError)
 			return
 		}
-		_, _ = S.db.Exec("UPDATE posts SET likes = likes + 1 WHERE id=?", PostID)
+		_, _ = S.db.Exec("UPDATE posts SET likes = likes + 1 WHERE id=$1", PostID)
 
 		if userIDs != userID {
 			notification := Notification{ID: userIDs, ActorID: userID, Type: "like", Content: "Like Your Post", IsRead: false}
@@ -194,10 +194,10 @@ func (S *Server) GetUserPosts(userID int, r *http.Request) ([]Post, error) {
 		u.id, u.first_name, u.last_name, u.nickname, u.avatar, u.is_private,
 		(SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id) as like_count,
 		(SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id AND c.parent_comment_id IS NULL) as comment_count,
-		EXISTS(SELECT 1 FROM likes l WHERE l.post_id = p.id AND l.user_id = ?) as is_liked
+		EXISTS(SELECT 1 FROM likes l WHERE l.post_id = p.id AND l.user_id = $1) as is_liked
 	FROM posts p
 	JOIN users u ON p.user_id = u.id
-	WHERE p.user_id = ? AND p.group_id IS NULL
+	WHERE p.user_id = $2 AND p.group_id IS NULL
 	ORDER BY p.created_at DESC
 `, currentUserID, userID)
 
@@ -253,7 +253,7 @@ func (S *Server) GetUserPosts(userID int, r *http.Request) ([]Post, error) {
 
 func (S *Server) GetUserIdFromPostID(postID int) (int, error) {
 	var userID int
-	err := S.db.QueryRow("SELECT user_id FROM posts WHERE id = ?", postID).Scan(&userID)
+	err := S.db.QueryRow("SELECT user_id FROM posts WHERE id = $1", postID).Scan(&userID)
 	if err != nil {
 		return 0, err
 	}
@@ -293,7 +293,7 @@ func (S *Server) GetPostsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (S *Server) UserAllowedToSeePost(userID int, postID int) (bool, error) {
-	query := "SELECT id FROM posts_private WHERE post_id = ? AND user_id = ?"
+	query := "SELECT id FROM posts_private WHERE post_id = $1 AND user_id = $2"
 
 	var id int
 	err := S.db.QueryRow(query, postID, userID).Scan(&id)
@@ -316,10 +316,10 @@ func (S *Server) GetPostFromID(postID int, r *http.Request) (Post, error) {
 		u.id, u.first_name, u.last_name, u.nickname, u.avatar, u.is_private,
 		(SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id) as like_count,
 		(SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id AND c.parent_comment_id IS NULL) as comment_count,
-		EXISTS(SELECT 1 FROM likes l WHERE l.post_id = p.id AND l.user_id = ?) as is_liked
+		EXISTS(SELECT 1 FROM likes l WHERE l.post_id = p.id AND l.user_id = $1) as is_liked
 	FROM posts p
 	JOIN users u ON p.user_id = u.id
-	WHERE p.id = ?
+	WHERE p.id = $2
 `, currentUserID, postID)
 
 	var post Post

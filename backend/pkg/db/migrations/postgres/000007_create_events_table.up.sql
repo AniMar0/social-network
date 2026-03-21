@@ -1,17 +1,17 @@
 CREATE TABLE IF NOT EXISTS events (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     group_id INTEGER NOT NULL,
     title TEXT NOT NULL,
     description TEXT,
-    event_datetime DATETIME NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    event_datetime TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(group_id) REFERENCES groups(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS event_participants (
     event_id INTEGER NOT NULL,
     user_id INTEGER NOT NULL,
-    status TEXT NOT NULL DEFAULT 'not-going', -- going | not-going
+    status TEXT NOT NULL DEFAULT 'not-going',
     PRIMARY KEY(event_id, user_id),
     FOREIGN KEY(event_id) REFERENCES events(id) ON DELETE CASCADE,
     FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE

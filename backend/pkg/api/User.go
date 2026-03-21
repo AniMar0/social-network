@@ -117,9 +117,9 @@ func (S *Server) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var userID int
-	S.db.QueryRow("SELECT user_id FROM sessions WHERE session_id = ?", cookie.Value).Scan(&userID)
+	S.db.QueryRow("SELECT user_id FROM sessions WHERE session_id = $1", cookie.Value).Scan(&userID)
 
-	_, err = S.db.Exec("DELETE FROM sessions WHERE session_id = ?", cookie.Value)
+	_, err = S.db.Exec("DELETE FROM sessions WHERE session_id = $1", cookie.Value)
 	if err != nil {
 		http.Error(w, "Error deleting session", http.StatusInternalServerError)
 		return
@@ -206,7 +206,7 @@ func (S *Server) AddUser(user User, ctx context.Context) error {
 	}
 
 	query := `INSERT INTO users (first_name, last_name, birthdate, age, avatar, nickname, about_me,email,password,gender, url)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`
 	_, err = S.db.ExecContext(ctx, query,
 		html.EscapeString(user.FirstName),
 		html.EscapeString(user.LastName),
@@ -231,7 +231,7 @@ func (S *Server) GetHashedPasswordFromDB(identifier string) (string, string, int
 
 	err := S.db.QueryRow(`
 		SELECT password, id, url FROM users 
-		WHERE nickname = ? OR email = ?
+		WHERE nickname = $1 OR email = $2
 	`, identifier, identifier).Scan(&hashedPassword, &id, &url)
 
 	if err != nil {
@@ -249,7 +249,7 @@ func (S *Server) GetUserData(url string, id int) (UserData, error) {
 	err := S.db.QueryRow(`
 		SELECT id, first_name, last_name, nickname, email, birthdate, avatar, about_me, is_private, created_at, url, age
 		FROM users 
-		WHERE url = ? OR id = ?
+		WHERE url = $1 OR id = $2
 	`, url, id).Scan(
 		&user.ID,
 		&user.FirstName,

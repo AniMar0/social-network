@@ -95,7 +95,7 @@ func (S *Server) LikeCommentHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (S *Server) CreateComment(userID int, content string, postID int, parentCommentID *string) (int, error) {
-	sqlRes, err := S.db.Exec("INSERT INTO comments (user_id, content, post_id, parent_comment_id) VALUES (?, ?, ?, ?)", userID, content, postID, parentCommentID)
+	sqlRes, err := S.db.Exec("INSERT INTO comments (user_id, content, post_id, parent_comment_id) VALUES ($1, $2, $3, $4)", userID, content, postID, parentCommentID)
 	if err != nil {
 		return 0, err
 	}
@@ -111,10 +111,10 @@ func (S *Server) GetComments(postID int, r *http.Request) ([]Comment, error) {
 			c.id, c.content, c.created_at, c.parent_comment_id,c.likes as like_count,
 			u.first_name || ' ' || u.last_name AS name, 
 			u.nickname, u.avatar,
-			EXISTS(SELECT 1 FROM likes l WHERE l.comment_id = c.id AND l.user_id = ?) as is_liked
+			EXISTS(SELECT 1 FROM likes l WHERE l.comment_id = c.id AND l.user_id = $1) as is_liked
 		FROM comments c
 		JOIN users u ON c.user_id = u.id
-		WHERE c.post_id = ?
+		WHERE c.post_id = $2
 		ORDER BY c.created_at ASC
 	`, currentUserID, postID)
 	if err != nil {
@@ -184,10 +184,10 @@ func (S *Server) GetCommentByID(commentID int, r *http.Request) (Comment, error)
 			c.id, c.content, c.created_at, c.parent_comment_id,c.likes as like_count,
 			u.first_name || ' ' || u.last_name AS name, 
 			u.nickname, u.avatar,
-			EXISTS(SELECT 1 FROM likes l WHERE l.comment_id = c.id AND l.user_id = ?) as is_liked
+			EXISTS(SELECT 1 FROM likes l WHERE l.comment_id = c.id AND l.user_id = $1) as is_liked
 		FROM comments c
 		JOIN users u ON c.user_id = u.id
-		WHERE c.id = ?
+		WHERE c.id = $2
 	`, currentUserID, commentID)
 
 	var comment Comment
@@ -232,7 +232,7 @@ func (S *Server) GetCommentByID(commentID int, r *http.Request) (Comment, error)
 func (S *Server) LikeComment(commentID int, userID int) (bool, error) {
 	var exists bool
 	err := S.db.QueryRow(
-		"SELECT EXISTS(SELECT 1 FROM likes WHERE user_id=? AND comment_id=?)",
+		"SELECT EXISTS(SELECT 1 FROM likes WHERE user_id=$1 AND comment_id=$2)",
 		userID, commentID,
 	).Scan(&exists)
 	if err != nil {
@@ -245,11 +245,11 @@ func (S *Server) LikeComment(commentID int, userID int) (bool, error) {
 	}
 
 	if exists {
-		_, err = S.db.Exec("DELETE FROM likes WHERE user_id=? AND comment_id=?", userID, commentID)
+		_, err = S.db.Exec("DELETE FROM likes WHERE user_id=$1 AND comment_id=$2", userID, commentID)
 		if err != nil {
 			return false, err
 		}
-		_, err = S.db.Exec("UPDATE comments SET likes = likes - 1 WHERE id=?", commentID)
+		_, err = S.db.Exec("UPDATE comments SET likes = likes - 1 WHERE id=$1", commentID)
 		if err != nil {
 			return false, err
 		}
@@ -257,11 +257,11 @@ func (S *Server) LikeComment(commentID int, userID int) (bool, error) {
 		S.PushNotification("-delete", AuthorID, Notification{})
 		return false, nil
 	} else {
-		_, err = S.db.Exec("INSERT INTO likes (comment_id, user_id) VALUES (?, ?)", commentID, userID)
+		_, err = S.db.Exec("INSERT INTO likes (comment_id, user_id) VALUES ($1, $2)", commentID, userID)
 		if err != nil {
 			return false, err
 		}
-		_, err = S.db.Exec("UPDATE comments SET likes = likes + 1 WHERE id=?", commentID)
+		_, err = S.db.Exec("UPDATE comments SET likes = likes + 1 WHERE id=$1", commentID)
 		if err != nil {
 			return false, err
 		}
@@ -278,7 +278,7 @@ func (S *Server) LikeComment(commentID int, userID int) (bool, error) {
 
 func (S *Server) GetCommentAuthorID(commentID int) (int, error) {
 	var userID int
-	err := S.db.QueryRow("SELECT user_id FROM comments WHERE id = ?", commentID).Scan(&userID)
+	err := S.db.QueryRow("SELECT user_id FROM comments WHERE id = $1", commentID).Scan(&userID)
 	if err != nil {
 		return 0, err
 	}

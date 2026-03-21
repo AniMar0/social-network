@@ -148,8 +148,8 @@ func (S *Server) UpdateProfileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	_, err = S.db.ExecContext(r.Context(), `
         UPDATE users
-        SET first_name = ?, last_name = ?, nickname = ?, email = ?, birthdate = ?, avatar = ?, about_me = ?, is_private = ?, url = ?
-		WHERE id = ?
+        SET first_name = $1, last_name = $2, nickname = $3, email = $4, birthdate = $5, avatar = $6, about_me = $7, is_private = $8, url = $9
+		WHERE id = $10
 	`, user.FirstName, user.LastName, user.Nickname, user.Email, user.DateOfBirth, user.Avatar, user.AboutMe, user.IsPrivate, user.Url, user.ID,
 	)
 	if err != nil {
@@ -170,11 +170,11 @@ func (S *Server) UserFound(user User, cnx context.Context) (error, bool) {
 
 	if user.Nickname != "" {
 		// Check both email and nickname if nickname is provided
-		query = "SELECT COUNT(*) FROM users WHERE email = ? OR nickname = ?"
+		query = "SELECT COUNT(*) FROM users WHERE email = $1 OR nickname = $2"
 		args = []interface{}{user.Email, user.Nickname}
 	} else {
 		// Only check email if nickname is empty (we allow multiple NULL nicknames)
-		query = "SELECT COUNT(*) FROM users WHERE email = ?"
+		query = "SELECT COUNT(*) FROM users WHERE email = $1"
 		args = []interface{}{user.Email}
 	}
 
@@ -190,7 +190,7 @@ func (S *Server) UserFound(user User, cnx context.Context) (error, bool) {
 func (S *Server) RemoveOldAvatar(userID int, newAvatar string) error {
 	// Get the avatar filename from the database
 	var oldAvatar string
-	err := S.db.QueryRow(`SELECT avatar FROM users WHERE id = ?`, userID).Scan(&oldAvatar)
+	err := S.db.QueryRow(`SELECT avatar FROM users WHERE id = $1`, userID).Scan(&oldAvatar)
 	if err != nil {
 		return err
 	}

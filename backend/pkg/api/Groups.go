@@ -36,7 +36,7 @@ func (S *Server) CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Insert group
-	res, err := S.db.Exec("INSERT INTO groups (creator_id, title, description) VALUES (?, ?, ?)", userID, html.EscapeString(group.Title), html.EscapeString(group.Description))
+	res, err := S.db.Exec("INSERT INTO groups (creator_id, title, description) VALUES ($1, $2, $3)", userID, html.EscapeString(group.Title), html.EscapeString(group.Description))
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
@@ -45,7 +45,7 @@ func (S *Server) CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 	groupID, _ := res.LastInsertId()
 
 	// Add creator as member
-	_, err = S.db.Exec("INSERT INTO group_members (group_id, user_id) VALUES (?, ?)", groupID, userID)
+	_, err = S.db.Exec("INSERT INTO group_members (group_id, user_id) VALUES ($1, $2)", groupID, userID)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
@@ -80,7 +80,7 @@ func (S *Server) GetGroupsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		if userID != 0 {
 			var count int
-			S.db.QueryRow("SELECT COUNT(*) FROM group_members WHERE group_id = ? AND user_id = ?", g.ID, userID).Scan(&count)
+			S.db.QueryRow("SELECT COUNT(*) FROM group_members WHERE group_id = $1 AND user_id = $2", g.ID, userID).Scan(&count)
 			g.IsMember = count > 0
 			g.IsCreator = g.CreatorID == userID
 		}
@@ -99,7 +99,7 @@ func (S *Server) GetGroupHandler(w http.ResponseWriter, r *http.Request) {
 	userID, _, _ := S.CheckSession(r)
 
 	var g Group
-	err := S.db.QueryRow("SELECT id, creator_id, title, description, created_at FROM groups WHERE id = ?", groupID).Scan(&g.ID, &g.CreatorID, &g.Title, &g.Description, &g.CreatedAt)
+	err := S.db.QueryRow("SELECT id, creator_id, title, description, created_at FROM groups WHERE id = $1", groupID).Scan(&g.ID, &g.CreatorID, &g.Title, &g.Description, &g.CreatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			http.Error(w, "Group not found", http.StatusNotFound)
@@ -111,7 +111,7 @@ func (S *Server) GetGroupHandler(w http.ResponseWriter, r *http.Request) {
 
 	if userID != 0 {
 		var count int
-		S.db.QueryRow("SELECT COUNT(*) FROM group_members WHERE group_id = ? AND user_id = ?", g.ID, userID).Scan(&count)
+		S.db.QueryRow("SELECT COUNT(*) FROM group_members WHERE group_id = $1 AND user_id = $2", g.ID, userID).Scan(&count)
 		g.IsMember = count > 0
 		g.IsCreator = g.CreatorID == userID
 	}
@@ -141,7 +141,7 @@ func (S *Server) UpdateGroupHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Check ownership
 	var creatorID int
-	err = S.db.QueryRow("SELECT creator_id FROM groups WHERE id = ?", group.ID).Scan(&creatorID)
+	err = S.db.QueryRow("SELECT creator_id FROM groups WHERE id = $1", group.ID).Scan(&creatorID)
 	if err != nil {
 		http.Error(w, "Group not found", http.StatusNotFound)
 		return
@@ -152,7 +152,7 @@ func (S *Server) UpdateGroupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = S.db.Exec("UPDATE groups SET title = ?, description = ? WHERE id = ?", html.EscapeString(group.Title), html.EscapeString(group.Description), group.ID)
+	_, err = S.db.Exec("UPDATE groups SET title = $1, description = $2 WHERE id = $3", html.EscapeString(group.Title), html.EscapeString(group.Description), group.ID)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
@@ -179,7 +179,7 @@ func (S *Server) DeleteGroupHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Check ownership
 	var creatorID int
-	err = S.db.QueryRow("SELECT creator_id FROM groups WHERE id = ?", groupID).Scan(&creatorID)
+	err = S.db.QueryRow("SELECT creator_id FROM groups WHERE id = $1", groupID).Scan(&creatorID)
 	if err != nil {
 		http.Error(w, "Group not found", http.StatusNotFound)
 		return
@@ -190,7 +190,7 @@ func (S *Server) DeleteGroupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = S.db.Exec("DELETE FROM groups WHERE id = ?", groupID)
+	_, err = S.db.Exec("DELETE FROM groups WHERE id = $1", groupID)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
@@ -222,20 +222,20 @@ func (S *Server) JoinGroupRequestHandler(w http.ResponseWriter, r *http.Request)
 
 	// Check if already member
 	var count int
-	S.db.QueryRow("SELECT COUNT(*) FROM group_members WHERE group_id = ? AND user_id = ?", req.GroupID, userID).Scan(&count)
+	S.db.QueryRow("SELECT COUNT(*) FROM group_members WHERE group_id = $1 AND user_id = $2", req.GroupID, userID).Scan(&count)
 	if count > 0 {
 		http.Error(w, "Already a member", http.StatusBadRequest)
 		return
 	}
 
 	// Check if already requested
-	S.db.QueryRow("SELECT COUNT(*) FROM group_requests WHERE group_id = ? AND user_id = ? AND type = 'request' AND status = 'pending'", req.GroupID, userID).Scan(&count)
+	S.db.QueryRow("SELECT COUNT(*) FROM group_requests WHERE group_id = $1 AND user_id = $2 AND type = 'request' AND status = 'pending'", req.GroupID, userID).Scan(&count)
 	if count > 0 {
 		http.Error(w, "Request already pending", http.StatusBadRequest)
 		return
 	}
 
-	_, err = S.db.Exec("INSERT INTO group_requests (group_id, user_id, requester_id, type, status) VALUES (?, ?, ?, 'request', 'pending')", req.GroupID, userID, userID)
+	_, err = S.db.Exec("INSERT INTO group_requests (group_id, user_id, requester_id, type, status) VALUES ($1, $2, $3, 'request', 'pending')", req.GroupID, userID, userID)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
@@ -268,27 +268,27 @@ func (S *Server) InviteGroupMemberHandler(w http.ResponseWriter, r *http.Request
 
 	// Check if requester is member
 	var count int
-	S.db.QueryRow("SELECT COUNT(*) FROM group_members WHERE group_id = ? AND user_id = ?", req.GroupID, userID).Scan(&count)
+	S.db.QueryRow("SELECT COUNT(*) FROM group_members WHERE group_id = $1 AND user_id = $2", req.GroupID, userID).Scan(&count)
 	if count == 0 {
 		http.Error(w, "Not a member", http.StatusForbidden)
 		return
 	}
 
 	// Check if invited user is already member
-	S.db.QueryRow("SELECT COUNT(*) FROM group_members WHERE group_id = ? AND user_id = ?", req.GroupID, req.UserID).Scan(&count)
+	S.db.QueryRow("SELECT COUNT(*) FROM group_members WHERE group_id = $1 AND user_id = $2", req.GroupID, req.UserID).Scan(&count)
 	if count > 0 {
 		http.Error(w, "User already a member", http.StatusBadRequest)
 		return
 	}
 
 	// Check if already invited
-	S.db.QueryRow("SELECT COUNT(*) FROM group_requests WHERE group_id = ? AND user_id = ? AND type = 'invite' AND status = 'pending'", req.GroupID, req.UserID).Scan(&count)
+	S.db.QueryRow("SELECT COUNT(*) FROM group_requests WHERE group_id = $1 AND user_id = $2 AND type = 'invite' AND status = 'pending'", req.GroupID, req.UserID).Scan(&count)
 	if count > 0 {
 		http.Error(w, "Invitation already pending", http.StatusBadRequest)
 		return
 	}
 
-	_, err = S.db.Exec("INSERT INTO group_requests (group_id, user_id, requester_id, type, status) VALUES (?, ?, ?, 'invite', 'pending')", req.GroupID, req.UserID, userID)
+	_, err = S.db.Exec("INSERT INTO group_requests (group_id, user_id, requester_id, type, status) VALUES ($1, $2, $3, 'invite', 'pending')", req.GroupID, req.UserID, userID)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
@@ -314,7 +314,7 @@ func (S *Server) AcceptGroupRequestHandler(w http.ResponseWriter, r *http.Reques
 	requestID := tools.StringToInt(requestIDStr)
 
 	var req GroupRequest
-	err = S.db.QueryRow("SELECT id, group_id, user_id, requester_id, type, status FROM group_requests WHERE id = ?", requestID).Scan(&req.ID, &req.GroupID, &req.UserID, &req.RequesterID, &req.Type, &req.Status)
+	err = S.db.QueryRow("SELECT id, group_id, user_id, requester_id, type, status FROM group_requests WHERE id = $1", requestID).Scan(&req.ID, &req.GroupID, &req.UserID, &req.RequesterID, &req.Type, &req.Status)
 	if err != nil {
 		http.Error(w, "Request not found", http.StatusNotFound)
 		return
@@ -334,7 +334,7 @@ func (S *Server) AcceptGroupRequestHandler(w http.ResponseWriter, r *http.Reques
 	} else if req.Type == "request" {
 		// Creator accepting join request
 		var creatorID int
-		S.db.QueryRow("SELECT creator_id FROM groups WHERE id = ?", req.GroupID).Scan(&creatorID)
+		S.db.QueryRow("SELECT creator_id FROM groups WHERE id = $1", req.GroupID).Scan(&creatorID)
 		if creatorID != userID {
 			http.Error(w, "Forbidden", http.StatusForbidden)
 			return
@@ -342,14 +342,14 @@ func (S *Server) AcceptGroupRequestHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	// Add to members
-	_, err = S.db.Exec("INSERT INTO group_members (group_id, user_id) VALUES (?, ?)", req.GroupID, req.UserID)
+	_, err = S.db.Exec("INSERT INTO group_members (group_id, user_id) VALUES ($1, $2)", req.GroupID, req.UserID)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
 	// Update request status
-	_, err = S.db.Exec("UPDATE group_requests SET status = 'accepted' WHERE id = ?", req.ID)
+	_, err = S.db.Exec("UPDATE group_requests SET status = 'accepted' WHERE id = $1", req.ID)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
@@ -375,7 +375,7 @@ func (S *Server) DeclineGroupRequestHandler(w http.ResponseWriter, r *http.Reque
 	requestID := tools.StringToInt(requestIDStr)
 
 	var req GroupRequest
-	err = S.db.QueryRow("SELECT id, group_id, user_id, requester_id, type, status FROM group_requests WHERE id = ?", requestID).Scan(&req.ID, &req.GroupID, &req.UserID, &req.RequesterID, &req.Type, &req.Status)
+	err = S.db.QueryRow("SELECT id, group_id, user_id, requester_id, type, status FROM group_requests WHERE id = $1", requestID).Scan(&req.ID, &req.GroupID, &req.UserID, &req.RequesterID, &req.Type, &req.Status)
 	if err != nil {
 		http.Error(w, "Request not found", http.StatusNotFound)
 		return
@@ -395,7 +395,7 @@ func (S *Server) DeclineGroupRequestHandler(w http.ResponseWriter, r *http.Reque
 	} else if req.Type == "request" {
 		// Creator declining join request
 		var creatorID int
-		S.db.QueryRow("SELECT creator_id FROM groups WHERE id = ?", req.GroupID).Scan(&creatorID)
+		S.db.QueryRow("SELECT creator_id FROM groups WHERE id = $1", req.GroupID).Scan(&creatorID)
 		if creatorID != userID {
 			http.Error(w, "Forbidden", http.StatusForbidden)
 			return
@@ -403,7 +403,7 @@ func (S *Server) DeclineGroupRequestHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	// Update request status
-	_, err = S.db.Exec("UPDATE group_requests SET status = 'rejected' WHERE id = ?", req.ID)
+	_, err = S.db.Exec("UPDATE group_requests SET status = 'rejected' WHERE id = $1", req.ID)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
@@ -427,7 +427,7 @@ func (S *Server) GetGroupRequestsHandler(w http.ResponseWriter, r *http.Request)
 		// Get requests for a specific group (Creator only)
 		groupID := tools.StringToInt(groupIDStr)
 		var creatorID int
-		S.db.QueryRow("SELECT creator_id FROM groups WHERE id = ?", groupID).Scan(&creatorID)
+		S.db.QueryRow("SELECT creator_id FROM groups WHERE id = $1", groupID).Scan(&creatorID)
 		if creatorID != userID {
 			http.Error(w, "Forbidden", http.StatusForbidden)
 			return
@@ -437,7 +437,7 @@ func (S *Server) GetGroupRequestsHandler(w http.ResponseWriter, r *http.Request)
 			       u.first_name, u.last_name, u.nickname, u.avatar
 			FROM group_requests r
 			JOIN users u ON r.user_id = u.id
-			WHERE r.group_id = ? AND r.type = 'request' AND r.status = 'pending'`, groupID)
+			WHERE r.group_id = $1 AND r.type = 'request' AND r.status = 'pending'`, groupID)
 	} else {
 		// Get invites for the user
 		rows, err = S.db.Query(`
@@ -445,7 +445,7 @@ func (S *Server) GetGroupRequestsHandler(w http.ResponseWriter, r *http.Request)
 			       g.title, g.description
 			FROM group_requests r
 			JOIN groups g ON r.group_id = g.id
-			WHERE r.user_id = ? AND r.type = 'invite' AND r.status = 'pending'`, userID)
+			WHERE r.user_id = $1 AND r.type = 'invite' AND r.status = 'pending'`, userID)
 	}
 
 	if err != nil {
@@ -512,7 +512,7 @@ func (S *Server) CreateGroupPostHandler(w http.ResponseWriter, r *http.Request) 
 
 	// Check membership
 	var count int
-	S.db.QueryRow("SELECT COUNT(*) FROM group_members WHERE group_id = ? AND user_id = ?", post.GroupID, userID).Scan(&count)
+	S.db.QueryRow("SELECT COUNT(*) FROM group_members WHERE group_id = $1 AND user_id = $2", post.GroupID, userID).Scan(&count)
 	if count == 0 {
 		http.Error(w, "Not a member", http.StatusForbidden)
 		return
@@ -526,7 +526,7 @@ func (S *Server) CreateGroupPostHandler(w http.ResponseWriter, r *http.Request) 
 	// Insert into database
 	res, err := S.db.Exec(`
         INSERT INTO posts (user_id, content, image, privacy, group_id)
-        VALUES (?, ?, ?, 'public', ?)`, // Group posts are public within the group context, or we can use 'group' privacy if we added it. But schema has 'public' default.
+        VALUES ($1, $2, $3, 'public', $4)`, // Group posts are public within the group context, or we can use 'group' privacy if we added it. But schema has 'public' default.
 		userID, html.EscapeString(post.Content), post.Image, post.GroupID,
 	)
 
@@ -566,7 +566,7 @@ func (S *Server) GetGroupPostsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Check membership
 	var count int
-	S.db.QueryRow("SELECT COUNT(*) FROM group_members WHERE group_id = ? AND user_id = ?", groupID, userID).Scan(&count)
+	S.db.QueryRow("SELECT COUNT(*) FROM group_members WHERE group_id = $1 AND user_id = $2", groupID, userID).Scan(&count)
 	if count == 0 {
 		http.Error(w, "Not a member", http.StatusForbidden)
 		return
@@ -578,10 +578,10 @@ func (S *Server) GetGroupPostsHandler(w http.ResponseWriter, r *http.Request) {
 		u.id, u.first_name, u.last_name, u.nickname, u.avatar, u.is_private,
 		(SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id) as like_count,
 		(SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id AND c.parent_comment_id IS NULL) as comment_count,
-		EXISTS(SELECT 1 FROM likes l WHERE l.post_id = p.id AND l.user_id = ?) as is_liked
+		EXISTS(SELECT 1 FROM likes l WHERE l.post_id = p.id AND l.user_id = $1) as is_liked
 	FROM posts p
 	JOIN users u ON p.user_id = u.id
-	WHERE p.group_id = ?
+	WHERE p.group_id = $2
 	ORDER BY p.created_at DESC
 `, userID, groupID)
 
@@ -640,13 +640,13 @@ func (S *Server) CreateGroupEventHandler(w http.ResponseWriter, r *http.Request)
 
 	// Check membership
 	var count int
-	S.db.QueryRow("SELECT COUNT(*) FROM group_members WHERE group_id = ? AND user_id = ?", event.GroupID, userID).Scan(&count)
+	S.db.QueryRow("SELECT COUNT(*) FROM group_members WHERE group_id = $1 AND user_id = $2", event.GroupID, userID).Scan(&count)
 	if count == 0 {
 		http.Error(w, "Not a member", http.StatusForbidden)
 		return
 	}
 
-	res, err := S.db.Exec("INSERT INTO events (group_id, title, description, event_datetime) VALUES (?, ?, ?, ?)", event.GroupID, html.EscapeString(event.Title), html.EscapeString(event.Description), event.EventDatetime)
+	res, err := S.db.Exec("INSERT INTO events (group_id, title, description, event_datetime) VALUES ($1, $2, $3, $4)", event.GroupID, html.EscapeString(event.Title), html.EscapeString(event.Description), event.EventDatetime)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
@@ -673,7 +673,7 @@ func (S *Server) GetGroupEventsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Check membership
 	var count int
-	S.db.QueryRow("SELECT COUNT(*) FROM group_members WHERE group_id = ? AND user_id = ?", groupID, userID).Scan(&count)
+	S.db.QueryRow("SELECT COUNT(*) FROM group_members WHERE group_id = $1 AND user_id = $2", groupID, userID).Scan(&count)
 	if count == 0 {
 		http.Error(w, "Not a member", http.StatusForbidden)
 		return
@@ -683,9 +683,9 @@ func (S *Server) GetGroupEventsHandler(w http.ResponseWriter, r *http.Request) {
 		SELECT e.id, e.group_id, e.title, e.description, e.event_datetime, e.created_at,
 		(SELECT COUNT(*) FROM event_participants ep WHERE ep.event_id = e.id AND ep.status = 'going') as going_count,
 		(SELECT COUNT(*) FROM event_participants ep WHERE ep.event_id = e.id AND ep.status = 'not-going') as not_going_count,
-		(SELECT status FROM event_participants ep WHERE ep.event_id = e.id AND ep.user_id = ?) as user_status
+		(SELECT status FROM event_participants ep WHERE ep.event_id = e.id AND ep.user_id = $1) as user_status
 		FROM events e
-		WHERE e.group_id = ?
+		WHERE e.group_id = $2
 		ORDER BY e.event_datetime ASC
 	`, userID, groupID)
 
@@ -739,14 +739,14 @@ func (S *Server) RespondToGroupEventHandler(w http.ResponseWriter, r *http.Reque
 
 	// Check if user is member of the group that owns the event
 	var groupID int
-	err = S.db.QueryRow("SELECT group_id FROM events WHERE id = ?", req.EventID).Scan(&groupID)
+	err = S.db.QueryRow("SELECT group_id FROM events WHERE id = $1", req.EventID).Scan(&groupID)
 	if err != nil {
 		http.Error(w, "Event not found", http.StatusNotFound)
 		return
 	}
 
 	var count int
-	S.db.QueryRow("SELECT COUNT(*) FROM group_members WHERE group_id = ? AND user_id = ?", groupID, userID).Scan(&count)
+	S.db.QueryRow("SELECT COUNT(*) FROM group_members WHERE group_id = $1 AND user_id = $2", groupID, userID).Scan(&count)
 	if count == 0 {
 		http.Error(w, "Not a member", http.StatusForbidden)
 		return
@@ -754,7 +754,7 @@ func (S *Server) RespondToGroupEventHandler(w http.ResponseWriter, r *http.Reque
 
 	// Upsert participant status
 	_, err = S.db.Exec(`
-		INSERT INTO event_participants (event_id, user_id, status) VALUES (?, ?, ?)
+		INSERT INTO event_participants (event_id, user_id, status) VALUES ($1, $2, $3)
 		ON CONFLICT(event_id, user_id) DO UPDATE SET status = excluded.status
 	`, req.EventID, userID, req.Status)
 
@@ -779,7 +779,7 @@ func (S *Server) GetGroupChatHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Check membership
 	var count int
-	S.db.QueryRow("SELECT COUNT(*) FROM group_members WHERE group_id = ? AND user_id = ?", groupID, userID).Scan(&count)
+	S.db.QueryRow("SELECT COUNT(*) FROM group_members WHERE group_id = $1 AND user_id = $2", groupID, userID).Scan(&count)
 	if count == 0 {
 		http.Error(w, "Not a member", http.StatusForbidden)
 		return
@@ -790,7 +790,7 @@ func (S *Server) GetGroupChatHandler(w http.ResponseWriter, r *http.Request) {
 		       u.first_name, u.last_name, u.nickname, u.avatar
 		FROM group_messages m
 		JOIN users u ON m.sender_id = u.id
-		WHERE m.group_id = ?
+		WHERE m.group_id = $1
 		ORDER BY m.created_at ASC
 	`, groupID)
 
@@ -857,14 +857,14 @@ func (S *Server) SendGroupMessageHandler(w http.ResponseWriter, r *http.Request)
 
 	// Check membership
 	var count int
-	S.db.QueryRow("SELECT COUNT(*) FROM group_members WHERE group_id = ? AND user_id = ?", msg.GroupID, userID).Scan(&count)
+	S.db.QueryRow("SELECT COUNT(*) FROM group_members WHERE group_id = $1 AND user_id = $2", msg.GroupID, userID).Scan(&count)
 	if count == 0 {
 		http.Error(w, "Not a member", http.StatusForbidden)
 		return
 	}
 
 	// Insert message
-	res, err := S.db.Exec("INSERT INTO group_messages (group_id, sender_id, content) VALUES (?, ?, ?)", msg.GroupID, userID, html.EscapeString(msg.Content))
+	res, err := S.db.Exec("INSERT INTO group_messages (group_id, sender_id, content) VALUES ($1, $2, $3)", msg.GroupID, userID, html.EscapeString(msg.Content))
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
@@ -873,7 +873,7 @@ func (S *Server) SendGroupMessageHandler(w http.ResponseWriter, r *http.Request)
 
 	// Get sender info
 	var sender User
-	S.db.QueryRow("SELECT first_name, last_name, nickname, avatar FROM users WHERE id = ?", userID).Scan(&sender.FirstName, &sender.LastName, &sender.Nickname, &sender.AvatarUrl)
+	S.db.QueryRow("SELECT first_name, last_name, nickname, avatar FROM users WHERE id = $1", userID).Scan(&sender.FirstName, &sender.LastName, &sender.Nickname, &sender.AvatarUrl)
 
 	messagePayload := map[string]interface{}{
 		"id":        msgID,
@@ -886,7 +886,7 @@ func (S *Server) SendGroupMessageHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	// Broadcast to all members
-	rows, err := S.db.Query("SELECT user_id FROM group_members WHERE group_id = ?", msg.GroupID)
+	rows, err := S.db.Query("SELECT user_id FROM group_members WHERE group_id = $1", msg.GroupID)
 	if err != nil {
 		fmt.Println("Error getting group members for broadcast:", err)
 	} else {
@@ -922,7 +922,7 @@ func (S *Server) GetGroupMembersHandler(w http.ResponseWriter, r *http.Request) 
 
 	// Check membership
 	var count int
-	S.db.QueryRow("SELECT COUNT(*) FROM group_members WHERE group_id = ? AND user_id = ?", groupID, userID).Scan(&count)
+	S.db.QueryRow("SELECT COUNT(*) FROM group_members WHERE group_id = $1 AND user_id = $2", groupID, userID).Scan(&count)
 	if count == 0 {
 		http.Error(w, "Not a member", http.StatusForbidden)
 		return
@@ -932,7 +932,7 @@ func (S *Server) GetGroupMembersHandler(w http.ResponseWriter, r *http.Request) 
 		SELECT u.id, u.first_name, u.last_name, u.nickname, u.avatar, u.is_private, u.url
 		FROM group_members gm
 		JOIN users u ON gm.user_id = u.id
-		WHERE gm.group_id = ?
+		WHERE gm.group_id = $1
 	`, groupID)
 
 	if err != nil {

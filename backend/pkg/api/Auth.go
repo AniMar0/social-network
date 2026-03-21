@@ -42,7 +42,7 @@ func (S *Server) MakeToken(Writer http.ResponseWriter, id int) {
 	sessionID := uuid.NewV4().String()
 	expirationTime := time.Now().Add(24 * time.Hour)
 
-	_, err := S.db.Exec("INSERT INTO sessions (session_id, user_id, expires_at) VALUES (?, ?, ?)",
+	_, err := S.db.Exec("INSERT INTO sessions (session_id, user_id, expires_at) VALUES ($1, $2, $3)",
 		sessionID, id, expirationTime)
 	if err != nil {
 		fmt.Println("Error creating session:", err)
@@ -70,7 +70,7 @@ func (S *Server) CheckSession(r *http.Request) (int, string, error) {
 	var userID int
 	err = S.db.QueryRow(`
         SELECT user_id FROM sessions 
-        WHERE session_id = ? AND expires_at > CURRENT_TIMESTAMP
+        WHERE session_id = $1 AND expires_at > CURRENT_TIMESTAMP
     `, sessionID).Scan(&userID)
 
 	if err != nil {

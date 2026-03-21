@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     email TEXT NOT NULL UNIQUE,
     password TEXT NOT NULL,
     first_name TEXT,
@@ -11,6 +11,6 @@ CREATE TABLE IF NOT EXISTS users (
     nickname TEXT UNIQUE,
     about_me TEXT,
     url TEXT UNIQUE,
-    is_private BOOLEAN DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    is_private BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

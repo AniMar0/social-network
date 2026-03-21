@@ -18,7 +18,7 @@ func (S *Server) GetNotificationsHandler(w http.ResponseWriter, r *http.Request)
 		       u.id, u.first_name, u.last_name, u.avatar
 		FROM notifications n
 		JOIN users u ON u.id = n.actor_id
-		WHERE n.user_id = ?
+		WHERE n.user_id = $1
 		ORDER BY n.created_at DESC
 	`, userID)
 	if err != nil {
@@ -57,7 +57,7 @@ func (S *Server) GetNotificationsHandler(w http.ResponseWriter, r *http.Request)
 func (S *Server) IsertNotification(notif Notification) error {
 	_, err := S.db.Exec(`
 		INSERT INTO notifications (user_id, actor_id, type, content, is_read)
-		VALUES (?, ?, ?, ?, ?)
+		VALUES ($1, $2, $3, $4, $5)
 	`, notif.ID, notif.ActorID, notif.Type, notif.Content, notif.IsRead)
 	return err
 }
@@ -67,7 +67,7 @@ func (S *Server) MarkNotificationAsReadHandler(w http.ResponseWriter, r *http.Re
 	_, err := S.db.Exec(`
 		UPDATE notifications
 		SET is_read = 1
-		WHERE id = ?
+		WHERE id = $1
 	`, notificationID)
 	if err != nil {
 		http.Error(w, "DB error: "+err.Error(), http.StatusInternalServerError)
@@ -94,7 +94,7 @@ func (S *Server) DeleteNotificationHandler(w http.ResponseWriter, r *http.Reques
 
 	_, err = S.db.Exec(`
 		DELETE FROM notifications
-		WHERE id = ?
+		WHERE id = $1
 	`, notificationID)
 	if err != nil {
 		http.Error(w, "DB error: "+err.Error(), http.StatusInternalServerError)
@@ -107,7 +107,7 @@ func (S *Server) DeleteNotificationHandler(w http.ResponseWriter, r *http.Reques
 func (S *Server) DeleteNotification(senderID, resiverID, notificationType string) error {
 	_, err := S.db.Exec(`
 		DELETE FROM notifications
-		WHERE actor_id = ? AND user_id = ? AND type = ?
+		WHERE actor_id = $1 AND user_id = $2 AND type = $3
 	`, senderID, resiverID, notificationType)
 
 	return err
@@ -118,7 +118,7 @@ func (S *Server) GetSenderAndReceiverIDs(notificationID string) (string, string,
 	err := S.db.QueryRow(`
 		SELECT actor_id, user_id
 		FROM notifications
-		WHERE id = ?
+		WHERE id = $1
 	`, tools.StringToInt(notificationID)).Scan(&senderID, &receiverID)
 	if err != nil {
 		return "", "", err
@@ -136,7 +136,7 @@ func (S *Server) MarkAllNotificationAsReadHandler(w http.ResponseWriter, r *http
 	_, err = S.db.Exec(`
 		UPDATE notifications
 		SET is_read = 1
-		WHERE user_id = ?
+		WHERE user_id = $1
 	`, currentUserID)
 	if err != nil {
 		http.Error(w, "DB error: "+err.Error(), http.StatusInternalServerError)

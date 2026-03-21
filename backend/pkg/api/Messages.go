@@ -13,7 +13,7 @@ import (
 )
 
 func (S *Server) GetUsersHandler(w http.ResponseWriter, r *http.Request) {
-	
+
 	if r.Method != http.MethodGet {
 		http.Redirect(w, r, "/404", http.StatusSeeOther)
 		return
@@ -84,7 +84,7 @@ func (S *Server) MakeChatHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (S *Server) MakeChat(currentUserID, otherUserID int) {
-	query := `INSERT INTO chats (user1_id, user2_id) VALUES (?, ?)`
+	query := `INSERT INTO chats (user1_id, user2_id) VALUES ($1, $2)`
 	_, err := S.db.Exec(query, currentUserID, otherUserID)
 	if err != nil {
 		fmt.Println(err)
@@ -92,7 +92,7 @@ func (S *Server) MakeChat(currentUserID, otherUserID int) {
 }
 
 func (S *Server) FoundChat(currentUserID, otherUserID int) bool {
-	query := `SELECT id FROM chats WHERE (user1_id = ? AND user2_id = ?) OR (user1_id = ? AND user2_id = ?)`
+	query := `SELECT id FROM chats WHERE (user1_id = $1 AND user2_id = $2) OR (user1_id = $3 AND user2_id = $4)`
 	var id int
 	err := S.db.QueryRow(query, currentUserID, otherUserID, otherUserID, currentUserID).Scan(&id)
 	if err != nil {
@@ -156,7 +156,7 @@ func (S *Server) SendMessage(currentUserID int, message Message) error {
 		replyTo = sql.NullString{Valid: false}
 	}
 
-	query := `INSERT INTO messages (sender_id, id, chat_id, content, is_read, type, reply_to) VALUES (?,?, ?, ? , ?, ?, ?)`
+	query := `INSERT INTO messages (sender_id, id, chat_id, content, is_read, type, reply_to) VALUES ($1,$2, $3, $4 , $5, $6, $7)`
 	_, err := S.db.Exec(query, currentUserID, message.ID, message.ChatID, message.Content, message.IsRead, message.Type, replyTo)
 	if err != nil {
 		fmt.Println(err)
@@ -191,7 +191,7 @@ func (S *Server) GetMessagesHandler(w http.ResponseWriter, r *http.Request) {
 
 func (S *Server) GetMessages(currentUserID int, chatID string) ([]Message, error) {
 	var messages []Message
-	query := `SELECT id, sender_id, content, is_read, type, read_at, reply_to FROM messages WHERE chat_id = ?`
+	query := `SELECT id, sender_id, content, is_read, type, read_at, reply_to FROM messages WHERE chat_id = $1`
 	rows, err := S.db.Query(query, chatID)
 	if err != nil {
 		fmt.Println("Get Messages Query Error : ", err)
@@ -222,7 +222,7 @@ func (S *Server) GetMessages(currentUserID int, chatID string) ([]Message, error
 }
 
 func (S *Server) GetChatID(currentUserID, otherUserID int) int {
-	query := `SELECT id FROM chats WHERE (user1_id = ? AND user2_id = ?) OR (user1_id = ? AND user2_id = ?)`
+	query := `SELECT id FROM chats WHERE (user1_id = $1 AND user2_id = $2) OR (user1_id = $3 AND user2_id = $4)`
 	var id int
 	err := S.db.QueryRow(query, currentUserID, otherUserID, otherUserID, currentUserID).Scan(&id)
 	if err != nil {
@@ -233,7 +233,7 @@ func (S *Server) GetChatID(currentUserID, otherUserID int) int {
 }
 
 func (S *Server) GetAllChatIDs(currentUserID int) ([]int, error) {
-	query := `SELECT id FROM chats WHERE user1_id = ? OR user2_id = ?`
+	query := `SELECT id FROM chats WHERE user1_id = $1 OR user2_id = $2`
 	rows, err := S.db.Query(query, currentUserID, currentUserID)
 	if err != nil {
 		return nil, err
@@ -252,7 +252,7 @@ func (S *Server) GetAllChatIDs(currentUserID int) ([]int, error) {
 }
 
 func (S *Server) GetOtherUserID(currentUserID, chatID int) int {
-	query := `SELECT user1_id, user2_id FROM chats WHERE id = ?`
+	query := `SELECT user1_id, user2_id FROM chats WHERE id = $1`
 	var user1_id, user2_id int
 	err := S.db.QueryRow(query, chatID).Scan(&user1_id, &user2_id)
 	if err != nil {
@@ -271,15 +271,15 @@ func (S *Server) GetUsers(w http.ResponseWriter, currentUserID int) ([]Chat, err
     SELECT 
         c.id AS chat_id,
         CASE 
-            WHEN m.sender_id = ? THEN 
-                CASE WHEN c.user1_id = ? THEN c.user2_id ELSE c.user1_id END
+            WHEN m.sender_id = $1 THEN 
+                CASE WHEN c.user1_id = $2 THEN c.user2_id ELSE c.user1_id END
             ELSE 
-                CASE WHEN c.user1_id = ? THEN c.user2_id ELSE c.user1_id END
+                CASE WHEN c.user1_id = $3 THEN c.user2_id ELSE c.user1_id END
         END AS other_user_id,
         MAX(m.backend_id) AS last_backend_id
     FROM chats c
     LEFT JOIN messages m ON m.chat_id = c.id
-    WHERE c.user1_id = ? OR c.user2_id = ?
+    WHERE c.user1_id = $4 OR c.user2_id = $5
     GROUP BY c.id
 ),
 cte_ordered_users AS (
@@ -300,7 +300,7 @@ cte_ordered_users AS (
         	FROM messages 
         	WHERE chat_id = lm.chat_id
         	  AND is_read = 0
-        	  AND sender_id != ?
+        	  AND sender_id != $6
         ) AS unread_count
     FROM latest_messages lm
     JOIN users u ON u.id = lm.other_user_id
@@ -396,10 +396,9 @@ ORDER BY last_backend_id DESC;
 			c.LastMessageID = lastMessageID.String
 		}
 
-		
 		chats = append(chats, c)
 	}
-	
+
 	return chats, nil
 }
 
@@ -472,7 +471,7 @@ func (S *Server) SeenMessageHandler(w http.ResponseWriter, r *http.Request) {
 
 func (S *Server) SeenMessage(chatID string, userID int) error {
 	// if last message is seen return
-	_, err := S.db.Exec(`UPDATE messages SET is_read = 1, read_at = CURRENT_TIMESTAMP WHERE chat_id = ? AND sender_id != ? AND is_read = 0`, chatID, userID)
+	_, err := S.db.Exec(`UPDATE messages SET is_read = 1, read_at = CURRENT_TIMESTAMP WHERE chat_id = $1 AND sender_id != $2 AND is_read = 0`, chatID, userID)
 	if err != nil {
 		fmt.Println("Seen Message", err)
 		return err
@@ -482,7 +481,7 @@ func (S *Server) SeenMessage(chatID string, userID int) error {
 
 func (S *Server) GetLastMessageID(chatID string) (string, error) {
 	var message string
-	query := `SELECT id FROM messages WHERE chat_id = ? ORDER BY created_at DESC LIMIT 1`
+	query := `SELECT id FROM messages WHERE chat_id = $1 ORDER BY created_at DESC LIMIT 1`
 	err := S.db.QueryRow(query, chatID).Scan(&message)
 	if err != nil {
 		fmt.Println("Get Last Message ID Error :", err)
@@ -494,7 +493,7 @@ func (S *Server) GetLastMessageID(chatID string) (string, error) {
 func (S *Server) GetLastMessageContent(chatID string) (Message, error) {
 	var message Message
 	var timestamp sql.NullString
-	query := `SELECT id, sender_id, is_read, read_at, content, type,created_at FROM messages WHERE chat_id = ? ORDER BY backend_id DESC LIMIT 1`
+	query := `SELECT id, sender_id, is_read, read_at, content, type,created_at FROM messages WHERE chat_id = $1 ORDER BY backend_id DESC LIMIT 1`
 	err := S.db.QueryRow(query, chatID).Scan(&message.ID, &message.SenderID, &message.IsRead, &timestamp, &message.Content, &message.Type, &message.Timestamp)
 	if timestamp.Valid {
 		message.Timestamp = timestamp.String
@@ -511,7 +510,7 @@ func (S *Server) GetLastMessageContent(chatID string) (Message, error) {
 
 func (S *Server) GetMessageContent(messageID string) Message {
 	var message Message
-	query := `SELECT id, content, type FROM messages WHERE id = ?`
+	query := `SELECT id, content, type FROM messages WHERE id = $1`
 	S.db.QueryRow(query, messageID).Scan(&message.ID, &message.Content, &message.Type)
 	return message
 }
@@ -585,7 +584,7 @@ func (S *Server) UnsendMessage(messageID string) error {
 		}
 	}
 
-	_, err := S.db.Exec(`DELETE FROM messages WHERE id = ?`, messageID)
+	_, err := S.db.Exec(`DELETE FROM messages WHERE id = $1`, messageID)
 	if err != nil {
 		fmt.Println(err)
 		return err
@@ -595,7 +594,7 @@ func (S *Server) UnsendMessage(messageID string) error {
 
 func (S *Server) GetChatIDFromMessageID(messageID string) (string, error) {
 	var chatID string
-	query := `SELECT chat_id FROM messages WHERE id = ?`
+	query := `SELECT chat_id FROM messages WHERE id = $1`
 	err := S.db.QueryRow(query, messageID).Scan(&chatID)
 	if err != nil {
 		fmt.Println(err)

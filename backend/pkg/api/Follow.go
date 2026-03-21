@@ -25,7 +25,7 @@ func (S *Server) CancelFollowRequestHandler(w http.ResponseWriter, r *http.Reque
 
 	_, err := S.db.Exec(`
 		DELETE FROM follow_requests 
-		WHERE sender_id = ? AND receiver_id = ?`,
+		WHERE sender_id = $1 AND receiver_id = $2`,
 		body.FollowerID, body.FollowingID,
 	)
 	if err != nil {
@@ -65,7 +65,7 @@ func (S *Server) AcceptFollowRequestHandler(w http.ResponseWriter, r *http.Reque
 
 	_, err = tx.Exec(`
 		DELETE FROM follow_requests 
-		WHERE sender_id = ? AND receiver_id = ?`,
+		WHERE sender_id = $1 AND receiver_id = $2`,
 		FollowerID, FollowingID,
 	)
 	if err != nil {
@@ -75,7 +75,7 @@ func (S *Server) AcceptFollowRequestHandler(w http.ResponseWriter, r *http.Reque
 
 	_, err = tx.Exec(`
 		INSERT INTO follows (follower_id, following_id) 
-		VALUES (?, ?)`,
+		VALUES ($1, $2)`,
 		FollowerID, FollowingID,
 	)
 	if err != nil {
@@ -127,7 +127,7 @@ func (S *Server) DeclineFollowRequestHandler(w http.ResponseWriter, r *http.Requ
 
 	_, err = S.db.Exec(`
 		DELETE FROM follow_requests 
-		WHERE sender_id = ? AND receiver_id = ?`,
+		WHERE sender_id = $1 AND receiver_id = $2`,
 		FollowerID, FollowingID,
 	)
 	if err != nil {
@@ -160,7 +160,7 @@ func (S *Server) SendFollowRequestHandler(w http.ResponseWriter, r *http.Request
 	err := S.db.QueryRow(`
 		SELECT COUNT(*) 
 		FROM follow_requests 
-		WHERE sender_id = ? AND receiver_id = ? AND status = 'pending'
+		WHERE sender_id = $1 AND receiver_id = $2 AND status = 'pending'
 	`, req.Follower, req.Following).Scan(&exists)
 	if err != nil {
 		http.Error(w, "DB error: "+err.Error(), http.StatusInternalServerError)
@@ -173,7 +173,7 @@ func (S *Server) SendFollowRequestHandler(w http.ResponseWriter, r *http.Request
 
 	_, err = S.db.Exec(`
 		INSERT INTO follow_requests (sender_id, receiver_id, status) 
-		VALUES (?, ?, 'pending')
+		VALUES ($1, $2, 'pending')
 	`, req.Follower, req.Following)
 	if err != nil {
 		http.Error(w, "Error inserting follow request: "+err.Error(), http.StatusInternalServerError)
@@ -277,7 +277,7 @@ func (S *Server) FollowUser(follower, following string) error {
 		return fmt.Errorf("you cannot follow yourself")
 	}
 	query := `
-		INSERT INTO follows (follower_id, following_id) VALUES (?, ?) 
+		INSERT INTO follows (follower_id, following_id) VALUES ($1, $2) 
 		ON CONFLICT(follower_id, following_id) DO NOTHING`
 
 	_, err := S.db.Exec(query, follower, following)
@@ -286,7 +286,7 @@ func (S *Server) FollowUser(follower, following string) error {
 }
 func (S *Server) UnfollowUser(follower, following string) error {
 	_, err := S.db.Exec(`
-		DELETE FROM follows WHERE follower_id = ? AND following_id = ?
+		DELETE FROM follows WHERE follower_id = $1 AND following_id = $2
 	`, follower, following)
 
 	return err
@@ -296,7 +296,7 @@ func (S *Server) GetFollowersCount(url string) (int, error) {
 		SELECT COUNT(*) 
 		FROM follows f
 		JOIN users u ON u.id = f.following_id
-		WHERE u.url = ?
+		WHERE u.url = $1
 	`, url)
 
 	var count int
@@ -310,7 +310,7 @@ func (S *Server) GetFollowingCount(url string) (int, error) {
 		SELECT COUNT(*) 
 		FROM follows f
 		JOIN users u ON u.id = f.follower_id
-		WHERE u.url = ?
+		WHERE u.url = $1
 	`, url)
 
 	var count int
@@ -322,7 +322,7 @@ func (S *Server) GetFollowingCount(url string) (int, error) {
 func (S *Server) GetFollowRequestStatus(r *http.Request, followingURL string) (string, error) {
 	follower, _, _ := S.CheckSession(r)
 	var followingID int
-	err := S.db.QueryRow(`SELECT id FROM users WHERE url = ?`, followingURL).Scan(&followingID)
+	err := S.db.QueryRow(`SELECT id FROM users WHERE url = $1`, followingURL).Scan(&followingID)
 	if err != nil {
 		return "", err
 	}
@@ -331,7 +331,7 @@ func (S *Server) GetFollowRequestStatus(r *http.Request, followingURL string) (s
 	if err := S.db.QueryRow(`
 		SELECT status 
 		FROM follow_requests 
-		WHERE sender_id = ? AND receiver_id = ?
+		WHERE sender_id = $1 AND receiver_id = $2
 	`, follower, followingID).Scan(&status); err != nil {
 		return "", err
 	}
@@ -340,13 +340,13 @@ func (S *Server) GetFollowRequestStatus(r *http.Request, followingURL string) (s
 func (S *Server) IsFollowing(r *http.Request, followingURL, followingID string) (bool, error) {
 	followerID, _, _ := S.CheckSession(r)
 	if followingID == "" {
-		err := S.db.QueryRow(`SELECT id FROM users WHERE url = ?`, followingURL).Scan(&followingID)
+		err := S.db.QueryRow(`SELECT id FROM users WHERE url = $1`, followingURL).Scan(&followingID)
 		if err != nil {
 			return false, err
 		}
 	}
 	var isFollowing bool
-	err := S.db.QueryRow(`SELECT EXISTS(SELECT 1 FROM follows WHERE follower_id = ? AND following_id = ?)`, followerID, followingID).Scan(&isFollowing)
+	err := S.db.QueryRow(`SELECT EXISTS(SELECT 1 FROM follows WHERE follower_id = $1 AND following_id = $2)`, followerID, followingID).Scan(&isFollowing)
 	if err != nil {
 		return false, err
 	}
@@ -357,13 +357,13 @@ func (S *Server) IsFollowing(r *http.Request, followingURL, followingID string) 
 func (S *Server) IsFollower(r *http.Request, followingURL, followingID string) (bool, error) {
 	followerID, _, _ := S.CheckSession(r)
 	if followingID == "" {
-		err := S.db.QueryRow(`SELECT id FROM users WHERE url = ?`, followingURL).Scan(&followingID)
+		err := S.db.QueryRow(`SELECT id FROM users WHERE url = $1`, followingURL).Scan(&followingID)
 		if err != nil {
 			return false, err
 		}
 	}
 	var isFollowing bool
-	err := S.db.QueryRow(`SELECT EXISTS(SELECT 1 FROM follows WHERE follower_id = ? AND following_id = ?)`, followingID, followerID).Scan(&isFollowing)
+	err := S.db.QueryRow(`SELECT EXISTS(SELECT 1 FROM follows WHERE follower_id = $1 AND following_id = $2)`, followingID, followerID).Scan(&isFollowing)
 	if err != nil {
 		return false, err
 	}
@@ -399,7 +399,7 @@ func (S *Server) GetFollowers(User int) ([]Follower, error) {
     	u.avatar
 	FROM follows f
 	JOIN users u ON u.id = f.follower_id
-	WHERE f.following_id = ?;
+	WHERE f.following_id = $1;
 	`
 	rows, err := S.db.Query(query, User)
 	if err != nil {
