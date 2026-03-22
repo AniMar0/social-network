@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"SOCIAL-NETWORK/pkg/db/postgresql"
 	"SOCIAL-NETWORK/pkg/db/sqlite"
 	"database/sql"
 	"log"
@@ -22,6 +23,8 @@ type Server struct {
 func (S *Server) Run(addr string) {
 	S.db = sqlite.ConnectAndMigrate("pkg/db/migrations/app.db", "pkg/db/migrations/sqlite")
 	defer S.db.Close()
+
+	postgresql.ConectAndMigrate()
 
 	S.mux = http.NewServeMux()
 	S.initRoutes()
