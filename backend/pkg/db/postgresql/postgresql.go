@@ -1,21 +1,20 @@
 package postgresql
 
 import (
-	"context"
+	"database/sql"
 	"log"
 	"os"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
 
 	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/postgres" // 🔹 مهم بزاف
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 type Config struct {
 	DatabaseURL string
-	pool        *pgxpool.Pool
 }
 
 func (c *Config) DSN() {
@@ -26,21 +25,23 @@ func (c *Config) DSN() {
 	c.DatabaseURL = os.Getenv("DATABASE_URL")
 }
 
-func (c *Config) ConnectAndMigrate() {
+func (c *Config) ConnectAndMigrate() *sql.DB {
 	c.DSN()
 
-	// Connect to the database using pgxpool (test connection)
-	pool, err := pgxpool.New(context.Background(), c.DatabaseURL)
+	// Open a database/sql connection used by handlers.
+	db, err := sql.Open("postgres", c.DatabaseURL)
 	if err != nil {
 		log.Fatalf("Failed to connect to the database: %v", err)
 	}
-	defer pool.Close()
-	c.pool = pool
+
+	if err := db.Ping(); err != nil {
+		log.Fatalf("Failed to ping database: %v", err)
+	}
 
 	// Run migrations using golang-migrate
 	m, err := migrate.New(
 		"file://pkg/db/migrations/postgresql",
-		c.DatabaseURL, 
+		c.DatabaseURL,
 	)
 	if err != nil {
 		log.Fatalf("Failed to initialize migrate: %v", err)
@@ -51,4 +52,5 @@ func (c *Config) ConnectAndMigrate() {
 	}
 
 	log.Println("✅ Migrations completed successfully")
+	return db
 }

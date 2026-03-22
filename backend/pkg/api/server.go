@@ -2,7 +2,6 @@ package backend
 
 import (
 	"SOCIAL-NETWORK/pkg/db/postgresql"
-	"database/sql"
 	"log"
 	"net/http"
 	"sync"
@@ -12,7 +11,7 @@ import (
 )
 
 type Server struct {
-	db       *sql.DB
+	db       *DB
 	mux      *http.ServeMux
 	upgrader websocket.Upgrader
 	Users    map[int][]*Client
@@ -24,7 +23,8 @@ func (S *Server) Run(addr string) {
 	// defer S.db.Close()
 
 	postgresqlConfig := &postgresql.Config{}
-	postgresqlConfig.ConnectAndMigrate()
+	S.db = NewDB(postgresqlConfig.ConnectAndMigrate())
+	defer S.db.Close()
 
 	S.mux = http.NewServeMux()
 	S.initRoutes()
