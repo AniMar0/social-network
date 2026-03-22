@@ -1,0 +1,1 @@
+ALTER TABLE likes DROP CONSTRAINT IF EXISTS fk_likes_comment;
